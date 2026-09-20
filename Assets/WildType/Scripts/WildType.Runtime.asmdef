@@ -1,0 +1,1 @@
+{"name":"WildType.Runtime","rootNamespace":"WildType","references":["Unity.InputSystem","Unity.TextMeshPro","Unity.ugui","Unity.RenderPipelines.Universal.Runtime"],"autoReferenced":true}

@@ -1,0 +1,1 @@
+{"name":"WildType.Editor","rootNamespace":"WildType","references":["WildType.Runtime","Unity.TextMeshPro","Unity.InputSystem","Unity.RenderPipelines.Universal.Runtime"],"includePlatforms":["Editor"]}
