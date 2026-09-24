@@ -61,6 +61,12 @@ Focus the Game view for input. Focus loss pauses the simulation. Food interactio
 
 Limits: **24 living creatures**, **32 creature objects including corpses**, **72 food slots**, **512 particles**, and **512 retained lineage records per run**. Pending courtships reserve capacity. Dead parents remain in the bounded value-data archive; full archive stops new births with a clear message rather than deleting ancestry. Restart/reseed clears the entire run, including age, reservations and family records. No automatic population replenishment.
 
+### Turnover visibility
+
+The upper-right HUD shows **Population, Births and Deaths** together. The lower-right panel retains the **four most recent births/deaths**, newest first, with creature ID, generation, parents when known and the recorded founder lineage. Entries do not time out or disappear when a birth fills a death's vacant slot; only a newer event can evict the oldest entry. Totals remain cumulative for the run even after entries leave the list. Initial founders and object cleanup are not counted as births/deaths. Restart/reseed clears both totals and events.
+
+Death causes are captured from the actual fatal damage source: **starvation**, **old age**, or **cause unknown** for other/unspecified damage. Energy or age alone is never used to guess a cause. The existing lineage identifier is a canonical founder reference; it does not imply that a two-parent descendant has only one founding ancestor. Events remain readable while paused or choosing a descendant.
+
 ## Architecture and asset replacement
 
 All original game code/content is under **Assets/WildType**.

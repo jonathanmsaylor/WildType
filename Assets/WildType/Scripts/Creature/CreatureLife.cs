@@ -20,7 +20,7 @@ namespace WildType
         {
             if (actor.Vitals.Dead) return;
             ApplyGrowth();
-            if (Age >= actor.Stats.LifespanSeconds) actor.Vitals.Damage(100);
+            if (Age >= actor.Stats.LifespanSeconds) actor.Vitals.Damage(100, CreatureDeathCause.OldAge);
         }
         void ApplyGrowth()
         {

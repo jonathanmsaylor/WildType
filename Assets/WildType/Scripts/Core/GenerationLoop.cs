@@ -16,14 +16,16 @@ namespace WildType
         int nextId;
         public double Clock { get; private set; }
         public LineageArchive Archive { get; private set; }
-        public int Births { get; private set; }
+        public TurnoverHistory Turnover { get; } = new TurnoverHistory();
+        public int Births => Turnover.Births;
+        public int Deaths => Turnover.Deaths;
         public int PendingBirths => pairs.Count;
         public int PeakPopulation { get; private set; }
         public void ResetRun(StageSession value)
         {
             session = value; pairs.Clear(); descendants.Clear(); Archive = new LineageArchive();
             settings = new EvolutionSettings().ValidatedCopy(); random = new SeededRandomSource(session.seed);
-            Clock = 1000; nextId = 0; Births = 0; PeakPopulation = 0;
+            Clock = 1000; nextId = 0; Turnover.Clear(); PeakPopulation = 0;
         }
         CreatureId NextId() => CreatureId.From(session.seed + ":" + (++nextId).ToString("D3"));
         public void RegisterFounder(CreatureAgent actor)
@@ -153,7 +155,7 @@ namespace WildType
             Archive.Add(record, DescribeChanges(result.Genome, first.Genome, second.Genome));
             var child = session.SpawnChild(result.Genome, point, record);
             child.Vitals.SpendEnergy(child.Stats.MaxEnergy * .45f);
-            Births++;
+            Turnover.RecordBirth(record);
             if (first.IsPlayer || second.IsPlayer)
                 session.ShowNotice($"Born: {ShortId(record.CreatureId)} · generation {record.Generation}" +
                     (result.MajorMutationCount > 0 ? " · notable mutation" : "") + " · F opens family", 7);
@@ -179,7 +181,14 @@ namespace WildType
             point = default; return false;
         }
         public void MarkDead(CreatureAgent actor)
-        { if (Owns(actor)) Archive.MarkDead(actor.Life.Id); }
+        {
+            if (!Owns(actor)) return;
+            var record = Archive.Get(actor.Life.Id);
+            if (!record.Alive) return; // Death notification and subsequent corpse cleanup count only once.
+            Archive.MarkDead(actor.Life.Id);
+            // Destruction/unregister alone is not evidence of gameplay death. Restarts are not deaths either.
+            if (session.Ready && actor.Vitals.Dead) Turnover.RecordDeath(record, actor.Vitals.DeathCause);
+        }
         public IReadOnlyList<CreatureAgent> LivingDescendants(CreatureId ancestor)
         {
             descendants.Clear();

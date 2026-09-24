@@ -1,5 +1,17 @@
 # WILDTYPE verification — Milestone 2A.2 — 2026-09-24
 
+## Follow-up: zoom response and turnover visibility — 2026-09-24
+
+- Zoom-only commit `30f9ae3`: changed `OrbitCamera` wheel multiplier from `.8f` to `2f`; limits and smoothing unchanged. Tested wheel input in both directions in the native Unity Game view. Existing `FullVerticalSliceAndBoundedSoak` passed all 102 checks, including wheel zoom and camera collision/recovery (77.6051737 seconds).
+- Added cumulative Deaths beside Population/Births and a four-entry, newest-first birth/death panel. Value snapshots retain creature ID, generation, parent IDs and the existing canonical founder lineage after corpse removal and control transfer. Entries persist until evicted by newer events; totals persist until restart/reseed. Founder spawning and cleanup are not deaths or births.
+- Causes are explicit fatal-source metadata: starvation from survival drain, old age from the inherited-lifespan path, otherwise unknown. Nonfatal starvation, low energy or advanced age do not imply a cause. Duplicate death notification/corpse cleanup cannot increment Deaths twice.
+- **52 Edit Mode tests passed, 0 failed** (0.0716669 seconds), including bounded history with cumulative totals, reset, ancestry snapshots and fatal-cause timing/unknown fallback.
+- **9 Play Mode tests passed, 0 failed** (163.2374235 seconds), including the existing full regressions. New turnover fixture: death reduces population from 13 to 12; a normal inherited birth restores 13 within 2.2 simulation seconds; the Deaths total and death entry remain visible, including after corpse cleanup and while paused. HUD text includes both events, IDs, generations, parents and lineage without text overflow. Paused restart/reseed clear events and totals; destroying a living object is not reported as a gameplay death. Existing fed-lifespan test additionally confirms an old-age event from the real lifespan path.
+- Inspected the actual rendered Editor HUD at 1920×1080 using computer-use. A **temporary Editor-only controlled fixture** produced three fatal-starvation events and one normal inherited birth to fill all four rows. Observed Population 11/24, Births 1, Deaths 3, newborn #014 / Gen 1 / parents #001 + #002 / lineage #001, plus all three death rows with starvation labels. Panel remained readable below the family journal while paused, with no clipping; also checked active play. Console showed 0 gameplay warnings/errors. This was controlled visual verification, not a natural ecosystem or human playtesting session. The temporary fixture and its metadata were removed before delivery.
+- Evidence outside Git: `%TEMP%\WildType2A2\zoom-regression.xml`, `turnover-edit.xml`, `turnover-play.xml` and corresponding logs. No new gameplay feature beyond turnover visibility, no packages/assets, and no survival balance changes. Existing limitations below still apply; physical-wheel feel across other mice and display sizes remains a human judgment task.
+
+The sections below retain the original 2A.2 verification record; the follow-up counts above are the current complete-suite results.
+
 ## Environment and scope
 
 - Existing Unity project: `C:\Users\jsayl\Desktop\UnityProjects\WILDTYPE`.

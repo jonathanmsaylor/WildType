@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 namespace WildType
 {
+    public enum CreatureDeathCause { Unknown, Starvation, OldAge }
     public sealed class CreatureVitals : MonoBehaviour
     {
         public float Energy { get; private set; }
@@ -10,10 +11,12 @@ namespace WildType
         public bool Dead => Health <= 0;
         public bool SprintLocked { get; private set; }
         public Phenotype Stats { get; private set; }
+        public CreatureDeathCause DeathCause { get; private set; }
         public event Action Died;
         public void Configure(Phenotype stats)
         {
             Stats = stats; Energy = stats.MaxEnergy; Stamina = stats.MaxStamina; Health = 100; SprintLocked = false;
+            DeathCause = CreatureDeathCause.Unknown;
         }
         public bool CanSprint => !Dead && !SprintLocked && Stamina > .01f && Energy > Stats.MaxEnergy * .08f;
         public void Tick(float dt, float speed, bool sprinting)
@@ -28,7 +31,7 @@ namespace WildType
             Stamina = Mathf.Clamp(Stamina, 0, Stats.MaxStamina);
             if (Stamina <= .01f) SprintLocked = true;
             else if (Stamina >= Stats.MaxStamina * .25f) SprintLocked = false;
-            if (Energy <= .001f) Damage(4f * dt);
+            if (Energy <= .001f) Damage(4f * dt, CreatureDeathCause.Starvation);
         }
         public float Eat(float nutrition)
         {
@@ -42,11 +45,16 @@ namespace WildType
             if (Dead || float.IsNaN(amount) || float.IsInfinity(amount) || amount < 0 || Energy < amount) return false;
             Energy -= amount; return true;
         }
-        public void Damage(float amount)
+        public void Damage(float amount, CreatureDeathCause cause = CreatureDeathCause.Unknown)
         {
             if (Dead || float.IsNaN(amount) || float.IsInfinity(amount)) return;
             Health = Mathf.Clamp(Health - Mathf.Max(0, amount), 0, 100);
-            if (Dead) Died?.Invoke();
+            if (Dead)
+            {
+                // Capture the fatal source before listeners run; never infer it from current reserves/age.
+                DeathCause = cause == CreatureDeathCause.Starvation || cause == CreatureDeathCause.OldAge ? cause : CreatureDeathCause.Unknown;
+                Died?.Invoke();
+            }
         }
     }
 }

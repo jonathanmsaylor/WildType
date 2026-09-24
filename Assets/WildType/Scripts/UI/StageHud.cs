@@ -1,3 +1,4 @@
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -8,7 +9,8 @@ namespace WildType
     public sealed class StageHud : MonoBehaviour
     {
         StageSession session;
-        TMP_Text readout, prompt, notice, panelTitle, region, family, mating, descendantTitle;
+        TMP_Text readout, prompt, notice, panelTitle, region, family, mating, descendantTitle, turnover;
+        readonly StringBuilder turnoverText = new StringBuilder(640);
         Image energy, stamina, health;
         GameObject pausePanel;
         Button resume, nextPage;
@@ -32,8 +34,12 @@ namespace WildType
             stamina = Bar(info, "Stamina", 108, new Color(.26f, .73f, .82f));
             health = Bar(info, "Health", 154, new Color(.93f, .51f, .36f));
             readout = Text(info, "", new Vector2(20, -207), new Vector2(305, 136), 19, Color.white);
-            region = Text(root.transform, "", new Vector2(-28, -26), new Vector2(390, 44), 22, Color.white, new Vector2(1, 1));
+            region = Text(root.transform, "", new Vector2(-28, -26), new Vector2(560, 64), 20, Color.white, new Vector2(1, 1));
             region.alignment = TextAlignmentOptions.Right;
+            var turnoverBox = Box(root.transform, "Recent turnover", new Vector2(-28, 25), new Vector2(560, 220), new Vector2(1, 0));
+            Text(turnoverBox, "RECENT BIRTHS / DEATHS · newest first · last 4", new Vector2(14, -10), new Vector2(532, 25), 18, new Color(.87f, .93f, .81f));
+            turnover = Text(turnoverBox, "", new Vector2(14, -42), new Vector2(532, 166), 17, Color.white);
+            turnover.gameObject.name = "Turnover events";
             var help = Box(root.transform, "Controls", new Vector2(28, 25), new Vector2(720, 60), Vector2.zero);
             Text(help, "WASD / stick Move · Shift / L3 Sprint · E / A Eat · M / X Mate\nMouse / stick Orbit · Wheel Zoom · F / Y Family · Esc / Start Pause", new Vector2(16, -9), new Vector2(690, 50), 18, new Color(.82f, .88f, .81f));
             var familyBox = Box(root.transform, "Lineage", new Vector2(28, -395), new Vector2(410, 220), new Vector2(0, 1));
@@ -113,12 +119,35 @@ namespace WildType
             health.rectTransform.localScale = new Vector3(health.fillAmount, 1, 1);
             stamina.color = v.SprintLocked ? new Color(1, .6f, .22f) : new Color(.26f, .73f, .82f);
             readout.text = $"Energy {v.Energy:0}/{a.Stats.MaxEnergy:0}   Health {v.Health:0}\nStamina {v.Stamina:0}/{a.Stats.MaxStamina:0}   Speed {a.Motor.Speed:0.0} m/s\nSize {a.Genome.bodySize:0.00}   Metabolism {a.Genome.metabolism:0.00}\nVision {a.Stats.Vision:0} m  •  {a.State}";
-            region.text = session.World.Zone(a.transform.position) + $"\nPopulation {session.Population}/{GenerationLoop.PopulationCap} · Births {generations.Births} · Food {session.World.AvailableFood}/{Ecosystem.FoodCap}";
+            region.text = session.World.Zone(a.transform.position) + $" · Food {session.World.AvailableFood}/{Ecosystem.FoodCap}\nPopulation {session.Population}/{GenerationLoop.PopulationCap} · Births {generations.Births} · Deaths {generations.Deaths}";
+            RefreshTurnover(generations.Turnover);
             if (highlighted) highlighted.Highlight(false);
             highlighted = a.Interaction.Nearest();
             if (highlighted && !session.Paused) highlighted.Highlight(true);
             prompt.text = session.Paused ? "" : highlighted ? (v.Energy >= a.Stats.MaxEnergy - .5f ? "Brightfruit  /  Energy full" : "E / A  •  Eat brightfruit") : v.Energy <= 0 ? "STARVING — find brightfruit" : v.SprintLocked ? "Stamina depleted — recovering" : "";
             notice.text = session.Paused ? "" : session.CurrentNotice;
+        }
+        void RefreshTurnover(TurnoverHistory history)
+        {
+            turnoverText.Clear();
+            foreach (var entry in history.Recent)
+            {
+                if (turnoverText.Length > 0) turnoverText.Append('\n');
+                turnoverText.Append(entry.Kind == TurnoverKind.Birth ? "<color=#C5E893>Born</color> " : "<color=#FFB99B>Died</color> ");
+                turnoverText.Append(GenerationLoop.ShortId(entry.CreatureId)).Append(" · Gen ").Append(entry.Generation);
+                if (entry.Kind == TurnoverKind.Death)
+                {
+                    if (entry.Cause == CreatureDeathCause.Starvation) turnoverText.Append(" · starvation");
+                    else if (entry.Cause == CreatureDeathCause.OldAge) turnoverText.Append(" · old age");
+                    else turnoverText.Append(" · cause unknown");
+                }
+                turnoverText.Append('\n');
+                if (entry.FirstParentId.IsValid || entry.SecondParentId.IsValid)
+                    turnoverText.Append("Parents ").Append(GenerationLoop.ShortId(entry.FirstParentId)).Append(" + ").Append(GenerationLoop.ShortId(entry.SecondParentId)).Append(" · ");
+                else turnoverText.Append("Founder · ");
+                turnoverText.Append("Lineage ").Append(GenerationLoop.ShortId(entry.FounderId));
+            }
+            turnover.text = turnoverText.Length == 0 ? "No births or deaths yet this run." : turnoverText.ToString();
         }
         RectTransform Box(Transform parent, string label, Vector2 position, Vector2 size, Vector2 anchor)
         {

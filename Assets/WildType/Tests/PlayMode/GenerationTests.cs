@@ -123,7 +123,56 @@ namespace WildType.Tests
             Assert.False(loop.Archive.Get(id).Alive, "A well-fed creature still dies at its inherited lifespan");
             Assert.True(!shortLived || shortLived.Vitals.Dead);
             Assert.False(session.GameOver); Assert.AreSame(session.Creatures[0], session.Player);
+            bool oldAgeRecorded = false;
+            foreach (var entry in loop.Turnover.Recent)
+                if (entry.CreatureId == id && entry.Kind == TurnoverKind.Death)
+                { Assert.AreEqual(CreatureDeathCause.OldAge, entry.Cause); oldAgeRecorded = true; }
+            Assert.True(oldAgeRecorded, "The real lifespan path records old age, not an inferred cause");
             Debug.Log($"WILDTYPE_LIFESPAN: natural AI death verified at simulation clock {loop.Clock:0.0}; ancestry retained");
+        }
+        [UnityTest] public IEnumerator TurnoverSurvivesReplacementBirthCleanupAndPausedResets()
+        {
+            var parent = session.Player; var partner = session.Creatures[1]; var victim = session.Creatures[2];
+            var victimId = victim.Life.Id; var parentId = parent.Life.Id;
+            Assert.AreEqual(0, loop.Turnover.Recent.Count, "Initial founders are not births");
+            Place(partner, 2, 0); Assert.True(loop.TryMate(parent, partner, out string reason), reason);
+            victim.Vitals.Tick(10000, 0, false); // Actual fatal starvation path, not a guessed cause.
+            Assert.AreEqual(12, session.Population); Assert.AreEqual(1, loop.Deaths);
+            session.NotifyDeath(victim); Assert.AreEqual(1, loop.Deaths, "Repeated notification must not double count");
+            yield return new WaitForSeconds(2.2f); FreezeBrains();
+            Assert.AreEqual(13, session.Population, "A new inherited birth fills the vacant slot quickly");
+            Assert.AreEqual(1, loop.Births); Assert.AreEqual(1, loop.Deaths);
+            Assert.AreEqual(2, loop.Turnover.Recent.Count);
+            var birth = loop.Turnover.Recent[0]; var death = loop.Turnover.Recent[1];
+            Assert.AreEqual(TurnoverKind.Birth, birth.Kind); Assert.AreEqual(parentId, birth.FirstParentId);
+            Assert.AreEqual(TurnoverKind.Death, death.Kind); Assert.AreEqual(victimId, death.CreatureId);
+            Assert.AreEqual(CreatureDeathCause.Starvation, death.Cause);
+            yield return new WaitForSeconds(2.2f); Assert.False(victim, "Corpse has been removed");
+            Assert.AreEqual(1, loop.Deaths); Assert.AreEqual(victimId, loop.Turnover.Recent[1].CreatureId);
+            session.SetPaused(true); yield return new WaitForSecondsRealtime(.15f);
+            TMPro.TMP_Text eventText = null; bool countersVisible = false;
+            foreach (var label in session.GetComponentsInChildren<TMPro.TMP_Text>())
+            {
+                if (label.name == "Turnover events") eventText = label;
+                if (label.text.Contains("Population 13/24 · Births 1 · Deaths 1")) countersVisible = true;
+            }
+            Assert.True(countersVisible); Assert.NotNull(eventText); Assert.True(eventText.gameObject.activeInHierarchy);
+            StringAssert.Contains("Died</color> " + GenerationLoop.ShortId(victimId) + " · Gen 0 · starvation", eventText.text);
+            StringAssert.Contains("Born</color> " + GenerationLoop.ShortId(birth.CreatureId) + " · Gen 1", eventText.text);
+            StringAssert.Contains("Parents " + GenerationLoop.ShortId(parentId), eventText.text);
+            StringAssert.Contains("Lineage " + GenerationLoop.ShortId(death.FounderId), eventText.text);
+            eventText.ForceMeshUpdate(); Assert.False(eventText.isTextOverflowing);
+            session.SetPaused(false); Object.Destroy(session.Creatures[3].gameObject); yield return null; yield return null;
+            Assert.AreEqual(1, loop.Deaths, "Destroying a living object is not a proven gameplay death");
+            session.SetPaused(true); int seed = session.seed; session.Restart(false);
+            yield return null; yield return new WaitForSeconds(.2f); FreezeBrains();
+            Assert.AreEqual(seed, session.seed); Assert.AreEqual(0, loop.Deaths); Assert.AreEqual(0, loop.Births);
+            Assert.AreEqual(0, loop.Turnover.Recent.Count);
+            session.Creatures[2].Vitals.Damage(100); Assert.AreEqual(CreatureDeathCause.Unknown, loop.Turnover.Recent[0].Cause);
+            session.SetPaused(true); session.Restart(true); yield return null; yield return new WaitForSeconds(.2f); FreezeBrains();
+            Assert.AreNotEqual(seed, session.seed); Assert.AreEqual(0, loop.Deaths); Assert.AreEqual(0, loop.Births);
+            Assert.AreEqual(0, loop.Turnover.Recent.Count);
+            Debug.Log("WILDTYPE_TURNOVER: death remains after replacement birth, corpse cleanup and pause; counts/ancestry/cause HUD verified; restart/reseed clear history");
         }
         [UnityTest] public IEnumerator DeathOffersDescendantsAndNoSilentReplacement()
         {
