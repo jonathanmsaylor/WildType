@@ -112,9 +112,9 @@ namespace WildType.Editor
         static GenomePreset[] BuildPresets()
         {
             var values = new[] {
-                new Genome { bodySize = 1, legLength = 1, movementSpeed = 6.4f, metabolism = 1, vision = 27, camouflage = new Color(.17f, .65f, .59f) },
-                new Genome { bodySize = 1.5f, legLength = .8f, movementSpeed = 4.8f, turnAgility = 5.5f, metabolism = .7f, energyEfficiency = 1.35f, maximumEnergy = 130, stamina = 120, vision = 20, camouflage = new Color(.59f, .39f, .2f) },
-                new Genome { bodySize = .77f, legLength = 1.5f, movementSpeed = 8.6f, turnAgility = 9, metabolism = 1.35f, energyEfficiency = .8f, maximumEnergy = 80, stamina = 85, vision = 38, camouflage = new Color(.38f, .4f, .77f) }
+                new Genome { bodySize = 1, legLength = 1, movementSpeed = 6.4f, metabolism = 1, vision = 27, fertility = 1.05f, reproductionThreshold = .72f, offspringTendency = 1.05f, lifespan = 600, camouflage = new Color(.17f, .65f, .59f) },
+                new Genome { bodySize = 1.5f, legLength = .8f, movementSpeed = 4.8f, turnAgility = 5.5f, metabolism = .7f, energyEfficiency = 1.35f, maximumEnergy = 130, stamina = 120, vision = 20, fertility = .72f, reproductionThreshold = .8f, offspringTendency = .72f, lifespan = 780, camouflage = new Color(.59f, .39f, .2f) },
+                new Genome { bodySize = .77f, legLength = 1.5f, movementSpeed = 8.6f, turnAgility = 9, metabolism = 1.35f, energyEfficiency = .8f, maximumEnergy = 80, stamina = 85, vision = 38, fertility = 1.28f, reproductionThreshold = .62f, offspringTendency = 1.3f, lifespan = 420, camouflage = new Color(.38f, .4f, .77f) }
             };
             string[] names = { "Meadow Grazer", "Amber Bulwark", "Violet Strider" };
             var presets = new GenomePreset[3];

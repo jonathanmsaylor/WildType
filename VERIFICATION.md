@@ -1,5 +1,11 @@
 # WILDTYPE verification — 2026-09-20
 
+## Milestone 2A.1 source-patch status
+
+The 2A.1 genetics/reproduction foundation was prepared outside the Windows Unity Editor against the source-only project export. Static inspection confirmed that the patch preserves the existing assembly layout and does not connect reproduction to the live scene. The patch adds 24 deterministic Edit Mode test cases, bringing the expected Edit Mode total from 20 to 44.
+
+Unity compilation, the new Test Runner results and the existing Play Mode regression have **not yet been rerun** after applying 2A.1. The results below remain the authoritative pre-patch baseline and must not be presented as post-patch verification. Follow `MILESTONE_2A_HANDOFF.md` after installing the patch.
+
 ## Environment
 
 - New, independent project: `C:\Users\jsayl\Desktop\UnityProjects\WILDTYPE`.

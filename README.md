@@ -37,6 +37,17 @@ Focus the Game view for input. Focus loss pauses the simulation. Food interactio
 - Scalable TMP survival/trait/population HUD, food proximity highlight, eating feedback, dust, death and regeneration particles, and subtle locomotion camera bob.
 - A single particle system capped at 512 particles; bounded registries; clean restart/reseed including while paused.
 
+### Milestone 2A.1 foundation
+
+- Four validated inheritable genes were added: fertility, reproduction threshold, offspring tendency and lifespan.
+- The immutable Phenotype exposes maturity age, lifespan, reproductive energy threshold, motivation, fertility/cooldown and explicit maintenance costs.
+- `GenomeGeneCatalog` gives every numeric and camouflage gene one normalized range for inheritance, mutation and genetic-distance calculations.
+- `GenomeInheritance` recombines both parents through an injected deterministic random source, then applies unbiased small or rare major mutations. Important mutation records are capped.
+- `GeneticDistance` returns a finite normalized, symmetric compatibility distance without allowing large-unit traits to dominate.
+- `CreatureId` and `CreatureLineageRecord` provide GameObject-independent founder, parent, generation, age, descendant-count and bounded mutation value data.
+- `ReproductionEligibility` is a pure nonmutating rules evaluator for maturity, health, energy, cooldown, reservation, compatibility and population capacity.
+- These systems are deliberately not connected to AI, spawning, UI or live mating yet. They are the testable foundation for Milestone 2A.2.
+
 ## Architecture and asset replacement
 
 All original game code/content is under **Assets/WildType**.
@@ -57,11 +68,11 @@ Future imported assets belong under **Assets/ThirdParty/PublisherOrPackName**. K
 
 Open **Window > General > Test Runner** to run Edit Mode and Play Mode tests.
 
-Edit Mode covers nonfinite/out-of-range genes, immutable presets, all required trait tradeoffs, seeded variation, frame-rate-independent resources, stamina hysteresis, starvation and invalid inputs.
+Edit Mode covers nonfinite/out-of-range genes, immutable presets, trait tradeoffs, seeded variation, frame-rate-independent resources, stamina hysteresis, starvation and invalid inputs. The staged 2A.1 suite adds deterministic inheritance, unbiased mutation, bounded mutation history, normalized genetic distance, lineage rules and reproduction eligibility.
 
 Play Mode exercises virtual keyboard/mouse/gamepad events, the actual saved scene, camera collision, multiple meals, regrowth, AI feeding and target invalidation, pause/restart/reseed, a ten-minute accelerated simulation with object/population/particle caps, and starvation/game-over recovery. Its test-only input settings route virtual events independently of Game-view focus and are restored afterward.
 
-Final verification: **20 Edit Mode tests passed**, plus a **102-check Play Mode integration test** with **600 simulated seconds** of bounded ecosystem soak. See **VERIFICATION.md** for the actual results and manual limits. Generated logs/results are not source assets.
+Baseline verification before the 2A.1 source patch: **20 Edit Mode tests passed**, plus a **102-check Play Mode integration test** with **600 simulated seconds** of bounded ecosystem soak. The new 2A.1 tests require a Unity Test Runner pass after installing the patch; see **VERIFICATION.md** and **MILESTONE_2A_HANDOFF.md**.
 
 ## Known limitations / deferred systems
 
@@ -70,8 +81,8 @@ Final verification: **20 Edit Mode tests passed**, plus a **102-check Play Mode 
 - No persistence, sound, rebinding interface, gamepad rumble, or in-game graphics menu. URP quality can be adjusted in editor settings for weaker hardware.
 - Genome and food layout randomization is deterministic on this runtime, not promised across future engine versions.
 - Food depletion/regrowth is bounded, but this is a prototype balance rather than a tuned natural-selection simulation.
-- No predators, mating, reproduction, inherited mutation, species tracking, lineage history, creature editor, other stages, multiplayer or open world.
+- Inheritance, mutation, genetic distance, lineage value records and eligibility rules exist as a disconnected foundation. No live mating, offspring spawning, descendant control, species tracking, predators, creature editor, other stages, multiplayer or open world.
 
 ## Next milestone
 
-Add mating eligibility and partner choice, bounded inheritance and mutation, offspring spawning with explicit population limits, selection of an offspring to control, and continuation through descendants. First extend the current tests to prove parental genome isolation and predictable inheritance, then add a small lineage summary. Keep this ecosystem and rendering scope.
+Milestone 2A.2 should connect the foundation to creatures: age updates, reproductive readiness, periodic partner choice, a two-creature reservation handshake, energy costs, cooldowns, bounded birth spawning and juvenile growth. Keep descendant selection, ancestry UI and control transfer for Milestone 2B.

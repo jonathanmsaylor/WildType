@@ -23,4 +23,8 @@ MonoBehaviour:
     energyEfficiency: 0.8
     maximumEnergy: 80
     stamina: 85
+    fertility: 1.28
+    reproductionThreshold: 0.62
+    offspringTendency: 1.3
+    lifespan: 420
     camouflage: {r: 0.38, g: 0.4, b: 0.77, a: 1}
