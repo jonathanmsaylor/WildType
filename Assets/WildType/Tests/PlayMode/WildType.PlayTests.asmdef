@@ -1,1 +1,1 @@
-{"name":"WildType.PlayTests","references":["WildType.Runtime","Unity.InputSystem"],"optionalUnityReferences":["TestAssemblies"]}
+{"name":"WildType.PlayTests","references":["WildType.Runtime","Unity.InputSystem","Unity.TextMeshPro","Unity.ugui"],"optionalUnityReferences":["TestAssemblies"]}

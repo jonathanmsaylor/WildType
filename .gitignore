@@ -30,3 +30,7 @@ sysinfo.txt
 MemoryCaptures/
 Recordings/
 *.tmp
+# Unity Test Runner transient scenes and source-export archives
+/Assets/InitTestScene*.unity
+/Assets/InitTestScene*.unity.meta
+/*.zip

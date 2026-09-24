@@ -8,6 +8,7 @@ namespace WildType
         Phenotype stats;
         Vector3 horizontal;
         float vertical;
+        float growth = 1;
         public float Speed { get; private set; }
         public bool Sprinting { get; private set; }
         public bool Grounded => controller && controller.isGrounded;
@@ -19,12 +20,20 @@ namespace WildType
             controller.center = Vector3.up * controller.height * .5f;
             controller.stepOffset = .32f * stats.Size; controller.slopeLimit = 48; controller.skinWidth = .045f;
         }
+        public void SetGrowth(float scale)
+        {
+            growth = Mathf.Clamp(scale, .48f, 1);
+            controller.radius = .46f * stats.Size * growth;
+            controller.height = Mathf.Max(stats.Height * growth, controller.radius * 2.1f);
+            controller.center = Vector3.up * controller.height * .5f;
+            controller.stepOffset = .32f * stats.Size * growth;
+        }
         public void Tick(Vector3 direction, bool sprint, CreatureVitals vitals, float dt)
         {
             if (!controller || !controller.enabled) return;
             direction.y = 0; direction = Vector3.ClampMagnitude(direction, 1);
             Sprinting = sprint && vitals.CanSprint && direction.sqrMagnitude > .01f;
-            float limit = Sprinting ? stats.SprintSpeed : stats.WalkSpeed;
+            float limit = (Sprinting ? stats.SprintSpeed : stats.WalkSpeed) * Mathf.Sqrt(growth);
             if (vitals.Energy < stats.MaxEnergy * .15f) limit *= Mathf.Lerp(.4f, 1, vitals.Energy / (stats.MaxEnergy * .15f));
             if (vitals.Dead) { direction = Vector3.zero; limit = 0; Sprinting = false; }
             horizontal = Vector3.MoveTowards(horizontal, direction * limit, stats.Acceleration * (direction == Vector3.zero ? 1.5f : 1) * dt);

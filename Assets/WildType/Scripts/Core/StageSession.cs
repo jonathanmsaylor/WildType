@@ -19,6 +19,7 @@ namespace WildType
         public IReadOnlyList<CreatureAgent> Creatures => creatures;
         public CreatureAgent Player { get; private set; }
         public Ecosystem World { get; private set; }
+        public GenerationLoop Generations { get; private set; }
         public FeedbackPool Fx { get; private set; }
         public Transform RuntimeRoot { get; private set; }
         public bool Paused { get; private set; }
@@ -32,6 +33,7 @@ namespace WildType
         {
             Time.timeScale = 1;
             World = GetComponent<Ecosystem>();
+            Generations = gameObject.AddComponent<GenerationLoop>();
             Fx = new GameObject("Bounded feedback pool").AddComponent<FeedbackPool>(); Fx.transform.SetParent(transform); Fx.Configure(particleMaterial);
             GetComponent<StageHud>().Configure(this);
         }
@@ -39,26 +41,45 @@ namespace WildType
         void Begin()
         {
             RuntimeRoot = new GameObject("Runtime ecosystem").transform;
+            Generations.ResetRun(this);
             World.Populate(this, seed);
             var random = new System.Random(seed);
             Player = Spawn(presets[0].RuntimeCopy(), new Vector3(0, Ecosystem.Height(0, 0) + .2f, 0), true);
             for (int i = 0; i < AICount; i++)
             {
                 Vector3 point = Ecosystem.RandomGround(random, 12, 64);
+                if (i == 0) point = new Vector3(4, Ecosystem.Height(4, 4), 4);
                 for (int retry = 0; retry < 30 && Physics.CheckSphere(point + Vector3.up, 2, Ecosystem.ObstacleMask); retry++) point = Ecosystem.RandomGround(random, 12, 64);
                 var actor = Spawn(Genome.Varied(presets[i % presets.Length].RuntimeCopy(), random), point + Vector3.up * .3f, false);
                 actor.gameObject.AddComponent<HerbivoreBrain>().Configure(actor, seed + i * 107);
             }
             orbit.Configure(Player, this);
             GetComponent<PlayerInputBridge>().Configure(this);
-            Ready = true; SetPaused(false); ShowNotice("Explore, eat, and survive.", 7);
+            Ready = true; SetPaused(false); ShowNotice("Eat to build reserves · M mates nearby · F opens your family", 9);
             Debug.Log("WILDTYPE ready | seed " + seed + " | creatures " + Population + " | food cap " + Ecosystem.FoodCap);
         }
         CreatureAgent Spawn(Genome genome, Vector3 at, bool isPlayer)
         {
             var actor = Instantiate(creaturePrefab, at, Quaternion.identity, RuntimeRoot);
             actor.name = isPlayer ? "Player Creature" : "Herbivore " + creatures.Count;
-            actor.Configure(genome, this, isPlayer); creatures.Add(actor); return actor;
+            actor.Configure(genome, this, isPlayer); creatures.Add(actor); Generations.RegisterFounder(actor); return actor;
+        }
+        internal CreatureAgent SpawnChild(Genome genome, Vector3 at, CreatureLineageRecord record)
+        {
+            var actor = Instantiate(creaturePrefab, at, Quaternion.identity, RuntimeRoot);
+            actor.name = "Descendant " + GenerationLoop.ShortId(record.CreatureId);
+            actor.Configure(genome, this, false); actor.AttachLife(record); creatures.Add(actor);
+            actor.gameObject.AddComponent<HerbivoreBrain>().Configure(actor, seed + Generations.Births * 107 + 31);
+            return actor;
+        }
+        public bool TakeControl(CreatureAgent descendant)
+        {
+            if (!Ready || !Player || !descendant || descendant.Session != this || descendant.Vitals.Dead || !descendant.Life ||
+                !Generations.IsLivingDescendant(descendant, Player.Life.Id)) return false;
+            Player.SetPlayer(false); descendant.SetPlayer(true); Player = descendant;
+            GameOver = false; SetPaused(false); orbit.Configure(Player, this);
+            ShowNotice("Now controlling " + GenerationLoop.ShortId(Player.Life.Id) + " · resources and age preserved", 6);
+            return true;
         }
         public void SetPaused(bool paused)
         {
@@ -69,9 +90,10 @@ namespace WildType
         }
         public void NotifyDeath(CreatureAgent actor)
         {
+            Generations.MarkDead(actor);
             if (actor.IsPlayer) { GameOver = true; SetPaused(true); ShowNotice("Your creature has died.", 60); }
         }
-        public void Unregister(CreatureAgent actor) { creatures.Remove(actor); }
+        public void Unregister(CreatureAgent actor) { if (Generations) Generations.MarkDead(actor); creatures.Remove(actor); }
         public void ShowNotice(string text, float duration) { Notice = text; noticeUntil = Time.unscaledTime + duration; }
         public string CurrentNotice => Time.unscaledTime < noticeUntil ? Notice : "";
         public void Restart(bool reseed)

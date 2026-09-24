@@ -14,7 +14,7 @@ namespace WildType
         {
             target = actor; session = stage; yaw = 0; pitch = 22;
             desiredDistance = distance = Mathf.Max(7, actor.Stats.Size * 7);
-            focus = actor.transform.position + Vector3.up * actor.Stats.Height * .72f;
+            focus = actor.transform.position + Vector3.up * actor.CurrentHeight * .72f;
             LateUpdate();
         }
         public void Orbit(Vector2 look, float zoom)
@@ -29,7 +29,7 @@ namespace WildType
             if (!target || session.Paused) return;
             float dt = Time.deltaTime;
             bob += target.Motor.Speed * dt * 1.8f;
-            Vector3 aim = target.transform.position + Vector3.up * (target.Stats.Height * .72f + Mathf.Sin(bob) * .018f * Mathf.Clamp01(target.Motor.Speed));
+            Vector3 aim = target.transform.position + Vector3.up * (target.CurrentHeight * .72f + Mathf.Sin(bob) * .018f * Mathf.Clamp01(target.Motor.Speed));
             focus = Vector3.Lerp(focus, aim, 1 - Mathf.Exp(-12 * dt));
             distance = Mathf.Lerp(distance, desiredDistance, 1 - Mathf.Exp(-10 * dt));
             Quaternion orientation = Quaternion.Euler(pitch, yaw, 0);

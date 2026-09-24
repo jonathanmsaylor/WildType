@@ -11,6 +11,8 @@ namespace WildType
         public CreatureInteraction Interaction { get; private set; }
         public CreatureVisual Visual { get; private set; }
         public StageSession Session { get; private set; }
+        public CreatureLife Life { get; private set; }
+        public float CurrentHeight => Stats.Height * (Life ? Life.Growth : 1);
         public bool IsPlayer { get; private set; }
         public Vector3 DesiredDirection { get; set; }
         public bool WantsSprint { get; set; }
@@ -27,9 +29,19 @@ namespace WildType
             Visual = GetComponentInChildren<CreatureVisual>(); Visual.Build(this);
             Vitals.Died += OnDeath;
         }
+        public void AttachLife(CreatureLineageRecord record)
+        { Life = gameObject.AddComponent<CreatureLife>(); Life.Configure(this, record); }
+        public void SetPlayer(bool player)
+        {
+            IsPlayer = player; DesiredDirection = Vector3.zero; WantsSprint = false;
+            var brain = GetComponent<HerbivoreBrain>();
+            if (!player && !brain) { brain = gameObject.AddComponent<HerbivoreBrain>(); brain.Configure(this, Session.seed + Session.Generations.Archive.Count * 107); }
+            if (brain) brain.enabled = !player;
+        }
         void FixedUpdate()
         {
             if (Session == null || Session.Paused || Genome == null) return;
+            if (Life && Session.Generations.enabled) Life.Tick();
             Motor.Tick(DesiredDirection, WantsSprint, Vitals, Time.fixedDeltaTime);
             Vitals.Tick(Time.fixedDeltaTime, Motor.Speed, Motor.Sprinting);
             if (Vitals.Dead && !IsPlayer)
@@ -40,6 +52,7 @@ namespace WildType
         }
         void OnDeath()
         {
+            if (Life) Life.FreezeDeathAge();
             DesiredDirection = Vector3.zero; WantsSprint = false;
             Session.Fx.Burst(transform.position + Vector3.up, Genome.camouflage, 28, 2);
             Session.NotifyDeath(this);

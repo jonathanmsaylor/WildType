@@ -58,16 +58,18 @@ namespace WildType
             return Reject(ReproductionRejection.None);
         }
 
-        static ReproductionRejection CandidateReason(ReproductionCandidate candidate)
+        public const float MinimumHealth = 60;
+        public static ReproductionRejection CandidateReason(ReproductionCandidate candidate)
         {
             if (!candidate.creatureId.IsValid || !Finite(candidate.age) || !Finite(candidate.maturityAge) ||
                 !Finite(candidate.health) || !Finite(candidate.energy) || !Finite(candidate.maximumEnergy) ||
                 !Finite(candidate.reproductionEnergyFraction) || !Finite(candidate.cooldownRemaining) ||
-                candidate.maximumEnergy <= 0 || candidate.maturityAge < 0)
+                candidate.maximumEnergy <= 0 || candidate.maturityAge < 0 || candidate.age < 0 ||
+                candidate.reproductionEnergyFraction < 0 || candidate.reproductionEnergyFraction > 1)
                 return ReproductionRejection.InvalidData;
             if (!candidate.alive) return ReproductionRejection.Dead;
             if (candidate.age < candidate.maturityAge) return ReproductionRejection.Juvenile;
-            if (candidate.health <= 0) return ReproductionRejection.LowHealth;
+            if (candidate.health < MinimumHealth) return ReproductionRejection.LowHealth;
             if (candidate.energy < candidate.maximumEnergy * Mathf.Clamp01(candidate.reproductionEnergyFraction))
                 return ReproductionRejection.InsufficientEnergy;
             if (candidate.cooldownRemaining > 0) return ReproductionRejection.Cooldown;

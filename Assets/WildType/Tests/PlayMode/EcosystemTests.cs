@@ -28,6 +28,8 @@ namespace WildType.Tests
             InputSystem.settings = testInputSettings;
             yield return SceneManager.LoadSceneAsync("CreatureStage_Prototype");
             session = Object.FindAnyObjectByType<StageSession>();
+            // Isolate the original locomotion/survival regression; GenerationTests covers the live lifecycle.
+            session.Generations.enabled = false;
             session.autoPauseOnFocusLoss = false; session.SetPaused(false);
             keyboard = InputSystem.AddDevice<Keyboard>(); pad = InputSystem.AddDevice<Gamepad>(); mouse = InputSystem.AddDevice<Mouse>();
             yield return new WaitForSeconds(1);

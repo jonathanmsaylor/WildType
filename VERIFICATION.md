@@ -1,56 +1,66 @@
-# WILDTYPE verification — 2026-09-20
+# WILDTYPE verification — Milestone 2A.2 — 2026-09-24
 
-## Milestone 2A.1 source-patch status
+## Environment and scope
 
-The 2A.1 genetics/reproduction foundation was prepared outside the Windows Unity Editor against the source-only project export. Static inspection confirmed that the patch preserves the existing assembly layout and does not connect reproduction to the live scene. The patch adds 24 deterministic Edit Mode test cases, bringing the expected Edit Mode total from 20 to 44.
+- Existing Unity project: `C:\Users\jsayl\Desktop\UnityProjects\WILDTYPE`.
+- Unity 6.4 **6000.4.7f1**, URP 17.4.0, Windows 64-bit, Direct3D 12 on NVIDIA RTX 4070 SUPER for rendered Editor checks.
+- Existing scene: `Assets/WildType/Scenes/CreatureStage_Prototype.unity`. No packages, external art, paid assets or gameplay services added.
+- Inspected README, previous verification/handoff, scene, prefab architecture, genetics, lineage, eligibility, AI, survival and tests before implementation.
+- Confirmed 2A.1 supplied functioning source-level inheritance/mutation/lineage/eligibility, but no live age, mating, births or descendant controls. Its pre-change baseline passed **44 Edit Mode tests** and the existing **102-check Play Mode regression**.
+- Preserved the existing light/preset/source edits in checkpoint `dfe62b9`. The user subsequently confirmed the RunAudit files were an accidental copy and had removed them. Only its orphan scene object, empty asset directory and folder `.meta` were cleaned from WILDTYPE; no separate RunAudit product was changed. The orphan folder metadata remains recoverable in the task's temporary cleanup folder, and the original scene is in the checkpoint.
 
-Unity compilation, the new Test Runner results and the existing Play Mode regression have **not yet been rerun** after applying 2A.1. The results below remain the authoritative pre-patch baseline and must not be presented as post-patch verification. Follow `MILESTONE_2A_HANDOFF.md` after installing the patch.
+## Automated tests
 
-## Environment
+Final Edit Mode suite: **49 passed, 0 failed**, 0.132115 seconds reported by Unity Test Framework.
 
-- New, independent project: `C:\Users\jsayl\Desktop\UnityProjects\WILDTYPE`.
-- Installed stable Unity 6.4, **6000.4.7f1 (f3c3c4248748)**, Universal 3D template, URP 17.4.0, Windows 64-bit target.
-- Normal editor rendering used Direct3D 12 on the NVIDIA GeForce RTX 4070 SUPER.
-- Confirmed Linear color, Force Text, Visible Meta Files, Both input backends, and 0.02-second fixed timestep (Unity serializes the float as approximately 0.01999999).
-- No physical gamepad was reported by the Input System. Gamepad tests used virtual device events, not a connected controller.
-- No existing Godot or other Unity project was changed. No paid content, extra editor, remote repository, or cloud project was created.
+Final Play Mode suite: **8 passed, 0 failed**, 158.0787504 seconds reported by Unity Test Framework, exercising the saved scene in a rendered-capable batch run. Both final Unity test processes exited with code 0.
 
-## Automated results
+The autonomous generation soak observed **11 births, 24 living creatures, peak 24 creature objects, and 24 lineage records over 126.2 simulated seconds**. The separate capacity fixture also reached 24 living creatures, rejected another mating without charging resources, and verified that juvenile starvation freed a slot. The fed-lifespan fixture verified natural AI death at simulation clock 1365.2 (about 365.2 elapsed simulation seconds). The original 102-check regression completed its separate 600-simulated-second soak.
 
-Final Edit Mode run: **20 passed, 0 failed**, 0.036697 seconds reported by Unity Test Framework.
+Coverage:
 
-Final Play Mode run: **1 full-scene integration test passed, 0 failed**, with **102 explicit checks**, 77.5764167 seconds reported by Unity Test Framework. This includes **600 simulated seconds** of accelerated ecosystem soak, not ten wall-clock minutes.
+- All original genome validation, preset/runtime isolation, phenotype tradeoffs, deterministic variation, stamina, energy, starvation and invalid-input tests.
+- Existing 2A.1 inheritance, signed probabilistic mutations, bounded mutation history, normalized genetic distance, lineage and eligibility cases.
+- New meaningful health/invalid-age checks; child/sibling and mutation-record isolation; retained dead-parent and transitive ancestry; orphan rejection; hard archive cap; 1,000 successive inherited/mutated genomes checked against every gene range, with positive, negative and absent mutations observed.
+- Original **102-check, 600-simulated-second** survival/movement regression: virtual keyboard/mouse/gamepad, locomotion/sprint/braking, camera collision, meals and regrowth, AI feeding and destroyed food targets, pause, restart/reseed and starvation. This legacy test explicitly disables the generation clock to preserve its original 13-creature assumptions; it is not a reproduction soak.
+- Native game-code mating through virtual `M` and gamepad west; virtual `F` and north-button journal; actual descendant-button callback; camera retargeting; control transfer without healing/refill; old player becomes AI.
+- Paused courtship freezes age and births. Completed births spend both parents' energy, set cooldowns, create independent genomes and retain exact parent IDs. Children are initially smaller in both visuals and collision, eat, spend energy, grow and reproduce into generation two.
+- Player death pauses without replacement; living descendants can continue; no-descendant death retains restart/reseed; dead or ancestral transfer targets are rejected.
+- Partners dying, being destroyed or moving away cancel courtship; no delayed birth charge. Paused reseed and repeated restart calls clear reservations, old objects and ancestry.
+- Autonomous ecosystem births with only the test player supplemented with energy; living/physical/reservation/archive bounds and finite transforms asserted throughout.
+- Controlled capacity fixture reaches **24 living creatures via 11 inherited births**, rejects another mating without spending energy, then kills a juvenile by starvation and verifies corpse cleanup and retained lineage.
+- Separate fed-creature lifespan test confirms natural AI death at its inherited lifespan while retaining the dead ancestor record. This fixture supplements food to isolate aging from starvation.
 
-Coverage actually exercised:
+These are automated tests and controlled fixtures, not human playtesting. Test XML/logs live outside source control under `%TEMP%\WildType2A2`; final runs use `edit-verified.xml` / `.log` and `play-verified.xml` / `.log`.
 
-- Nonfinite and out-of-range genome values, runtime-copy isolation, deterministic seeded variation, derived-stat tradeoffs, and nonmutating phenotype construction.
-- Resource updates at different timesteps, stamina exhaustion/recovery hysteresis, starvation, and single death notification.
-- Saved prototype scene startup: one player, twelve AI creatures, 72 food slots, grounded player, multipart replaceable visuals, and different preset sizes/movement limits.
-- Held virtual W movement, Shift sprint, braking, energy cost, stamina drain/recovery; virtual left/right gamepad sticks, L3 sprint, Start pause/resume, south-button eating, and mouse-wheel zoom.
-- Escape pause/resume; camera retraction against a temporary solid obstacle and recovery after removal.
-- Three separate plant meals, no double consumption, regrowth, unchanged food-slot cap, AI detection/feeding, and destroyed/depleted target rejection.
-- Paused simulation freezing, restart while paused, changed-seed restart, AI starvation/corpse cleanup, player game-over, and recovery through restart.
-- Sixty soak checkpoints for population <=13, food slots <=72, and particles <=512; final object-count growth bound and finite player position.
+## Native Editor and rendered-scene inspection
 
-No C# compiler warnings/errors, gameplay exceptions, or missing-reference failures appeared in the final test runs. Test-run logs contain normal stack traces for informational assertions; those are not failures. Unity can show an Input Manager deprecation notice because **Both** was explicitly requested; this is not a project compiler warning and has not been suppressed.
+Used the computer-use skill to operate the actual Unity Editor and inspect its rendered Game view at Full HD (1920×1080, displayed scaled inside the Editor).
 
-Test evidence was written outside the source project to the Windows temporary folder: `WildTypeUnity-edit-final.xml`, `WildTypeUnity-play-final.xml`, and corresponding `.log` files. These temporary files are not committed.
+Observed terrain, vegetation, food, lighting/shadows, AI movement, autonomous births and visibly smaller juveniles. Inspected the survival HUD, family HUD, empty/populated journal and descendant row without overlap or clipping at this resolution.
 
-## Native editor / visual checks
+The native pass caught brief `F`/`M` taps not consistently reaching the Input System through Editor routing. Extended the existing Escape IMGUI fallback to those actions with held-key and per-frame duplicate protection, then retested successfully. AI now retains an eligible partner between decisions instead of randomly abandoning the approach each decision interval.
 
-The computer-use skill was used to operate Unity Hub and the Editor and inspect the running scene directly. The scene rendered its terrain, vegetation, shadows, food, different creature forms, procedural motion, and survival HUD. Energy decreased and AI food consumption was observed. The normal Play Mode Console showed **0 warnings and 0 errors** during this visual pass.
+Actually performed through native controls:
 
-Confirmed native Escape opens the pause panel; mouse clicks on Resume, Restart Prototype, and Reseed Ecosystem work. Restart restores full resources and the original population/food bounds; reseed changes the displayed seed and actor/food arrangement. Mouse interaction changed camera orbit/framing. An Editor Escape-routing issue was corrected with a single-toggle GUI fallback, and pointer recapture ignores its first delta.
+- Pressed `M`, observed the courtship message, a player offspring birth, and the parent's energy cost.
+- Pressed `F`, saw living juvenile **#017 / generation 1**, clicked its row and transferred control. The child's retained resources, parents **#001 + #002**, age and inherited vision comparison appeared in the HUD.
+- Resumed as the juvenile, observed growth into an adult, pressed `M` again, and saw living offspring **#023 / generation 2** in its journal.
+- Observed **23 living creatures / 10 births** in this native session; did not claim this was a full-capacity stress test.
+- Clicked Restart while paused: returned to founder identity with cleared family history. Clicked Reseed while paused: restarted at 13 creatures / zero births / 72 foods and changed seed from 917430 to 925349.
+- Inspected Console after these operations: **0 warnings, 0 errors**. No missing RunAudit script remained.
 
-Inspected the HUD and pause panel at **1920x1080** and **1366x768** Game-view resolutions: text, bars, population/food count, controls and menu buttons remain inside the view without overlap.
+Native mouse automation and short key taps are not equivalent to sustained human controller play. Automated tests cover player-death continuation, starvation, full capacity and natural lifespan; those scenarios were not individually recreated through native input during this visual pass.
 
-## Limits of verification
+## Limits and remaining judgment
 
-- Sustained movement/sprinting and precise camera/zoom assertions were validated with virtual Input System events. Native automation provides brief key taps, not a human held-key play session; a human feel pass is still worthwhile.
-- No physical controller was connected, so physical controller mapping, deadzones, and menu navigation feel remain unverified.
-- No standalone executable was built, and no frame-time benchmark or GPU/CPU memory profile was recorded. The automated object/particle/population checks catch runaway spawning, not every possible memory leak.
-- Procedural gait has no foot-contact IK; feet can slide or intersect slopes. AI uses local steering rather than complete pathfinding and may take imperfect routes around dense obstacles.
-- Prototype survival balance needs extended human play. There is no save/load, audio, rebinding, rumble, or in-game graphics menu.
-- Reproduction, inheritance/mutation, offspring control, predators and lineage systems remain deliberately deferred.
+- Hard caps: 24 living creatures, 32 creature objects including corpses, 72 food slots, 512 particles and 512 ancestry records per run. Pending courtships reserve space; archive saturation stops births with a message. Full runtime archive saturation is covered by pure archive tests and guarded in code, not a 512-birth Editor session.
+- No physical gamepad was connected. Controller input paths were exercised by virtual Input System events; hardware mapping, deadzones and navigation feel remain unverified.
+- Long-term balance, mutation readability and survival difficulty need extended human play. AI uses local steering, not complete pathfinding; crowding and imperfect routes remain possible. Creature collisions remain disabled against other creatures, as in the baseline.
+- Procedural rigid-mesh gait has no foot-contact IK, so feet may slide/intersect slopes. Fine dorsal markings may soften during movement; no new art pipeline or rendering overhaul was undertaken.
+- No standalone build, profiler benchmark or exhaustive memory-leak audit was performed. Object/record/particle limits prevent unbounded authored spawning but are not a complete memory profile.
+- Session-only lineage: no save/load, gestation, parental care, kinship restriction or species tracking. No predators, creature editor, other evolutionary stages, multiplayer or open world.
 
-The authored scene and assets are saved; the final handoff leaves the Editor on `CreatureStage_Prototype` out of Play Mode. Local Git contains source, settings, assets and metadata only; generated caches, test logs, build outputs and local IDE state are ignored.
+## Source control
+
+The final handoff reports the pushed `main` commit. Local starting history and GitHub's separate placeholder README history are reconciled without force-pushing or deleting project source. Unity source, authored assets, settings, documentation and `.meta` files are included; Library/Temp/Logs/obj/builds, test evidence, IDE state and source-export ZIPs are excluded.

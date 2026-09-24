@@ -7,13 +7,16 @@ namespace WildType
     {
         StageSession session;
         int pauseFrame = -1;
-        bool pointerWasLocked, guiEscapeHeld;
+        int mateFrame = -1;
+        bool pointerWasLocked, guiEscapeHeld, guiFamilyHeld, guiMateHeld;
         public void Configure(StageSession value) { session = value; }
         void Update()
         {
             if (!session || !session.Ready) return;
             var keyboard = Keyboard.current; var pad = Gamepad.current; var mouse = Mouse.current;
             if ((keyboard != null && keyboard.escapeKey.wasPressedThisFrame) || (pad != null && pad.startButton.wasPressedThisFrame))
+                TogglePause();
+            if ((keyboard != null && keyboard.fKey.wasPressedThisFrame) || (pad != null && pad.buttonNorth.wasPressedThisFrame))
                 TogglePause();
             if (session.Paused || !session.Player || session.Player.Vitals.Dead) return;
             Vector2 move = pad != null ? pad.leftStick.ReadValue() : Vector2.zero;
@@ -29,6 +32,8 @@ namespace WildType
             session.Player.WantsSprint = (keyboard != null && keyboard.leftShiftKey.isPressed) || (pad != null && pad.leftStickButton.isPressed);
             if ((keyboard != null && keyboard.eKey.wasPressedThisFrame) || (pad != null && pad.buttonSouth.wasPressedThisFrame))
                 session.Player.Interaction.TryEat();
+            if ((keyboard != null && keyboard.mKey.wasPressedThisFrame) || (pad != null && pad.buttonWest.wasPressedThisFrame))
+                RequestMate();
             bool locked = Cursor.lockState == CursorLockMode.Locked;
             Vector2 look = mouse != null && locked && pointerWasLocked ? mouse.delta.ReadValue() * .13f : Vector2.zero;
             pointerWasLocked = locked;
@@ -43,15 +48,22 @@ namespace WildType
         }
         void OnGUI()
         {
-            // Editor Game-view shortcuts can consume Escape before the Input System update.
-            // Both input routes use one frame latch, so a key never toggles twice.
-            if (Event.current.keyCode != KeyCode.Escape) return;
-            if (Event.current.type == EventType.KeyUp) guiEscapeHeld = false;
-            if (Event.current.type == EventType.KeyDown && !guiEscapeHeld)
-            {
-                guiEscapeHeld = true; TogglePause();
-            }
+            // Editor Game-view routing can consume brief taps before the Input System update.
+            // Held-key and frame latches keep both routes from repeating/toggling twice.
+            var key = Event.current.keyCode;
+            if (key != KeyCode.Escape && key != KeyCode.F && key != KeyCode.M) return;
+            if (Event.current.type == EventType.KeyUp)
+            { if (key == KeyCode.Escape) guiEscapeHeld = false; if (key == KeyCode.F) guiFamilyHeld = false; if (key == KeyCode.M) guiMateHeld = false; }
+            if (Event.current.type != EventType.KeyDown) return;
+            if (key == KeyCode.M) { if (!guiMateHeld) { guiMateHeld = true; RequestMate(); } }
+            else if (key == KeyCode.F) { if (!guiFamilyHeld) { guiFamilyHeld = true; TogglePause(); } }
+            else if (!guiEscapeHeld) { guiEscapeHeld = true; TogglePause(); }
         }
-        void OnApplicationFocus(bool focused) { if (!focused) { guiEscapeHeld = false; pointerWasLocked = false; } }
+        void RequestMate()
+        {
+            if (!session || !session.Ready || session.Paused || !session.Player || session.Player.Vitals.Dead || mateFrame == Time.frameCount) return;
+            mateFrame = Time.frameCount; session.Generations.TryPlayerMate();
+        }
+        void OnApplicationFocus(bool focused) { if (!focused) { guiEscapeHeld = guiFamilyHeld = guiMateHeld = false; pointerWasLocked = false; } }
     }
 }

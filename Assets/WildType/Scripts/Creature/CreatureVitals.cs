@@ -37,6 +37,11 @@ namespace WildType
             Energy = Mathf.Clamp(Energy + Mathf.Max(0, nutrition) * Stats.NutritionFactor, 0, Stats.MaxEnergy);
             return Energy - before;
         }
+        public bool SpendEnergy(float amount)
+        {
+            if (Dead || float.IsNaN(amount) || float.IsInfinity(amount) || amount < 0 || Energy < amount) return false;
+            Energy -= amount; return true;
+        }
         public void Damage(float amount)
         {
             if (Dead || float.IsNaN(amount) || float.IsInfinity(amount)) return;
