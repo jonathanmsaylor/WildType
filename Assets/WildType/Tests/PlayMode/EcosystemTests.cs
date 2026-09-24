@@ -55,7 +55,7 @@ namespace WildType.Tests
             yield return null; Keys(Key.Escape); yield return null; yield return null; Keys();
             Check(!session.Paused, "Escape input resumes the simulation");
             Check(a.Motor.Grounded, "Player grounded on rolling terrain");
-            Check(a.Visual.transform.childCount >= 10, "Replaceable model is a multi-part creature");
+            Check(a.Visual.GetComponentsInChildren<Renderer>().Length >= 30, "Replaceable model is a multi-part creature (including nested limbs and coat)");
             Check(session.Creatures[2].Stats.Size > session.Creatures[3].Stats.Size, "Presets create visibly different bodies");
             Check(session.Creatures[2].Stats.WalkSpeed < session.Creatures[3].Stats.WalkSpeed, "Presets change actual movement limits");
             Vector3 start = a.transform.position; float initialEnergy = a.Vitals.Energy;

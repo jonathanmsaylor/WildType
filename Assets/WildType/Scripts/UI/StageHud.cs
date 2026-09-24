@@ -42,8 +42,9 @@ namespace WildType
             turnover.gameObject.name = "Turnover events";
             var help = Box(root.transform, "Controls", new Vector2(28, 25), new Vector2(720, 60), Vector2.zero);
             Text(help, "WASD / stick Move · Shift / L3 Sprint · E / A Eat · M / X Mate\nMouse / stick Orbit · Wheel Zoom · F / Y Family · Esc / Start Pause", new Vector2(16, -9), new Vector2(690, 50), 18, new Color(.82f, .88f, .81f));
-            var familyBox = Box(root.transform, "Lineage", new Vector2(28, -395), new Vector2(410, 220), new Vector2(0, 1));
-            family = Text(familyBox, "", new Vector2(16, -13), new Vector2(378, 190), 18, new Color(.87f, .93f, .81f));
+            var familyBox = Box(root.transform, "Lineage", new Vector2(28, -395), new Vector2(410, 380), new Vector2(0, 1));
+            family = Text(familyBox, "", new Vector2(16, -13), new Vector2(378, 352), 16, new Color(.87f, .93f, .81f));
+            family.gameObject.name = "Inherited traits";
             family.textWrappingMode = TextWrappingModes.Normal;
             mating = Text(root.transform, "", new Vector2(0, 165), new Vector2(1100, 40), 23, new Color(.82f, .97f, .86f), new Vector2(.5f, 0));
             mating.alignment = TextAlignmentOptions.Center;
@@ -90,10 +91,10 @@ namespace WildType
             var generations = session.Generations; var record = generations.Archive.Get(a.Life.Id);
             family.text = $"{GenerationLoop.ShortId(a.Life.Id)} · GENERATION {record.Generation} · {(a.Life.Adult ? "ADULT" : "JUVENILE")}\n" +
                 $"Age {a.Life.Age:0}s / lifespan {a.Stats.LifespanSeconds:0}s\n" +
-                $"Parents {GenerationLoop.ShortId(record.FirstParentId)} + {GenerationLoop.ShortId(record.SecondParentId)}\n" +
+                $"Parents A {GenerationLoop.ShortId(record.FirstParentId)} / B {GenerationLoop.ShortId(record.SecondParentId)}\n" +
                 $"Living children {generations.LivingChildren(a.Life.Id)} / born {record.OffspringCount}\n" + generations.Archive.Changes(a.Life.Id);
             var mutations = record.ImportantMutations;
-            if (mutations.Length > 0) family.text += "\nMutation: " + mutations[0].TraitName;
+            family.text += InheritanceSummary.NotableMutation(mutations);
             mating.text = session.Paused ? "" : generations.PlayerHint();
             if (session.Paused)
             {
@@ -108,7 +109,8 @@ namespace WildType
                     descendantButtons[i].gameObject.SetActive(choices[i]);
                     if (!choices[i]) continue;
                     var child = choices[i]; var childRecord = generations.Archive.Get(child.Life.Id);
-                    choiceLabels[i].text = $"{GenerationLoop.ShortId(child.Life.Id)} · Gen {childRecord.Generation} · {(child.Life.Adult ? "Adult" : "Juvenile")} · E {child.Vitals.Energy:0} / HP {child.Vitals.Health:0}";
+                    choiceLabels[i].text = $"{GenerationLoop.ShortId(child.Life.Id)} · Gen {childRecord.Generation} · {(child.Life.Adult ? "Adult" : "Juvenile")} · E {child.Vitals.Energy:0} / HP {child.Vitals.Health:0}\n" +
+                        $"{CreatureAppearance.CoatName(child.Genome.camouflage)} · adult size {child.Genome.bodySize:0.00} · legs {child.Genome.legLength:0.00}";
                 }
                 if (opening && session.GameOver && living.Count > 0 && EventSystem.current)
                     EventSystem.current.SetSelectedGameObject(descendantButtons[0].gameObject);

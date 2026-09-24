@@ -10,6 +10,7 @@ namespace WildType
         float vertical;
         float growth = 1;
         public float Speed { get; private set; }
+        public Vector3 TravelHeading => horizontal.sqrMagnitude > .001f ? horizontal.normalized : transform.forward;
         public bool Sprinting { get; private set; }
         public bool Grounded => controller && controller.isGrounded;
         public Vector3 GroundNormal { get; private set; } = Vector3.up;
@@ -36,7 +37,7 @@ namespace WildType
             float limit = (Sprinting ? stats.SprintSpeed : stats.WalkSpeed) * Mathf.Sqrt(growth);
             if (vitals.Energy < stats.MaxEnergy * .15f) limit *= Mathf.Lerp(.4f, 1, vitals.Energy / (stats.MaxEnergy * .15f));
             if (vitals.Dead) { direction = Vector3.zero; limit = 0; Sprinting = false; }
-            horizontal = Vector3.MoveTowards(horizontal, direction * limit, stats.Acceleration * (direction == Vector3.zero ? 1.5f : 1) * dt);
+            horizontal = SteerVelocity(horizontal, direction, limit, stats.Acceleration, stats.TurnRate, dt);
             vertical = Grounded ? -3f : Mathf.Max(-30, vertical - 22 * dt);
             Vector3 previous = transform.position;
             controller.Move((horizontal + Vector3.up * vertical) * dt);
@@ -50,10 +51,25 @@ namespace WildType
             Vector3 travelled = transform.position - previous; travelled.y = 0;
             Speed = travelled.magnitude / Mathf.Max(dt, .0001f);
             if (direction.sqrMagnitude > .01f)
-                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(direction), 1 - Mathf.Exp(-stats.TurnRate * dt));
+                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(TravelHeading), 1 - Mathf.Exp(-stats.TurnRate * dt));
             if (Physics.Raycast(transform.position + Vector3.up, Vector3.down, out var hit, 3, Ecosystem.GroundMask))
                 GroundNormal = hit.normal;
             if (!Finite(transform.position) || transform.position.y < -20) Teleport(new Vector3(0, Ecosystem.Height(0, 0) + 2, 0));
+        }
+        public static Vector3 SteerVelocity(Vector3 current, Vector3 input, float limit, float acceleration, float turnRate, float dt)
+        {
+            // Reuse the phenotype's existing leg/agility tradeoff in actual travel, not just facing.
+            // Magnitude handles acceleration/braking separately; turning cannot bypass its rate limit.
+            float speed = Mathf.MoveTowards(current.magnitude, input.magnitude * limit, acceleration * (input == Vector3.zero ? 1.5f : 1) * dt);
+            if (input.sqrMagnitude < .0001f) return current.normalized * speed;
+            Vector3 heading = input.normalized;
+            if (current.sqrMagnitude >= .0001f)
+            {
+                float angle = Vector3.SignedAngle(current, input, Vector3.up);
+                float step = Mathf.Clamp(angle, -turnRate * Mathf.Rad2Deg * dt, turnRate * Mathf.Rad2Deg * dt);
+                heading = Quaternion.AngleAxis(step, Vector3.up) * current.normalized;
+            }
+            return heading * speed;
         }
         public void Teleport(Vector3 position)
         {

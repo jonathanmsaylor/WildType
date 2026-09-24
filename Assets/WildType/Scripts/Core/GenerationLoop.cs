@@ -31,7 +31,7 @@ namespace WildType
         public void RegisterFounder(CreatureAgent actor)
         {
             var record = CreatureLineageRecord.Founder(NextId(), Clock - actor.Stats.MaturityAge - 15);
-            Archive.Add(record); actor.AttachLife(record);
+            Archive.Add(record, InheritanceSummary.Founder(actor.Genome)); actor.AttachLife(record);
         }
         public bool Reserved(CreatureAgent actor)
         { foreach (var pair in pairs) if (pair.first == actor || pair.second == actor) return true; return false; }
@@ -152,7 +152,7 @@ namespace WildType
             first.Vitals.SpendEnergy(first.Stats.MaxEnergy * ParentEnergyCost);
             second.Vitals.SpendEnergy(second.Stats.MaxEnergy * ParentEnergyCost);
             first.Life.BeginCooldown(); second.Life.BeginCooldown();
-            Archive.Add(record, DescribeChanges(result.Genome, first.Genome, second.Genome));
+            Archive.Add(record, InheritanceSummary.Child(result.Genome, first.Genome, second.Genome));
             var child = session.SpawnChild(result.Genome, point, record);
             child.Vitals.SpendEnergy(child.Stats.MaxEnergy * .45f);
             Turnover.RecordBirth(record);
@@ -210,18 +210,5 @@ namespace WildType
         public bool IsLivingDescendant(CreatureAgent actor, CreatureId ancestor) => Owns(actor) && !actor.Vitals.Dead && Archive.IsDescendant(actor.Life.Id, ancestor);
         public static string ShortId(CreatureId id)
         { int colon = id.Value.LastIndexOf(':'); return id.IsValid ? "#" + id.Value.Substring(colon + 1) : "—"; }
-        static string DescribeChanges(Genome child, Genome first, Genome second)
-        {
-            GenomeGene best = GenomeGene.BodySize; float largest = -1;
-            for (int i = 0; i < GenomeGeneCatalog.Count; i++)
-            {
-                var gene = GenomeGeneCatalog.At(i);
-                float mid = (GenomeGeneCatalog.Get(first, gene) + GenomeGeneCatalog.Get(second, gene)) * .5f;
-                float delta = Mathf.Abs(GenomeGeneCatalog.Get(child, gene) - mid) / GenomeGeneCatalog.Span(gene);
-                if (delta > largest) { largest = delta; best = gene; }
-            }
-            float average = (GenomeGeneCatalog.Get(first, best) + GenomeGeneCatalog.Get(second, best)) * .5f;
-            return $"{GenomeGeneCatalog.Name(best)} {GenomeGeneCatalog.Get(child, best):0.00} (parents avg {average:0.00})";
-        }
     }
 }

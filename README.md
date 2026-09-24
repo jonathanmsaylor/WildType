@@ -1,6 +1,6 @@
 # WILDTYPE — Creature Stage vertical slice
 
-A Unity implementation, independent of the earlier Godot project. **Milestone 2A.2: playable generations.** Explore, eat, reproduce and continue through living descendants in a bounded, roughly 250 m-wide Creature-stage ecosystem. Start with twelve autonomous herbivores; total living population is capped at 24.
+A Unity implementation, independent of the earlier Godot project. **Current milestone: visible, playable inheritance.** Explore, eat, reproduce and continue through living descendants in a bounded, roughly 250 m-wide Creature-stage ecosystem. Start with twelve autonomous herbivores; total living population is capped at 24.
 
 ## Editor and opening
 
@@ -56,10 +56,25 @@ Focus the Game view for input. Focus loss pauses the simulation. Food interactio
 2. Approach another adult. The bottom mating hint reports readiness, partner distance, energy requirement, cooldown or capacity. Press **M / west button** within **3.5 m** of an eligible partner; stay close for **two seconds**. Moving away, death or loss of eligibility cancels courtship without a birth charge.
 3. Both parents must be adults, have **60+ health**, meet their inherited energy threshold (50–90% maximum), be compatible, and have no cooldown or other courtship. Birth costs **30% of each parent's maximum energy** and applies each parent's inherited cooldown (about 35–104 seconds). One child is born per completed courtship. AI seeks partners through its normal staggered decision loop; AI never initiates mating on the player's behalf.
 4. Each child receives its own two-parent genome with probabilistic, signed mutations—never guaranteed improvement. Juveniles start at **48% adult size**, **55% energy**, and mature in **18–42 simulation seconds** according to inherited lifespan. They eat, spend resources, move more slowly, can starve, grow to inherited adult dimensions and eventually reproduce. Natural lifespan is **240–900 seconds**; pause freezes all life timers.
-5. Press **F / north button** to open the family journal. It shows your generation, parents, age, living direct children, a notable trait difference from the parental average, and recorded notable mutation. The selector lists **all living descendants**, including grandchildren and juveniles, with generation and resources. Select one to take control; the former player becomes AI if alive. No healing, aging reset or resource refill occurs.
+5. Press **F / north button** to open the family journal. The lineage panel shows your generation, parents, age, living direct children, inherited adult appearance/stat comparisons for both parents, and a recorded notable mutation when present. The selector lists **all living descendants**, including grandchildren and juveniles, with generation, resources, coat, adult size and leg proportions. Select one to take control; the former player becomes AI if alive. No healing, aging reset or resource refill occurs.
 6. Death pauses the world and offers the same descendant choices. With no descendants, restart or reseed explicitly; the game never creates a hidden replacement. Taking a branch means future choices are descendants of that newly controlled creature, not its siblings or ancestors.
 
 Limits: **24 living creatures**, **32 creature objects including corpses**, **72 food slots**, **512 particles**, and **512 retained lineage records per run**. Pending courtships reserve capacity. Dead parents remain in the bounded value-data archive; full archive stops new births with a clear message rather than deleting ancestry. Restart/reseed clears the entire run, including age, reservations and family records. No automatic population replenishment.
+
+### Visible, playable inheritance
+
+Look for a broad, thick-bodied amber Bulwark versus the slimmer, long-legged blue/violet Strider. The existing teal Meadow Grazer lies between them. Body size now changes torso width/depth proportionally as well as total scale; leg length changes limb length/thickness, torso elongation and the width of three high-contrast coat bands. Bands wrap over the back and sides rather than floating as tiny dorsal pieces. Coat RGB still comes directly from the inherited genome. These are deterministic expressions of **existing genes**, not new genes, cosmetic random rolls or generation bonuses.
+
+Mate two compatible adults, press **F**, and select their child. The on-screen lineage panel reads **parent A / B -> child**, comparing coat, adult size, leg proportion, sprint speed, steering rate, energy reserve and idle food cost. The parent's values are recorded at birth and survive its death. Juveniles begin small but keep the same adult shape and bands throughout growth. Breed that descendant again to see the next combination; there is no guaranteed improvement. Recorded mutations show before/after values without claiming they are beneficial.
+
+Two visible traits have opposing effects, **all other genes equal**:
+
+- **Longer legs:** greater stride speed, but a lower turning rate. The existing phenotype turn rate now limits actual planar travel direction, not just the visual facing. Shorter legs turn more sharply. Acceleration and braking remain separate from steering; reversing input turns on the ground plane.
+- **Larger/broader bodies:** larger energy reserves, but greater absolute food consumption and slower acceleration. Existing metabolism/efficiency/speed/agility genes still affect the final result; color and band width add no bonuses. Compare the final numbers rather than assuming every tall creature beats every short one.
+
+The coat uses one 375-vertex mesh per creature lifetime, a shared material and property-block colors. Growth/animation reuse it; death/restart releases it. The `VisualRoot` boundary remains replaceable. No per-frame mesh or material allocation was introduced. Mouse-wheel zoom, reproduction, mutation probabilities, survival formulas, population limits and turnover rules were not retuned.
+
+See the [running-Editor comparison screenshots](Documentation/VisibleInheritance/README.md) and [verification record](VERIFICATION.md) for actual results and the limits of controlled visual checks.
 
 ### Turnover visibility
 
@@ -73,7 +88,7 @@ All original game code/content is under **Assets/WildType**.
 
 - **Genetics:** serializable Genome, immutable derived Phenotype, reusable GenomePreset ScriptableObjects.
 - **Creature:** CreatureAgent coordinates root-level CreatureMotor, CreatureVitals, CreatureInteraction and CreatureLife. LineageArchive retains bounded, GameObject-independent ancestry. OrbitCamera is independent and follows current juvenile height.
-- **VisualRoot:** CreatureVisual alone builds and animates the prototype model. Gameplay never depends on individual body-part objects. Replace this child/component with an adapter for a future rig without rewriting survival, genomes, AI or physics.
+- **VisualRoot:** CreatureAppearance derives immutable deterministic adult presentation inputs; CreatureVisual builds and animates the prototype model. Gameplay never depends on individual body-part objects. Replace this child/component with an adapter for a future rig without rewriting survival, genomes, AI or physics. InheritanceSummary stores compact parent/child comparisons in the existing lineage archive.
 - **World:** Ecosystem owns the bounded food registry and deterministic placement; FoodPlant owns depletion/regrowth.
 - **AI:** HerbivoreBrain sets the same movement intent and uses the same interactions as the player. Its periodic nearest-food query is the future spatial-grid seam.
 - **Core:** StageSession coordinates startup/control transfer; GenerationLoop owns the simulation clock, partner reservations, birth validation and archive; PlayerInputBridge reads controls; FeedbackPool owns bounded effects.

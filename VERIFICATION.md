@@ -1,4 +1,50 @@
-# WILDTYPE verification — Milestone 2A.2 — 2026-09-24
+# WILDTYPE verification — visible, playable inheritance — 2026-09-24
+
+## Visible, playable inheritance
+
+### Scope and checkpoint
+
+Started from clean `main` / `origin/main` at `8407155`. Inspected the saved scene, creature prefab, genome/presets, phenotype rules, procedural model, input/motor, life/lineage/mating, survival, HUD and existing tests. Preserved a local checkpoint branch `checkpoint-before-visible-inheritance-20260924`; work is on `milestone-visible-inheritance`. No Godot, separate RunAudit, package, camera/zoom, genome schema, mutation probability or population-limit changes. The existing GitHub README and prior history remain intact.
+
+Permanent code changes: `CreatureAppearance.cs` (new deterministic presentation inputs), `CreatureVisual.cs` (silhouette/limbs/coat mesh), `CreatureMotor.cs` (existing turn-rate limit applied to travel), `InheritanceSummary.cs` (new birth-time comparisons), `GenerationLoop.cs` (stores summaries) and `StageHud.cs` (compact comparison and descendant rows). Tests: new `VisibleInheritanceTests.cs` and `AppearancePlayTests.cs`; the legacy multi-part visual assertion now counts nested renderers instead of relying on ten direct children, because coat bands are nested under the torso. README and this record explain the result. New Unity source files include their generated `.meta` files.
+
+### Automated verification
+
+- Unchanged baseline: **52 Edit Mode + 9 Play Mode passed**, zero failures.
+- Final complete suites after removing the temporary Editor fixture: **60 Edit Mode passed in 0.0854998 seconds + 12 Play Mode passed in 174.8295634 seconds**, zero failures; both Unity processes exited 0. Final XML/logs are under `%TEMP%/WildTypeInheritance/final-EditMode.*` and `final-PlayMode.*`.
+- Eight added Edit Mode cases: deterministic appearance and untouched Unity random state; invalid-input sanitation without mutating source; 100 ordinary offspring combining both parents' body/leg/color inputs; 500 default probabilistic-mutation samples with shorter, longer and unchanged legs and all gene bounds checked; long-leg speed/steering opposition; broad-body reserve/food/acceleration opposition; planar 180-degree reversal, timestep agreement and braking; parent comparisons and neutral mutation wording. Existing inheritance isolation, parentage and mutation-bound tests also pass.
+- Three added full-scene Play Mode cases: coat topology/shared material/stable mesh across frames and released mesh on destruction; two normal inherited generations, juvenile-to-adult visual continuity, descendant control, measured walking speed, resource consumption and parent summary retention after death; paused restart/reseed reproducing same-genome appearance, releasing old meshes, clearing counts and respecting population bounds. Inheritance HUD text is asserted not to overflow.
+- Existing 102-check / 600-simulated-second movement, camera, food, survival, input and restart regression passed. Existing reproduction, natural lifespan, player-death continuation and turnover tests passed. Fatal starvation remains visible after an inherited replacement birth restores the previous population, including corpse cleanup and pause. No change to cause attribution.
+- Autonomous generation soak: **11 births, 24 living, peak 24 objects, 24 archive records over 126.2 simulated seconds**. Controlled capacity fixture separately reaches 24 via 11 births, rejects another mating without spending energy, then confirms juvenile starvation frees a slot. Limits remain 24 living / 32 objects / 72 food / 512 particles / 512 ancestry records.
+- An initial Play Mode run caught a new material-property-block initializer being called from a MonoBehaviour constructor. It was moved to the build phase and the complete suites passed afterward; the failure was not suppressed.
+
+These are automated tests and controlled checks, not human playtesting. Test runs use the installed Unity 6000.4.7f1 Editor with `-batchmode -runTests -testPlatform EditMode` / `PlayMode`, the saved project and explicit XML/log paths; no `-nographics` rendering substitution.
+
+### Actual Editor inspection and evidence
+
+Used the computer-use skill to operate the real Unity Editor and inspect its Full HD Game view and Console. A **temporary Editor-only fixture** arranged existing founders, used the normal eligible two-parent mating/birth path, supplemented food and accelerated real growth to compare generations. Genomes, inheritance rules and mutation probabilities were not replaced. Temporary nameplates and fixed comparison-camera placement are evidence aids, not permanent game features. The fixture froze AI/aging at the end only to permit stable native inspection; it and its `.meta` were removed before final tests.
+
+Observed:
+
+- Teal Meadow founder #001 (size 1.00 / legs 1.00), broad amber founder #003 (1.45 / 0.86), and slim violet founder #004 (0.73 / 1.38) have legible different silhouettes, limb thickness/length, coat colors and band widths.
+- Normal child #014 of #001 + #003 has a green coat and intermediate size 1.19 / leg proportion 0.93. Inspected it at juvenile scale and again at inherited adult scale: same pattern and body proportions, no visual reroll.
+- #014 paired with founder #005 to produce generation-two #015 (size 0.993 / legs 1.025). The later descendant visibly returns toward the teal, slimmer other parent's appearance. The journal preserves values for both parents instead of labeling ordinary mixing as mutation.
+- Pressed **F** in the native Game view, inspected the two-line descendant choice (coat/adult size/legs/resources), and activated #015's row. Control transferred to generation two and the camera retargeted. One rapid automated click was missed by Editor input routing; repeating the activation succeeded. This was not a physical-mouse usability benchmark.
+- After native selection, the controlled fixture drove the actual descendant motor: measured sprint **6.107 m/s**, expected **6.107 m/s**, steering **6.744 rad/s**. Stamina fell to about **76/101**, energy to **102.1/104.6**, and a right turn changed the planar travel heading before braking. This was a scripted movement measurement in the actual Editor, not sustained human WASD play.
+- Read the parent/child comparison, reserve/cost rows and two retained birth events in active play and the paused journal. No clipping at 1920×1080; Console showed **0 gameplay warnings / 0 errors** in the controlled session.
+- After final tests, reopened the ordinary saved scene without the fixture. Observed autonomous births (three before restart, four in the next run), the full four-entry turnover panel, and no runtime warnings/errors. Used the native paused journal to restart: restored 13 creatures, founder identity and zero births/deaths with an empty history. User input was detected afterward, so the Editor was left running for the user rather than interrupting it for another native reseed; paused reseed is verified by the automated suites. Cold startup still emits the existing Input Manager deprecation advisory, unrelated to this milestone.
+
+Unedited Game-view captures: [founders](Documentation/VisibleInheritance/01-founders.png), [parents and juvenile](Documentation/VisibleInheritance/02-parents-juvenile.png), [same child as adult](Documentation/VisibleInheritance/03-parents-adult.png), [generation-two family](Documentation/VisibleInheritance/04-generation-two.png), [controlled descendant](Documentation/VisibleInheritance/05-descendant-control.png). Captions explicitly identify the controlled fixture. Source code, not screenshot annotations, implements the inherited appearance.
+
+### Remaining limitations
+
+Existing procedural rigid-part gait still has no foot-contact IK; sliding/slope intersections and local AI steering imperfections remain possible. Bands share one pattern family and vary continuously in width using the existing leg gene, not a new independent pattern gene. RGB blending can yield muted colors; no mutation or stronger descendant is guaranteed. Agility, speed, metabolism and efficiency also affect final stats: leg/body tradeoffs are comparisons with other genes held equal.
+
+HUD was visually inspected at Full HD, not every aspect ratio. No physical gamepad, standalone build, profiler benchmark, exhaustive allocation audit or long-term natural-selection balance session was performed. Birth-site/food assistance in the visual fixture is not evidence of natural mating success; the independent autonomous regression supplies that evidence. Rare important mutations were covered by tests/code, not a staged rare-mutation Editor screenshot. Session-only ancestry and the existing survival/ecosystem limits remain; no extra stage or art pipeline was begun. Zoom is unchanged as requested.
+
+---
+
+The following sections preserve historical milestone verification; the visible-inheritance section above is the current handoff.
 
 ## Follow-up: zoom response and turnover visibility — 2026-09-24
 
