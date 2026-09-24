@@ -22,7 +22,7 @@ namespace WildType
             if (!target) return;
             yaw = Mathf.Repeat(yaw + look.x, 360);
             pitch = Mathf.Clamp(pitch - look.y, 8, 66);
-            desiredDistance = Mathf.Clamp(desiredDistance - zoom * .8f, Mathf.Max(3.6f, target.Stats.Size * 4), 19);
+            desiredDistance = Mathf.Clamp(desiredDistance - zoom * 2f, Mathf.Max(3.6f, target.Stats.Size * 4), 19);
         }
         void LateUpdate()
         {
