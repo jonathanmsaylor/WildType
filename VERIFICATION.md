@@ -1,4 +1,60 @@
-# WILDTYPE verification — visible, playable inheritance — 2026-09-24
+# WILDTYPE verification — ecological selection — 2026-09-24
+
+## Ecological selection
+
+### Scope and integration
+
+Confirmed accepted commit `b4d000d` locally and a clean working tree. Fetched and checked the remote, preserved checkpoint branch `checkpoint-before-ecological-selection-20260924`, fast-forwarded `main` from `8407155` to `b4d000d`, and pushed normally. This milestone is on `milestone-ecological-selection`. No rewritten history, force push, unrelated project edits or discarded work.
+
+Inspected the saved scene and terrain/scenery builder (region edges x ±35), the 72-slot food registry, regeneration, player/AI movement and consumption, metabolism and inherited phenotype, reproduction/mutation, ancestry/object caps, HUD and all relevant tests before changing rules. The original source/preset/scene architecture remains.
+
+Changed production files: new `World/EcologyRules.cs`; regional placement/visible-forage/observations in `Ecosystem.cs`; shared-material regional food appearance and defensive regrowth in `FoodPlant.cs`; local food valuation, finite memory/search and obstruction recovery in `HerbivoreBrain.cs`; a smoothly blended woodland steering-derived travel cap in `CreatureMotor.cs`; existing notice/food prompt/region text in `StageHud.cs`. New files include `.meta` files. No scene/prefab asset replacement, new gene, artificial improvement, evolution setting, reproduction threshold, metabolism formula, population cap, zoom, package or paid-service change.
+
+Region quotas are **32 meadow / 12 dry / 28 woodland**, totaling 72. Meadow food: 42 nutrition / 25–33 s; woodland: 22 / 18–26 s; dry: 72 / 85–115 s. All raw values still pass through the same nutrition factor and maximum-energy clamp. Regrowth reuses the same objects. Woodland clearance caps original travel by existing turn rate × .45 m, blended over an 8 m boundary strip; sprint cannot charge stamina when it cannot provide a meaningful speed increase. Existing juvenile/fatigue/energy rules still apply. No weather cycle: depletion and recovery provide the local availability change.
+
+### Verification record
+
+Final complete suites after removing the temporary harness: **68/68 Edit Mode passed in 0.1778256 seconds; 16/16 Play Mode passed in 257.6401841 seconds**, zero failures or skips. Both Unity batch processes exited 0. Results/logs are retained outside the source tree at `%TEMP%/WildTypeEcology/final-EditMode.xml` / `.log` and `final-PlayMode.xml` / `.log`. Runs use the installed Editor with `-batchmode -runTests -testPlatform EditMode` / `PlayMode`, explicit results/log paths, and rendering (no `-nographics`). No automated check is described as human playtesting.
+
+First implementation run: **68/68 Edit Mode passed** (0.2115534 s); **15/16 Play Mode passed** (255.1454942 s). The failing new relocation assertion demanded an extended-search counter before the AI could eat. Diagnostics showed the AI had already crossed from x=32 to x=60.51 and eaten the initially unseen sunpod during its initial exploratory walk (energy 96.11, alive). The test now verifies that successful cross-boundary meal, then removes all ripe food and verifies a separate extended search. The focused rerun passed (1/1, 4.4805727 s). Existing regression expectations were not weakened. An AI refinement also skips a temporarily rejected target in the forage query so other visible food remains selectable.
+
+New Edit Mode coverage: saved region edges; 10,800 deterministic candidate comparisons across 50 seeds without Unity RNG consumption; finite/bounded nutrition/regrowth variants; matched-genome travel advantage reversal; continuous/no-bonus canopy transition; reserve versus maintenance cost; actual food timer frame independence and invalid ticks; 200 normally mutated descendants evaluated in all regions. Existing inheritance isolation/parentage/mutation tests continue unchanged.
+
+New Play Mode coverage: exact regional quotas and collision-free sites, consumption and individual recovery in all 72 slots, pause, deterministic restart and changed reseed, actual two-genome motor speeds in two regions, player nutrition and depletion in all regions, initially unseen AI forage across an edge, destroyed target handling and hungry extended search. A 1,200-second autonomous run checks finite actors, reproduction after deaths, multigeneration ancestry, all region use and 24 living / 32 objects / 72 food / 512 ancestry / 512 particle bounds. The original 102-check/600-second survival and camera regression, generations, death/continuation, turnover, capacity and visible-inheritance suites remain in the complete run.
+
+Autonomous-run method: seed 917430, normal starting genomes, food, lifecycle and reproduction. The inputless player is given the ordinary AI brain so the run does not depend on a human feeding it. No creature is fed, healed, moved, replaced or assigned a favorable mate/genome. When that observer creature naturally dies, only its dead object is retained for camera/reference safety; it cannot consume or reproduce. Simulation runs at 16× with normal .02 s fixed steps and samples living creatures every ten simulation seconds. The retained corpse counts against the object cap. This is distinct from the older regression's explicitly fed-player soak.
+
+Final bounded-run observation: **1,200.9 simulation seconds, 46 births, 35 deaths, 24 living, generation 10 reached**, peak 24 living / 25 objects including the observer corpse, 59 archive records. Births continued after deaths freed slots. Recorded fatal sources were **35 old age, 0 starvation, 0 unknown** in this run. Across ten-second samples, region occupancy counts were meadow 1,420 / dry 353 / woodland 1,051, with 312 sampled crossings. These are repeated actor observations, not unique visits or proof of preference.
+
+| Final location | Living | Mean body size | Mean leg gene |
+|---|---:|---:|---:|
+| Meadow | 14 | 1.119 | 1.090 |
+| Amber flats | 3 | 1.068 | 1.148 |
+| Fernwood | 7 | 1.061 | 1.095 |
+
+The 13 founders began with mean size 1.064 and leg proportion 1.113; final whole-population means were 1.096 and 1.099. No assertion demands these values or that a favored allele spreads. The first implementation run instead ended at 49 births / 38 deaths / mean size .955 / legs 1.162, also at generation 10; small timing/AI changes alter who mates and survives. **No convincing regional genetic adaptation or stable equilibrium is demonstrated here.** The matched-genome motor tests establish a causal local tradeoff; these ecological runs establish bounded turnover and viable reproduction. The zero-starvation final run is a real balance risk: food can be generous for this seed and cohort. The separate ordinary Editor session did exhibit a natural starvation/replacement event without intervention.
+
+### Actual Editor inspection
+
+Opened the actual saved `CreatureStage_Prototype` scene in Unity 6000.4.7f1 Personal with rendering. A temporary Editor-only harness initially positioned the existing player near an edge to avoid spending the inspection on travel. It then supplied movement intent through the **normal motor, growth, fatigue and survival rules**, with ordinary AI and food still running. It did not refill resources, edit genomes, spawn replacement creatures, alter food placement or change reproduction. Native Unity UI was used to inspect the Game view and Console and to start/stop Play Mode. All harness files are removed before delivery and final tests.
+
+- Meadow → Fernwood: x=-28 to -41.78 at z=-91.69, about 13.8 m of actual travel in 3.96 s. The blended local walking limit was 3.19 m/s at arrival. Low violet fernberries are distinct from meadow coral fruit; consumed fruit disappears but the plant remains. The normal E prompt names fernberry. A sustained virtual E through the unchanged PlayerInputBridge consumed one and returned energy to 99.91/100.
+- Meadow → Amber flats: x=28 to 48.21 at z=-70.30, about 20.2 m of actual travel in 5.56 s, local walking limit 3.73 m/s. Tall gold sunpods and wider gaps are readable against the brown terrain. The restrained entry notice reads “Amber flats: rich sunpods, long waits. Keep a reserve.” A later virtual E consumed the visible sunpod; the captured +38 energy is the useful amount after the existing maximum-energy clamp, not a changed 38-nutrition rule.
+- The ordinary simulation produced births during inspection, including later generations and a full 24-creature population. The original compact four-entry birth/death panel and cumulative counters remain readable. No extra ecology number panel was added; global food inventory was removed from the normal HUD.
+- While observing normal recovery, the consumed sunpod became ripe again without timer manipulation. Later an AI consumed it. The live HUD recorded **#021, generation 1, starvation**, then **#025, generation 3, birth** while population returned to **24** (12 births / 1 death). The starvation entry stayed visible beneath the replacement birth. Neither event was injected by the harness. Console showed zero gameplay errors/warnings during inspection.
+- Native automation's brief E taps did not register reliably. The successful consumption evidence uses a .25-second virtual key state in the real Editor, with cloned/restored input settings. This verifies the real input bridge and gameplay path, not physical keyboard usability. Automated suites separately cover keyboard/gamepad input. No production input workaround was added.
+
+Unedited Game-view screenshots and captions: [ecological selection evidence](Documentation/EcologicalSelection/README.md).
+
+### Balance and verification limits
+
+Regional survival/mating remains emergent; no fitness score, favored allele, guaranteed mutation, genome replacement or scripted population recovery exists. A single seed and short accelerated run cannot prove equilibrium or adaptation. Crossing counts are sampled transitions, and per-region survivor means are location snapshots, not heritable migration preferences or proof of selective causation. Timing/physics/AI competition can vary between runs even though food layout and genetic random streams are seeded.
+
+The woodland clearance rule is a region-wide abstraction, not individually simulated branch collision. Existing high agility and other genes can offset long-leg steering costs. Large reserves help meal gaps but do not guarantee success on dry flats. Abundant regions may reach the population cap readily; sparse regions and local steering need broader seed/human balance testing. No new weather, predators, stages, genes, nav package or art pipeline. No physical gamepad, standalone build, exhaustive profiler pass or long-duration human balance session was performed. The visual checks use initial placement and scripted walking, not a complete human-controlled journey across the map. Zoom and the separate RunAudit project are untouched.
+
+---
+
+Historical verification follows; the ecology section above is the current milestone.
 
 ## Visible, playable inheritance
 

@@ -33,8 +33,11 @@ namespace WildType
         {
             if (!controller || !controller.enabled) return;
             direction.y = 0; direction = Vector3.ClampMagnitude(direction, 1);
-            Sprinting = sprint && vitals.CanSprint && direction.sqrMagnitude > .01f;
-            float limit = (Sprinting ? stats.SprintSpeed : stats.WalkSpeed) * Mathf.Sqrt(growth);
+            float walkLimit = EcologyRules.TravelLimit(stats, transform.position, false);
+            float sprintLimit = EcologyRules.TravelLimit(stats, transform.position, true);
+            // Do not charge sprint stamina when tight brush leaves no room to go faster.
+            Sprinting = sprint && vitals.CanSprint && direction.sqrMagnitude > .01f && sprintLimit > walkLimit * 1.05f;
+            float limit = (Sprinting ? sprintLimit : walkLimit) * Mathf.Sqrt(growth);
             if (vitals.Energy < stats.MaxEnergy * .15f) limit *= Mathf.Lerp(.4f, 1, vitals.Energy / (stats.MaxEnergy * .15f));
             if (vitals.Dead) { direction = Vector3.zero; limit = 0; Sprinting = false; }
             horizontal = SteerVelocity(horizontal, direction, limit, stats.Acceleration, stats.TurnRate, dt);

@@ -1,6 +1,6 @@
 # WILDTYPE — Creature Stage vertical slice
 
-A Unity implementation, independent of the earlier Godot project. **Current milestone: visible, playable inheritance.** Explore, eat, reproduce and continue through living descendants in a bounded, roughly 250 m-wide Creature-stage ecosystem. Start with twelve autonomous herbivores; total living population is capped at 24.
+A Unity implementation, independent of the earlier Godot project. **Current milestone: ecological selection.** Explore, eat, reproduce and continue through living descendants in a bounded, roughly 250 m-wide Creature-stage ecosystem. Start with twelve autonomous herbivores; total living population is capped at 24.
 
 ## Editor and opening
 
@@ -33,9 +33,9 @@ Focus the Game view for input. Focus loss pauses the simulation. Food interactio
 - Third-person acceleration/braking, camera-relative control, gravity, slope alignment, sprint/stamina recovery lock, sphere-swept camera collision and zoom.
 - Procedural multi-part creature visuals, jointed legs, feet, eyes, tail, markings, idle/gait motion and feeding nod.
 - Meadow, dry flats and woodland, rolling terrain, rocky perimeter hills, sun, fog, shadows and batched static vegetation.
-- Fixed 72 food slots. Eating removes berries; 18–33 second timers regenerate them in place. No per-food coroutine or unbounded spawning.
+- Fixed 72 food slots with distinct meadow, woodland and dry-region forage. Eating removes fruit; regional timers regenerate it in place. No per-food coroutine or unbounded spawning.
 - Shared player/AI energy, stamina, health, starvation and death rules. Starvation costs 4 health per second. AI corpses are removed after four seconds; player death opens descendant choices and restart/reseed options.
-- Twelve herbivores with staggered 0.35–0.5 s decisions, vision-limited food queries, local obstacle steering and stale-target rejection.
+- Twelve herbivores with staggered 0.35–0.5 s decisions, vision/line-of-sight-limited food choices, local obstacle steering, short meal memory and extended searches when forage is absent.
 - Scalable TMP survival/trait/population HUD, food proximity highlight, eating feedback, dust, death and regeneration particles, and subtle locomotion camera bob.
 - A single particle system capped at 512 particles; bounded registries; clean restart/reseed including while paused.
 
@@ -76,6 +76,30 @@ The coat uses one 375-vertex mesh per creature lifetime, a shared material and p
 
 See the [running-Editor comparison screenshots](Documentation/VisibleInheritance/README.md) and [verification record](VERIFICATION.md) for actual results and the limits of controlled visual checks.
 
+### Ecological selection
+
+The same map now changes your foraging choices. **Coral brightfruit** is dependable meadow forage. In green **Fernwood**, look for low, broad **violet fernberries**: small meals that recover quickly. On the brown **Amber flats**, tall **gold sunpods** hold larger meals but are sparse and take much longer to return. Empty plants remain visible; their fruit returns in place. There is no automatic replenishment of creatures or guarantee of survival.
+
+Food details (reference numbers, deliberately not added to the normal HUD):
+
+| Region | Fixed slots | Raw nutrition per meal | Seeded regrowth |
+|---|---:|---:|---:|
+| Meadow | 32 | 42 | 25–33 s |
+| Fernwood | 28 | 22 | 18–26 s |
+| Amber flats | 12 | 72 | 85–115 s |
+
+All meals restore **energy**, through the existing metabolism-based nutrition factor; unused nutrition above maximum energy is lost. Each slot's timer is deterministic for the seed. Placement respects the existing region boundaries, rejects scenery collisions and enforces regional spacing; no new world or food objects appear on regrowth. Pause freezes recovery, and restart/reseed clears the run and its ecology observations.
+
+**Inherited tradeoff:** open ground retains the original stride speed. Fernwood's tight understory caps travel by the existing steering rate (`min(original speed, turn rate × 0.45 m)`). This is one environmental cap, not a second genetic speed bonus. It blends smoothly from x = -35 to -43 rather than snapping at the edge. Matched short-legged / long-legged genomes walked at **3.21 / 3.91 m/s in open ground**, but **3.21 / 2.74 m/s in woodland** in the actual motor tests. Agility and other inherited genes still matter. Sprint does not spend stamina when brush prevents a meaningful speed increase; juvenile scaling and low-energy fatigue still apply normally.
+
+Large bodies keep their existing reserve-versus-food-cost tradeoff: a full reserve lasts longer between meals, but each little woodland bite refills less of it and greater maintenance consumes more food. No new metabolism, inheritance, mutation, reproduction or generation bonuses were added. A faster local body is not necessarily the most energy-efficient one, and no trait is forced to spread.
+
+Hungry AI evaluates **only ripe food within vision and line of sight**, using useful nutrition and estimated travel cost. It remembers one recent meal location for at most 50 seconds, without knowing whether unseen fruit has returned. When nothing is viable, it extends its exploratory walk, can cross a nearby terrain edge, and abandons prolonged or obstructed approaches. It receives the same movement cap, meals, starvation and reproduction rules as the player—no remote food knowledge, teleporting or survival subsidy.
+
+Brief region/scarcity observations reuse the existing notice line, defer to birth/eating feedback, and have cooldowns. The normal HUD now names the region without reporting the global food inventory; birth/death counts and the four-entry history are unchanged. Try leaving a depleted patch, banking a sunpod meal before a longer trip, and taking a differently proportioned descendant between meadow and woodland. No weather cycle was added; consumption and fixed regrowth provide the narrowly scoped changing availability.
+
+See [ecology Editor evidence](Documentation/EcologicalSelection/README.md) and [verification results](VERIFICATION.md). The bounded simulation is an observation, not proof of long-term equilibrium or region-specific genetic adaptation.
+
 ### Turnover visibility
 
 The upper-right HUD shows **Population, Births and Deaths** together. The lower-right panel retains the **four most recent births/deaths**, newest first, with creature ID, generation, parents when known and the recorded founder lineage. Entries do not time out or disappear when a birth fills a death's vacant slot; only a newer event can evict the oldest entry. Totals remain cumulative for the run even after entries leave the list. Initial founders and object cleanup are not counted as births/deaths. Restart/reseed clears both totals and events.
@@ -89,7 +113,7 @@ All original game code/content is under **Assets/WildType**.
 - **Genetics:** serializable Genome, immutable derived Phenotype, reusable GenomePreset ScriptableObjects.
 - **Creature:** CreatureAgent coordinates root-level CreatureMotor, CreatureVitals, CreatureInteraction and CreatureLife. LineageArchive retains bounded, GameObject-independent ancestry. OrbitCamera is independent and follows current juvenile height.
 - **VisualRoot:** CreatureAppearance derives immutable deterministic adult presentation inputs; CreatureVisual builds and animates the prototype model. Gameplay never depends on individual body-part objects. Replace this child/component with an adapter for a future rig without rewriting survival, genomes, AI or physics. InheritanceSummary stores compact parent/child comparisons in the existing lineage archive.
-- **World:** Ecosystem owns the bounded food registry and deterministic placement; FoodPlant owns depletion/regrowth.
+- **World:** EcologyRules owns region/food/clearance constants; Ecosystem owns the bounded food registry, deterministic placement, visible-forage query and restrained observations; FoodPlant owns depletion/regrowth and procedural regional appearance.
 - **AI:** HerbivoreBrain sets the same movement intent and uses the same interactions as the player. Its periodic nearest-food query is the future spatial-grid seam.
 - **Core:** StageSession coordinates startup/control transfer; GenerationLoop owns the simulation clock, partner reservations, birth validation and archive; PlayerInputBridge reads controls; FeedbackPool owns bounded effects.
 - **UI:** StageHud owns TMP displays and pause controls.
@@ -114,7 +138,7 @@ The legacy 102-check/600-second survival regression explicitly disables the gene
 - Gait is procedural rigid-mesh animation, not skeletal animation or ground-contact IK; some foot sliding or slope penetration is expected.
 - No persistence, sound, rebinding interface, gamepad rumble, or in-game graphics menu. URP quality can be adjusted in editor settings for weaker hardware.
 - Genome and food layout randomization is deterministic on this runtime, not promised across future engine versions.
-- Food depletion/regrowth is bounded, but this is a prototype balance rather than a tuned natural-selection simulation.
+- Food depletion/regrowth is bounded, but this is a prototype balance rather than a tuned natural-selection simulation. Woodland clearance is a region-wide approximation, not collision with individually simulated branches. High agility, food abundance and founder geography can outweigh leg length; sparse dry sites may still be too generous or harsh across other seeds.
 - Generations and ancestry are session-only: no save/load, species tracking, mate sex, gestation, kinship restriction, parental care, predators, creature editor, other stages, multiplayer or open world. Genetically compatible relatives may mate in this milestone. The lineage archive cap requires a restart for extremely long runs.
 
 ## Next milestone

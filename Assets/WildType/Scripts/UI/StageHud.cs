@@ -121,12 +121,12 @@ namespace WildType
             health.rectTransform.localScale = new Vector3(health.fillAmount, 1, 1);
             stamina.color = v.SprintLocked ? new Color(1, .6f, .22f) : new Color(.26f, .73f, .82f);
             readout.text = $"Energy {v.Energy:0}/{a.Stats.MaxEnergy:0}   Health {v.Health:0}\nStamina {v.Stamina:0}/{a.Stats.MaxStamina:0}   Speed {a.Motor.Speed:0.0} m/s\nSize {a.Genome.bodySize:0.00}   Metabolism {a.Genome.metabolism:0.00}\nVision {a.Stats.Vision:0} m  •  {a.State}";
-            region.text = session.World.Zone(a.transform.position) + $" · Food {session.World.AvailableFood}/{Ecosystem.FoodCap}\nPopulation {session.Population}/{GenerationLoop.PopulationCap} · Births {generations.Births} · Deaths {generations.Deaths}";
+            region.text = session.World.Zone(a.transform.position) + $"\nPopulation {session.Population}/{GenerationLoop.PopulationCap} · Births {generations.Births} · Deaths {generations.Deaths}";
             RefreshTurnover(generations.Turnover);
             if (highlighted) highlighted.Highlight(false);
             highlighted = a.Interaction.Nearest();
             if (highlighted && !session.Paused) highlighted.Highlight(true);
-            prompt.text = session.Paused ? "" : highlighted ? (v.Energy >= a.Stats.MaxEnergy - .5f ? "Brightfruit  /  Energy full" : "E / A  •  Eat brightfruit") : v.Energy <= 0 ? "STARVING — find brightfruit" : v.SprintLocked ? "Stamina depleted — recovering" : "";
+            prompt.text = session.Paused ? "" : highlighted ? (v.Energy >= a.Stats.MaxEnergy - .5f ? highlighted.DisplayName + "  /  Energy full" : "E / A  •  Eat " + highlighted.DisplayName.ToLowerInvariant()) : v.Energy <= 0 ? "STARVING — find ripe forage" : v.SprintLocked ? "Stamina depleted — recovering" : "";
             notice.text = session.Paused ? "" : session.CurrentNotice;
         }
         void RefreshTurnover(TurnoverHistory history)
