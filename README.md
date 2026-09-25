@@ -1,6 +1,6 @@
 # WILDTYPE — Creature Stage vertical slice
 
-A Unity implementation, independent of the earlier Godot project. **Current milestone: lineage identity and locating.** Explore, eat, reproduce, recognize and locate your descendants, optionally support your children, and continue through living descendants in a bounded, roughly 250 m-wide Creature-stage ecosystem. Start with twelve autonomous herbivores; total living population is capped at 24.
+A Unity implementation, independent of the earlier Godot project. **Current milestone: lineage chronicle.** Explore, eat, reproduce, recognize and locate your descendants, read their recorded lives, optionally support your children, and continue through living descendants in a bounded, roughly 250 m-wide Creature-stage ecosystem. Start with twelve autonomous herbivores; total living population is capped at 24.
 
 ## Editor and opening
 
@@ -82,6 +82,16 @@ See [running-Editor evidence](Documentation/FamilyCare/README.md) and [verificat
 
 The journal's right side has **four larger cards per page** in a wider 620-point column: a 21-point identity/name heading, then 18-point resources and region/trait details. Locate is separate from the control-transfer card. All living descendants remain accessible through paging.
 
+### Lineage chronicle
+
+Press **Tab**, then choose **Chronicle** at the bottom of the existing journal's right panel. Three roomier records per page show the controlled creature, its actual ancestors and all its descendants retained this run, including deceased children and grandchildren. Each record keeps the **name + stable ID + generation**, relationship to you, living adult/juvenile or recorded deceased status, parent IDs, **children born**, and current age or recorded lifespan. Matching first names or full names remain distinct by ID. **Next page** cycles through the bounded archive view; **Living descendants** returns to the original four-card selector.
+
+Only living descendants can be selected to take control or have a **Locate** button. Ancestors, yourself, deceased and unavailable entries say **record only**. Locate retains its existing pulse and does not transfer control; it remains disabled on the death menu. Taking control resets the view to the new creature's living descendants, while Chronicle still includes its ancestors, including dead parents. Siblings/cousins are not automatically included merely because they share a founder; the view follows actual ancestry links, not a single founder label. A descendant's other parent remains identified by ID even when outside this branch's view.
+
+Death details are retained with the existing **512-record archive**, independently of the four-event turnover HUD. **Starvation** or **old age** comes only from the actual fatal-damage notification; other confirmed deaths say **cause unknown**. A removed/missing actor without a recorded death says **Unavailable · no recorded death**, never an invented death. Corpse cleanup cannot erase or rewrite a recorded cause. Life records are ordered by archive registration (founders first, then births), not a new event feed or interactive tree.
+
+The journal stays paused. It adds no normal-play HUD panel or controls, and changes no naming, care, Locate, mating, survival, ecology or genetics rules. Counts describe this family history, **not evidence of genetic selection**. Restart/reseed clears the archive, death records, names, selection and journal page/view; no persistence is added. See [Chronicle screenshots](Documentation/LineageChronicle/README.md) and [verification](VERIFICATION.md), including the preserved local asset differences.
+
 ### Locating living descendants
 
 Choose **Locate** beside any living descendant, including a grandchild. Play resumes with your current creature still controlled and the notice **Locating Dave 1 · #014** (for example). The selected creature receives a soft pale-gold pulse for **four simulation seconds**; a compact temporary name/ID/generation cue identifies it. An offscreen cue adds **Left / Right / Above / Below / Behind** and distance. A terrain-hidden onscreen target is described as **Obscured**, not shown through geometry. There is no automatic movement, teleport, persistent beacon or camera takeover.
@@ -158,12 +168,12 @@ Death causes are captured from the actual fatal damage source: **starvation**, *
 All original game code/content is under **Assets/WildType**.
 
 - **Genetics:** serializable Genome, immutable derived Phenotype, reusable GenomePreset ScriptableObjects.
-- **Creature:** CreatureAgent coordinates root-level CreatureMotor, CreatureVitals, CreatureInteraction and CreatureLife. LineageArchive retains bounded, GameObject-independent ancestry. OrbitCamera is independent and follows current juvenile height.
+- **Creature:** CreatureAgent coordinates root-level CreatureMotor, CreatureVitals, CreatureInteraction and CreatureLife. LineageArchive retains bounded, GameObject-independent ancestry and confirmed death snapshots; its revisioned family query includes actual ancestors and descendants. OrbitCamera is independent and follows current juvenile height.
 - **VisualRoot:** CreatureAppearance derives immutable deterministic adult presentation inputs; CreatureVisual builds and animates the prototype model. Gameplay never depends on individual body-part objects. Replace this child/component with an adapter for a future rig without rewriting survival, genomes, AI or physics. InheritanceSummary stores compact parent/child comparisons in the existing lineage archive.
 - **World:** EcologyRules owns region/food/clearance constants; Ecosystem owns the bounded food registry, deterministic placement, visible-forage query and restrained observations; FoodPlant owns depletion/regrowth and procedural regional appearance.
 - **AI:** HerbivoreBrain sets the same movement intent and uses the same interactions as the player. Its periodic nearest-food query is the future spatial-grid seam.
 - **Core:** StageSession coordinates startup/control transfer; GenerationLoop owns the simulation clock, partner reservations, birth validation and archive; FamilyCare coordinates validated direct-child sharing using pure FamilyCareRules and per-life cooldowns; DescendantLocator owns one short-lived, validated player selection independently of care; FamilyNames stores bounded run-only names and birth order without modifying identity/genetics; PlayerInputBridge reads controls; FeedbackPool owns bounded effects.
-- **UI:** StageHud owns TMP displays and pause controls. FamilyWorldCues reuses three child labels, one temporary locating cue and up to twelve procedural CourtshipHeart graphics. DescendantPulse temporarily tints the selected VisualRoot's existing renderers using cached/restored property blocks, without allocating creature meshes/materials per frame.
+- **UI:** StageHud owns TMP displays and pause controls, with living-descendant and compact Chronicle views sharing the existing card pool. LineageChronicle formats factual life records and resolves living actors without inferring death from absence. FamilyWorldCues reuses three child labels, one temporary locating cue and up to twelve procedural CourtshipHeart graphics. DescendantPulse temporarily tints the selected VisualRoot's existing renderers using cached/restored property blocks, without allocating creature meshes/materials per frame.
 - **Editor:** PrototypeBuilder creates authored meshes, materials, prefabs, presets and the saved scene. Rebuilding replaces these generated prototype assets; do not use it over subsequent hand-authored changes without reviewing them first.
 - **Tests:** Edit Mode data/unit tests and Play Mode full-scene regression/soak.
 

@@ -1,3 +1,55 @@
+# WILDTYPE verification — lineage chronicle — 2026-09-25
+
+## Lineage chronicle
+
+### Starting state and protected local assets
+
+Confirmed local and pushed `milestone-lineage-locating` at **806915f5554739945555a22770836cc9987ff281** before editing. Created **milestone-lineage-chronicle** from that commit. No merge into `main`, history rewrite, force-push or unrelated project edit. All twelve paths initially reported modified were copied byte-for-byte to `%TEMP%/WildTypeChronicle/Preexisting` and checked by SHA-256 after rendered inspection and final verification; none is staged in this milestone.
+
+The eight content-changing paths are the saved **CreatureStage_Prototype.unity**, **PrototypeTree.prefab**, **Brightfruit.prefab**, and **Grass / Terrain / Scenery Fern canopy / Scenery Warm bark / Scenery Weathered rock** mesh assets. The five mesh diffs are serialized mesh-name changes (e.g. Grass → Batched meadow grass). Prefab diffs include serialized object/reference reordering and local positions; the saved scene has extensive reordered objects/positions. **Interaction gold.mat** and the three authored genome preset assets also appeared dirty but had no content diff under Git normalization. All twelve files—not just the eight substantive diffs—are protected.
+
+Their authorship/intended integration is unresolved. This milestone does not repair, regenerate, stage, discard or save them. The rendered inspection and saved-scene Play Mode tests use the **existing local scene/assets**, not a fresh Git checkout. A clean clone therefore need not look identical to the screenshots. Chronicle behavior depends on runtime IDs/ancestry/vitals and the existing runtime-created journal, not on resolving these art/scene differences. No painterly work or new art was begun.
+
+### Implementation and bounds
+
+Inspected README/verification, ancestry records/archive, birth/death flow, names, descendant selection, Locate, control transfer, archive limits, saved scene and relevant tests first.
+
+- **LineageArchive.cs:** retains one value-only confirmed death snapshot per archived identity (time plus validated fatal cause), independent of the four-event turnover ring. First evidence wins; nonfinite/pre-birth times and unknown identities are rejected. A bounded family query includes the controlled creature, its actual ancestors and transitive descendants. It uses registration order and does not equate a canonical founder ID with complete ancestry. A revision invalidates journal caches after births, removals or confirmed deaths. The archive stays capped at **512**, with no pruning or new spawn allowance.
+- **GenerationLoop.cs:** at the existing fatal notification, records the same cause/time alongside the existing turnover event. Destruction/unregister without fatal vitals continues to remove availability but supplies **no death evidence**. Existing one-time death totals, cleanup and reset behavior remain. No death, survival, reproduction, energy or AI rule changes.
+- **LineageChronicle.cs / StageHud.cs:** add a **Chronicle / Living descendants** toggle to the existing paused journal. Three four-line records per Chronicle page (versus the existing four living cards), using the same four-card pool and Next page control. Name, stable ID, generation, relationship, actual living stage or confirmed death cause, parent IDs, children born and age/lifespan remain readable. Only a currently living descendant has a selectable control card and Locate; all other records say **record only**. Missing actors say **Unavailable · no recorded death**. Changing control or restarting/reseeding resets page/view. The normal play HUD, care, naming, Locate effect, controls and zoom are unchanged.
+
+The history follows the current branch: ancestors, self and descendants, not every sibling/cousin. Other parents remain identified by ID even if outside this view. Counts are descriptive, not evidence of genetic selection. No save persistence or large family-tree UI was added.
+
+### Automated verification
+
+Initial complete Edit Mode: **110/110 passed in 0.2448931 s**. Initial targeted Chronicle Play Mode: **3/3 passed in 31.1629437 s**. Unity exits were 0; no failed assertions. Rendered inspection then simplified the age/lifespan wording without changing rules.
+
+Final verification after removing the helper: complete **Edit Mode 110/110 passed in 0.2335247 s**, complete **Play Mode 35/35 passed in 440.5482171 s**. Both Unity exits were 0, with **zero failures, skips or inconclusive cases**. No project parser/compile, missing-reference or gameplay runtime error was reported. The staged milestone diff passes whitespace validation; pre-existing saved-scene whitespace is untouched. All six source/test files matched the reviewed versions, and all **12 protected local asset files** still matched their starting SHA-256 hashes after the full suites. No temporary helper remains in Assets.
+
+The existing three-seed 1,200-second autonomous regression reported births **47 / 49 / 44**, deaths **36 / 39 / 33**, end population **24 / 23 / 24**, and peak objects **26 / 26 / 26**, retaining 72 food slots. Recorded starvation/old-age deaths were **1/35, 1/38, 0/33**, respectively; unknown causes were zero. Seeds were 917430, 925349 and 933268. These are regression observations with ordinary timing variation, not a matched selection/balance study or evidence that any trait was favored.
+
+New Edit coverage: **eight cases** for multi-generation ancestry through dead relatives, excluding sibling branches, immutable cause/time after recent-event eviction, removal without a death claim, unknown causes, three invalid-time cases, the full **512-record** archive with retained parent links, and refresh of reproduction counts. New Play coverage: **three saved-scene cases** creating real two-parent births with controlled co-location/refills/accelerated growth. They test duplicate full names distinguished by ID; deceased child plus living grandchild; actual fatal starvation cause and corpse cleanup; no care eligibility for a grandchild; only eligible Locate/control actions; text fit; control transfer with deceased ancestors; paging; paused restart/reseed clearing names, deaths, view and page; and destroyed living actors remaining unavailable rather than deceased. Existing 24-living/32-object/72-food/512-ancestry assertions remain.
+
+These automated cases use deliberate fixtures to isolate behavior, not unaided human play. The full suite also retains existing genetics, naming, Locate, camera, care, ecology, turnover, survival and long-run regressions. No tuning was performed to influence population or trait outcomes.
+
+### Rendered Editor inspection
+
+Used Unity **6000.4.7f1 Personal**, DX12 and the actual local saved **CreatureStage_Prototype** at a **1920×1080 Game-view resolution**. The computer-use skill supplied native Windows journal clicks and Tab input. A temporary Editor-only helper froze AI, co-located mating partners, used the real mating/inheritance flow for two generations, automatically named the first child Tavi, accelerated its growth and refilled two partners once for the second birth. The AI-born grandchild's existing name system also produced **Tavi 1**. The helper deliberately exhausted the child's energy and advanced its normal Vitals starvation tick to create a confirmed fatal starvation record. This is a **forced test setup, not a natural ecological death or unaided human playthrough**.
+
+After the child's corpse had disappeared, clicked **Chronicle** in the native Game view. Saw **#001 (you), #014 Tavi 1 (Gen 1, deceased child, starvation, lived 33 s, one child born), and #015 Tavi 1 (Gen 2, living juvenile descendant)**. Parent IDs linked #015 back to #014 + #005. Only #015 had Locate and select-to-control; the dead child's record was readable but not actionable. The two identical names were clearly distinguished by ID/generation.
+
+Clicked #015's control card, then pressed **Tab**, opened Chronicle and clicked **Next page**. The new perspective showed its living ancestors on page 1 and **#014 as its deceased parent** beside its own #015 record on page 2. Parent identity/cause/lifespan survived control transfer. The Console displayed **zero warnings and zero errors** in the inspected session. The normal HUD retained its existing appearance.
+
+The helper never saved scene/assets; it and its `.meta` were backed up outside the project and removed before the final complete suites. [Screenshots](Documentation/LineageChronicle/README.md) document both journal perspectives. Raw logs/XML, temporary-helper backup and protected assets remain outside Git in `%TEMP%/WildTypeChronicle`.
+
+### Limitations / return-to-PC checks
+
+Open the saved scene, reproduce, press **Tab → Chronicle**, and compare a living descendant with a deceased family member. Use Next page, Locate and the living creature card; after control transfer, revisit Chronicle to see its parents. Causes not proven by the fatal notification remain unknown, and missing actors have no invented death. Check the readability at your preferred resolution and input setup. Physical gamepad ergonomics, every resolution, a standalone build and a clean-clone visual match were not manually verified. History is run-only, bounded by the existing archive, and not a genetic-selection analysis.
+
+---
+
+Historical lineage-locating verification follows.
+
 # WILDTYPE verification — lineage identity and locating — 2026-09-25
 
 ## Lineage identity and locating

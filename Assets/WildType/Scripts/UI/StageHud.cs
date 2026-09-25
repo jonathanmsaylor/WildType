@@ -19,7 +19,12 @@ namespace WildType
         TMP_InputField nameInput;
         TMP_Text namePreview;
         CreatureId namingId;
-        Button resume, nextPage;
+        Button resume, nextPage, chronicleToggle;
+        bool chronicle;
+        LineageArchive journalArchive;
+        CreatureId journalFocus;
+        int journalRevision = -1;
+        readonly System.Collections.Generic.List<CreatureLineageRecord> chronicleRecords = new System.Collections.Generic.List<CreatureLineageRecord>(LineageArchive.Capacity);
         readonly Button[] descendantButtons = new Button[4];
         readonly Button[] findButtons = new Button[4];
         readonly CreatureAgent[] choices = new CreatureAgent[4];
@@ -94,6 +99,10 @@ namespace WildType
             }
             nextPage = ButtonAt(selection, "Next page", 452, () => { page++; refresh = 0; });
             nextPage.GetComponent<RectTransform>().anchoredPosition = new Vector2(15, -452);
+            chronicleToggle = ButtonAt(selection, "Chronicle", 452, () => { chronicle = !chronicle; page = 0; refresh = 0; });
+            chronicleToggle.GetComponent<RectTransform>().anchoredPosition = new Vector2(335, -452);
+            chronicleToggle.GetComponent<RectTransform>().sizeDelta = new Vector2(265, 55);
+            chronicleToggle.GetComponentInChildren<TMP_Text>().rectTransform.sizeDelta = new Vector2(265, 42);
             pausePanel.SetActive(false);
             BuildNaming(root.transform);
             var events = new GameObject("UI input", typeof(EventSystem), typeof(InputSystemUIInputModule));
@@ -122,6 +131,11 @@ namespace WildType
             panelTitle.text = "FAMILY JOURNAL\nSimulation paused";
             var a = session.Player; var v = a.Vitals;
             var generations = session.Generations; var record = generations.Archive.Get(a.Life.Id);
+            if (journalArchive != generations.Archive || journalFocus != a.Life.Id)
+            {
+                journalArchive = generations.Archive; journalFocus = a.Life.Id;
+                chronicle = false; page = 0; journalRevision = -1; chronicleRecords.Clear();
+            }
             familyBox.sizeDelta = new Vector2(session.Paused ? 410 : 340, session.Paused ? 650 : 255);
             family.rectTransform.sizeDelta = new Vector2(session.Paused ? 370 : 300, session.Paused ? 614 : 219);
             family.fontSize = session.Paused ? 17 : 20; family.lineSpacing = session.Paused ? 4 : 6;
@@ -146,13 +160,40 @@ namespace WildType
             {
                 var living = generations.LivingDescendants(a.Life.Id);
                 if (session.GameOver) panelTitle.text = living.Count == 0 ? "LIFE ENDED\nNo living descendants\nRestart or reseed" : "LIFE ENDED\nChoose a descendant or restart";
-                int pages = Mathf.Max(1, Mathf.CeilToInt(living.Count / (float)choices.Length)); page %= pages;
+                if (chronicle && journalRevision != journalArchive.Revision)
+                { journalArchive.CollectFamily(journalFocus, chronicleRecords); journalRevision = journalArchive.Revision; }
+                int count = chronicle ? chronicleRecords.Count : living.Count;
+                int pageSize = chronicle ? 3 : choices.Length;
+                int pages = Mathf.Max(1, Mathf.CeilToInt(count / (float)pageSize)); page %= pages;
                 nextPage.gameObject.SetActive(pages > 1);
+                chronicleToggle.GetComponentInChildren<TMP_Text>().text = chronicle ? "Living descendants" : "Chronicle";
                 descendantTitle.text = living.Count == 0 ? (session.GameOver ? "No living descendants.\nRestart or reseed to begin a new lineage." : "No living descendants yet.\nSurvive, build energy, and mate to grow your family.") : $"Living descendants: {living.Count} · page {page + 1}/{pages}\nSelect a creature to take control.";
+                if (chronicle) descendantTitle.text = $"Family chronicle · page {page + 1}/{pages}\nRecorded lives: ancestors, you & descendants";
                 for (int i = 0; i < choices.Length; i++)
                 {
-                    int index = page * choices.Length + i;
+                    int index = page * pageSize + i;
+                    float rowY = 92 + i * (chronicle ? 112 : 84), rowHeight = chronicle ? 106 : 78;
+                    var cardRect = descendantButtons[i].GetComponent<RectTransform>();
+                    cardRect.anchoredPosition = new Vector2(15, -rowY); cardRect.sizeDelta = new Vector2(495, rowHeight);
+                    choiceLabels[i].rectTransform.sizeDelta = new Vector2(475, rowHeight - 6);
+                    var locateRect = findButtons[i].GetComponent<RectTransform>();
+                    locateRect.anchoredPosition = new Vector2(522, -rowY); locateRect.sizeDelta = new Vector2(78, rowHeight);
+                    if (chronicle)
+                    {
+                        var entry = i < pageSize && index < count ? chronicleRecords[index] : null;
+                        var actor = entry == null ? null : LineageChronicle.LivingActor(session, entry);
+                        choices[i] = actor && generations.IsLivingDescendant(actor, a.Life.Id) ? actor : null;
+                        descendantButtons[i].gameObject.SetActive(entry != null);
+                        descendantButtons[i].interactable = choices[i];
+                        findButtons[i].gameObject.SetActive(choices[i]); findButtons[i].interactable = !session.GameOver;
+                        choiceLabels[i].fontSize = 18;
+                        // Keep archived records readable even though they cannot be clicked.
+                        var colors = descendantButtons[i].colors; colors.disabledColor = Color.white; descendantButtons[i].colors = colors;
+                        if (entry != null) choiceLabels[i].text = LineageChronicle.Card(session, entry, actor, choices[i]);
+                        continue;
+                    }
                     choices[i] = index < living.Count ? living[index] : null;
+                    descendantButtons[i].interactable = true; choiceLabels[i].fontSize = 18;
                     descendantButtons[i].gameObject.SetActive(choices[i]);
                     findButtons[i].gameObject.SetActive(choices[i]);
                     findButtons[i].interactable = !session.GameOver;
@@ -162,7 +203,7 @@ namespace WildType
                         $"{(child.Life.Adult ? "Adult" : "Juvenile")} · Energy {child.Vitals.Energy:0}/{child.Stats.MaxEnergy:0} · HP {child.Vitals.Health:0} · {Vector3.Distance(a.transform.position, child.transform.position):0} m\n" +
                         $"{session.World.Zone(child.transform.position)} · {CreatureAppearance.CoatName(child.Genome.camouflage)} · size {child.Genome.bodySize:0.00} / legs {child.Genome.legLength:0.00}";
                 }
-                if (opening && session.GameOver && living.Count > 0 && EventSystem.current)
+                if (opening && !chronicle && session.GameOver && living.Count > 0 && EventSystem.current)
                     EventSystem.current.SetSelectedGameObject(descendantButtons[0].gameObject);
             }
             energy.fillAmount = v.Energy / a.Stats.MaxEnergy; stamina.fillAmount = v.Stamina / a.Stats.MaxStamina; health.fillAmount = v.Health / 100;

@@ -191,9 +191,13 @@ namespace WildType
             if (!Owns(actor)) return;
             var record = Archive.Get(actor.Life.Id);
             if (!record.Alive) return; // Death notification and subsequent corpse cleanup count only once.
-            Archive.MarkDead(actor.Life.Id);
             // Destruction/unregister alone is not evidence of gameplay death. Restarts are not deaths either.
-            if (session.Ready && actor.Vitals.Dead) Turnover.RecordDeath(record, actor.Vitals.DeathCause);
+            if (session.Ready && actor.Vitals.Dead)
+            {
+                Archive.RecordDeath(actor.Life.Id, actor.Vitals.DeathCause, Clock);
+                Turnover.RecordDeath(record, actor.Vitals.DeathCause);
+            }
+            else Archive.MarkDead(actor.Life.Id);
         }
         public IReadOnlyList<CreatureAgent> LivingDescendants(CreatureId ancestor)
         {
