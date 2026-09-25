@@ -1,4 +1,112 @@
-# WILDTYPE verification — ecological selection — 2026-09-24
+# WILDTYPE verification — survival pressure and ecological balance — 2026-09-24
+
+## Survival pressure and ecological balance
+
+### Integration and diagnosis before tuning
+
+Confirmed a clean working tree and accepted commit `9091ed0` on `milestone-ecological-selection`. Fetched origin, fast-forwarded `main` from `b4d000d` to `9091ed0`, pushed normally, preserved local branch `checkpoint-before-survival-pressure-20260924`, and created `milestone-survival-pressure`. No history rewriting, discarded files or changes to the separate RunAudit/Godot projects.
+
+Inspected the saved Creature scene, README/verification, phenotype, vitals, actual motor, AI food valuation and relocation, food slots/regrowth, aging, inheritance, birth costs, caps and tests. Before modifying production rules, added and ran the same three-seed observation fixture described below against the accepted ecology rules. Baseline: **3/3 passed, 72.3392818 seconds**. Then made one ecological change and repeated the unchanged survey: **3/3 passed, 81.2944492 seconds**. There was no second tuning pass to force deaths in every seed.
+
+Why old age dominated:
+
+- The midpoint food-regrowth budget is approximately **83 raw nutrition/second** if all 72 plants are continually harvested: meadow ~46, woodland ~28, dry ~9. This is a potential supply ceiling, not actual consumption. Observed mean survival expenditure was only **17.45–19.08 energy/second** across the whole living population, excluding one-off birth charges. Even allowing for unused nutrition at the energy cap, ripe stocks were high.
+- The 24-creature cap stops further population growth and mating charges when full. Parents pay 30% of their own maximum energy per birth; children start at 55%. Those rules are unchanged. Lifespan turnover opens slots, and well-fed adults refill them quickly.
+- AI starts searching below at least 78% energy (or reproduction threshold + 4%), rather than waiting until critical hunger. It scores visible food by useful nutrition and travel cost, avoids prolonged targets and searches across nearby boundaries. There is no remote-food query or resource subsidy.
+- Starvation remains zero-energy damage at 4 health/second, while the existing low-energy motor slowdown begins below 15%. Aging remains independent. Zero fatal starvation did **not** mean zero food stress: two baseline seeds included small amounts of nonfatal low-energy/health exposure.
+
+### Exact, single rule change
+
+**Consumption-dependent recovery pressure on each meadow brightfruit plant only.** Base regrowth remains 25–33 seconds. On successful consumption, the current timer is base plus the previously accumulated delay; the plant then gains 45 seconds of stored delay for its next harvest, capped at 120. Repeated immediate harvests therefore wait base, base + 45, base + 90, then base + 120; production meadow timers never exceed **153 seconds**. Duplicate/failed consumption adds nothing. No existing ripe fruit is removed.
+
+While ripe and untouched, stored delay decays at **0.5 seconds per simulation second**, fully clearing in at most 240 ripe seconds. Empty time completes the existing countdown but does not additionally restore the reserve. A tick crossing into ripe time applies rest only to its leftover duration. This is deterministic from seed/layout and consumption history, not a random or global weather/famine event. Pause freezes both processes; restart/reseed resets them. Fixed food objects are reused.
+
+Dry and woodland food, nutrition, placement, all 72 slots, movement costs, AI, genomes, mutation, aging, reproduction, population/ancestry limits, and zoom are unchanged. Production edits are limited to `EcologyRules.cs`, `FoodPlant.cs` and `Ecosystem.cs` (a brief existing notice explains nearby grazing). No HUD panel, scene replacement, new package, art or service. In addition to these files, source changes include focused scarcity tests, the repeatable survey, documentation and `.meta` files.
+
+### Matched before/after observations
+
+Method: three seeds, normal saved-scene founders and all ordinary food/AI/survival/reproduction. The inputless player becomes an ordinary AI; its dead object is retained only as a camera anchor after natural death, incapable of eating or reproducing. No feeding, healing, kills, relocation, mate selection or genome editing. Each run lasts approximately 1,200 simulation seconds with a fixed **0.1-second presentation/AI step and normal 0.02-second physics**, sampled each simulation second. Seeds and this fixture are identical before/after. Small Unity startup/physics timing differences remain possible: fixed random streams are not a claim of cross-machine bitwise ecosystem determinism.
+
+| Seed | Rules | Births | Deaths: starvation / age / unknown | End living | Population range after 120 s | Max generation | Longest observed vacancy-to-next-birth |
+|---|---|---:|---|---:|---|---:|---:|
+| 917430 | Before | 46 | 0 / 35 / 0 | 24 | 22–24 | 8 | 11 s |
+| 917430 | After | 47 | 0 / 36 / 0 | 24 | 22–24 | 8 | 7 s |
+| 925349 | Before | 48 | 0 / 38 / 0 | 23 | 21–24 | 12 | 13 s |
+| 925349 | After | 47 | 2 / 34 / 0 | 24 | 18–24 | 8 | 47 s |
+| 933268 | Before | 46 | 0 / 35 / 0 | 24 | 21–24 | 9 | 22 s |
+| 933268 | After | 47 | 1 / 35 / 0 | 24 | 21–24 | 6 | 27 s |
+
+The population begins at 13, rises through births, and never exceeds 24. In the changed-rule surveys it finishes at 24 in all three seeds; none goes extinct. Each has 36 births after its first death. Peak observed objects were 26 and archive records 59–61 across all six runs; samples asserted 24 living/32 objects including reservations, 72 food, 512 ancestry and 512 particles. No silent respawning.
+
+Mean ripe food stocks (minimum in parentheses); these count actual available objects, not projected nutrition:
+
+| Seed | Meadow before → after / 32 | Dry before → after / 12 | Woodland before → after / 28 |
+|---|---|---|---|
+| 917430 | 18.94 (9) → 9.26 (2) | 5.95 (0) → 5.43 (1) | 21.88 (16) → 16.03 (5) |
+| 925349 | 19.78 (11) → 7.54 (1) | 7.60 (2) → 4.27 (0) | 19.02 (11) → 17.01 (7) |
+| 933268 | 18.30 (8) → 9.30 (2) | 5.66 (1) → 6.38 (0) | 21.04 (13) → 15.53 (7) |
+
+Food availability recovers rather than decreasing permanently. In seed 925349, the meadow's 100-second mean falls to **2.69 ripe plants** in the 300–400 s window, later rises to **9.41** in 1000–1100 s, and ends with a population of 24. Its two fatal starvations occur before the 600 s sample; subsequent births continue. This is a spatially changing stock observation, not proof that every individual plant completed a full 240-second rest (that rule is isolated in targeted tests).
+
+Region samples meadow/dry/woodland and sampled crossings:
+
+| Seed | Before region samples | After region samples | Crossings before → after |
+|---|---|---|---|
+| 917430 | 16456 / 3835 / 7952 | 10227 / 3473 / 14563 | 490 → 584 |
+| 925349 | 13825 / 2742 / 11626 | 10839 / 4299 / 12528 | 571 → 765 |
+| 933268 | 14950 / 3915 / 9419 | 9020 / 3203 / 16002 | 600 → 624 |
+
+These are repeated observations of living actors, not unique visits, preference measurements or proof of heritable migration. More woodland use is consistent with seeking alternative forage; the existing isolated AI test verifies actual discovery and consumption beyond an initially unseen region edge without teleportation, plus abandoning destroyed/empty targets.
+
+### Inherited trait outcomes versus causal tests
+
+In the evolving samples, body size below 1 versus at least 1 is a descriptive grouping, **not matched genomes**. Other genes, birth time, ancestry, lifespan, location and food competition differ. Low-energy exposure is the number of living actor samples below 15% maximum energy:
+
+| Seed | Small: low-energy samples before → after | Large: before → after | Starvation after: small / large |
+|---|---|---|---|
+| 917430 | 20/12625 → 44/11995 | 0/15618 → 0/16268 | 0 / 0 |
+| 925349 | 12/14397 → 139/10808 | 0/13796 → 148/16858 | 1 / 1 |
+| 933268 | 0/12573 → 18/9676 | 0/15711 → 114/18549 | 0 / 1 |
+
+For legs below 1.1 versus at least 1.1, changed-rule cohort counts were **44/16**, **36/24**, **35/25**; fatal starvation counts **0/0**, **1/1**, **1/0** respectively. Size-group changed-rule cohort counts were **24/36**, **25/35**, **20/40**. These small, correlated and right-censored cohorts do not establish that compact bodies or any leg gene were selected for. There is no forced spread or scripted improvement.
+
+The separate **causal matched-size test** changes only body size (.65 versus 1.7). Both independent vitals receive the same four-meal schedule generated by one repeatedly harvested midpoint meadow plant, with ordinary resting drain: waits 29, 74, 119 and 149 s, total **371 s**. Small body ends at **74.61/74.61 energy**, large at **126.02/236.96 (53%)**, both alive. Conversely, a completely foodless gap starting full can last **271 versus 342 seconds** before zero energy: the larger reserve has a genuine opposing benefit. This isolates the physiological effect and removes travel, aging and competition; it is not a natural death or adaptation test.
+
+Matched legs (.6 / 1.6), other genes equal: a steady 100 m walk takes **31.13 / 25.57 s in meadow**, **31.13 / 36.51 s in woodland**. Calculated ordinary energy expenditure is **23.36 / 19.19** and **23.36 / 22.92**, respectively. An initial new test incorrectly expected longer legs to cost more energy per metre than short legs in woodland; it failed (72/73 Edit tests passed), revealing the existing speed-scaled movement drain. Corrected the unsupported test assumption, not the production survival formula. Long woodland legs arrive later and cost more than their own open-ground journey, but still cost slightly less energy per metre than the short-legged peer. No duplicate penalty was added to make a desired story true.
+
+### Automated and Editor verification
+
+Initial complete suites after correcting the one new test assumption: **73/73 Edit Mode** (0.1831569 s), **20/20 Play Mode** (339.4369966 s), zero failures. The complete Play suite reran the three-seed survey with the same birth/death totals. The older variable-frame 16x, 1,200-second ecology soak additionally observed **47 births, 36 deaths (1 starvation, 35 old age), 24 living, generation 10**, peak 27 creature objects; this is a separate run, not substituted into the matched-seed table.
+
+New focused coverage: repeated harvest limits and unchanged other habitats/nutrition; no duplicate-harvest pressure; ripe rest versus empty time; crossing-tick frame independence; invalid/nonfinite input rejection; matched size/leg resource tests; pause while depleted and while ripe; paused restart/reseed resetting delay, objects, ancestry, births/deaths; and the three bounded evolving-population surveys. Existing full input/camera/survival, AI relocation/feeding/stale targets, real motor tradeoffs, inheritance/mutation, juvenile growth, descendant control, natural lifespan, turnover, capacity and 600-second regression all ran unchanged.
+
+**Final clean suites, after removing the helper: 73/73 Edit Mode passed (0.1784286 s), 20/20 Play Mode passed (339.3691991 s), zero failures or skips; both Unity processes exited 0.** Files: `%TEMP%/WildTypeBalance/final-edit.xml` / `.log`, `final-play.xml` / `.log`. No parser/compiler errors, missing references or gameplay exceptions were found. Rendering-capable Unity 6000.4.7f1 batch runs used the saved project, without `-nographics` or new packages.
+
+The final three fixed-step surveys retained starvation totals **0 / 2 / 1** and ended at 24 each. The third seed changed to **51 births / 40 deaths (1 starvation, 39 old age), generation 8, 64 archive records, 27 peak objects**, rather than the comparison run's 47/36. The first two retained 47/36, though sample crossings in seed 917430 varied. The old variable-frame soak in this final run observed **47 births / 37 deaths, all old age, 23 living, generation 9**, instead of its earlier 1-starvation outcome. These reruns underline the limits of the short samples and startup/frame timing; they are not hidden or substituted into the matched comparison. A final reporting-only cleanup corrected the initial 100-second window's denominator to include its initial sample; the whole-run means and other windows above are unaffected.
+
+### Actual saved-scene Editor observations
+
+Used the computer-use skill for native Unity window, Play/stop, pause, restart, reseed and Console inspection at Full HD. A **temporary Editor-only inspection helper** supplied a virtual gamepad through the unchanged `PlayerInputBridge`, following selected food sites with normal local steering, and saved unedited Game-view captures. **No teleport, energy/health refill, food manipulation, genome edits, injected births/deaths or AI disabling** occurred. Time scale was 1–3x during the observation. This is assisted input in the actual Editor, not a human/physical-controller playtest.
+
+- The saved seed 917430 run began with normal founders. Near the spawn, AI ate brightfruit #0 at about 15 s, it returned at 48 s, was consumed again at 54 s (about 72 s remaining), and later reached the capped pressure of 120. Empty stems were visible. The player had 61 energy while resting by the depleted meadow patch in the first evidence image.
+- Virtual left-stick input moved the hungry player from `(0, 1.97, 2.73)` to approximately `(-48.29, .19, -7.35)` in Fernwood; recorded moving duration 13.8 s, energy 34.31 at arrival. Local motor limits, expenditure and the existing food prompt remained active. The first woodland meal at about 216 s restored **22 energy** through ordinary South-button input (captured at 40/100); a second at about 284 s also succeeded. No direct `Eat` call or refill was used by the helper.
+- While the player was away, brightfruit #0 naturally became ripe at **246.4 s** with stored delay **119.8**; by **282.5 s** it was still ripe and delay was **101.8**, demonstrating the new rest recovery in the live scene. Later AI ate it again. Full 240-second rest is verified by isolated tests, not claimed from this short inspection.
+- A return trip to the meadow took 13.5 s and ended at a plant another creature had already depleted. Moving to another nearby ripe plant at low reserves slowed normally. That plant was also consumed by an AI before the delayed virtual eat request; the player gained no energy. Waiting while arranging screenshots was costly: it naturally starved at about **399.8 s**. This is an observation of missed timing/competition and long inspection pauses, not a controlled measure of human difficulty or autonomous selection.
+- Before that player death, the ordinary ecosystem reached 24 living/11 births, then four natural old-age deaths opened slots. Births #025–#028 restored population to 24/15 births. The visible four-entry log retained **old age #007** under **birth #028, generation 4**, and subsequently added **starvation #001** while cumulative deaths became 5 and population 23. No death or replacement was staged. There was no living player descendant: the normal death menu paused and offered restart/reseed, without creating a replacement.
+- Clicked native **Restart Prototype**: observed 13 founders, zero births/deaths, empty history and zero nearby plant pressure. Pressed Escape: verified the simulation clock, player energy and a depleted timer stayed unchanged across observations. Clicked **Reseed Ecosystem** while paused: seed changed 917430 → 925349, again 13 founders, zero counts and fresh food. Logs confirm both normal restarts.
+- The restrained grazing notice rendered on the existing line without overlapping the Full-HD panels. Birth/death HUD remained readable. Native Console showed **0 gameplay warnings / 0 errors** throughout. The existing cold-start Input Manager deprecation advisory is not a new runtime error.
+
+The temporary helper and its `.meta` were backed up outside the project and **removed before final suites**; it never became a saved scene component. Input settings were cloned/restored and the virtual device removed on leaving Play Mode. Scene/prefab assets remain unchanged. [Unedited captures and captions](Documentation/SurvivalPressure/README.md).
+
+### Remaining balance risks
+
+This is evidence of **modest food-driven survival pressure and recovery**, not convincing long-term genetic adaptation. One changed-rule seed still has zero starvation, intentionally accepted. Old age remains the dominant fatal cause; woodland remains a generous refuge, and the cap is often reached. No optimum genotype, equilibrium or sustained population resilience beyond these short runs is proven. More seeds, longer observation and human play may reveal camping strategies, unlucky AI routing or excessive crowding. The local steering system is not full pathfinding.
+
+All raw XML/logs remain outside source control under `%TEMP%/WildTypeBalance`. Baseline/after observations above use `baseline.*` and `after.*`; complete-suite reruns are separately identified rather than silently replacing the recorded comparison. The fixed-step survey is retained as an automated regression, not embedded in the scene or runtime build. Temporary Editor input/capture assistance is removed before final verification. No standalone build, physical controller usability benchmark or long-term balance claim.
+
+---
+
+Historical accepted ecological-selection verification follows; the section above describes the current balance milestone.
 
 ## Ecological selection
 

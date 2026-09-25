@@ -1,6 +1,6 @@
 # WILDTYPE — Creature Stage vertical slice
 
-A Unity implementation, independent of the earlier Godot project. **Current milestone: ecological selection.** Explore, eat, reproduce and continue through living descendants in a bounded, roughly 250 m-wide Creature-stage ecosystem. Start with twelve autonomous herbivores; total living population is capped at 24.
+A Unity implementation, independent of the earlier Godot project. **Current milestone: survival pressure and ecological balance.** Explore, eat, reproduce and continue through living descendants in a bounded, roughly 250 m-wide Creature-stage ecosystem. Start with twelve autonomous herbivores; total living population is capped at 24.
 
 ## Editor and opening
 
@@ -78,17 +78,17 @@ See the [running-Editor comparison screenshots](Documentation/VisibleInheritance
 
 ### Ecological selection
 
-The same map now changes your foraging choices. **Coral brightfruit** is dependable meadow forage. In green **Fernwood**, look for low, broad **violet fernberries**: small meals that recover quickly. On the brown **Amber flats**, tall **gold sunpods** hold larger meals but are sparse and take much longer to return. Empty plants remain visible; their fruit returns in place. There is no automatic replenishment of creatures or guarantee of survival.
+The same map changes your foraging choices. **Coral brightfruit** is meadow forage that slows under repeated grazing. In green **Fernwood**, look for low, broad **violet fernberries**: small meals that recover quickly. On the brown **Amber flats**, tall **gold sunpods** hold larger meals but are sparse and take much longer to return. Empty plants remain visible; their fruit returns in place. There is no automatic replenishment of creatures or guarantee of survival.
 
 Food details (reference numbers, deliberately not added to the normal HUD):
 
 | Region | Fixed slots | Raw nutrition per meal | Seeded regrowth |
 |---|---:|---:|---:|
-| Meadow | 32 | 42 | 25–33 s |
+| Meadow | 32 | 42 | 25–33 s base, up to 120 s extra after repeated harvests |
 | Fernwood | 28 | 22 | 18–26 s |
 | Amber flats | 12 | 72 | 85–115 s |
 
-All meals restore **energy**, through the existing metabolism-based nutrition factor; unused nutrition above maximum energy is lost. Each slot's timer is deterministic for the seed. Placement respects the existing region boundaries, rejects scenery collisions and enforces regional spacing; no new world or food objects appear on regrowth. Pause freezes recovery, and restart/reseed clears the run and its ecology observations.
+All meals restore **energy**, through the existing metabolism-based nutrition factor; unused nutrition above maximum energy is lost. Each slot's base wait is deterministic for the seed; the current meadow wait also depends on its harvest/rest history. Placement respects the existing region boundaries, rejects scenery collisions and enforces regional spacing; no new world or food objects appear on regrowth. Pause freezes recovery, and restart/reseed clears the run and its ecology observations.
 
 **Inherited tradeoff:** open ground retains the original stride speed. Fernwood's tight understory caps travel by the existing steering rate (`min(original speed, turn rate × 0.45 m)`). This is one environmental cap, not a second genetic speed bonus. It blends smoothly from x = -35 to -43 rather than snapping at the edge. Matched short-legged / long-legged genomes walked at **3.21 / 3.91 m/s in open ground**, but **3.21 / 2.74 m/s in woodland** in the actual motor tests. Agility and other inherited genes still matter. Sprint does not spend stamina when brush prevents a meaningful speed increase; juvenile scaling and low-energy fatigue still apply normally.
 
@@ -96,7 +96,17 @@ Large bodies keep their existing reserve-versus-food-cost tradeoff: a full reser
 
 Hungry AI evaluates **only ripe food within vision and line of sight**, using useful nutrition and estimated travel cost. It remembers one recent meal location for at most 50 seconds, without knowing whether unseen fruit has returned. When nothing is viable, it extends its exploratory walk, can cross a nearby terrain edge, and abandons prolonged or obstructed approaches. It receives the same movement cap, meals, starvation and reproduction rules as the player—no remote food knowledge, teleporting or survival subsidy.
 
-Brief region/scarcity observations reuse the existing notice line, defer to birth/eating feedback, and have cooldowns. The normal HUD now names the region without reporting the global food inventory; birth/death counts and the four-entry history are unchanged. Try leaving a depleted patch, banking a sunpod meal before a longer trip, and taking a differently proportioned descendant between meadow and woodland. No weather cycle was added; consumption and fixed regrowth provide the narrowly scoped changing availability.
+Brief region/scarcity observations reuse the existing notice line, defer to birth/eating feedback, and have cooldowns. The normal HUD names the region without reporting the global food inventory; birth/death counts and the four-entry history are unchanged. Try leaving a depleted patch, banking a sunpod meal before a longer trip, and taking a differently proportioned descendant between meadow and woodland. No weather cycle was added.
+
+### Survival pressure: rest the meadow patch
+
+Only **meadow brightfruit** has changed. Its first harvest still regrows in 25–33 seconds. Every successful harvest adds **45 seconds** to that plant's stored delay for its **next** harvest, capped at **120 extra seconds**. If immediately harvested whenever ripe, its waits are base, base + 45, base + 90, then base + 120 (at most **153 seconds**). Failed eating attempts do not add pressure. Ripe fruit is never taken away by this rule.
+
+When a ripe plant is left untouched, its stored delay decreases by **0.5 seconds per simulation second**: at most **240 seconds of ripe rest** returns the next harvest to its base wait. Empty time completes the current regrowth; it does not also erase grazing pressure. Fresh or rested meadow patches, steady woodland berries and rich dry-region sunpods offer alternatives to camping one grazed site. Empty stems and disappearing/returning fruit remain visible. A brief existing notice explains nearby grazing when forage runs out; there is no added HUD panel or global famine cycle.
+
+Nutrition, all 72 slots, inherited genes, AI vision/search, movement/metabolism, birth costs and caps are unchanged. Travel still spends energy; resting avoids movement expenditure but not maintenance. Larger reserves buffer complete meal gaps, while larger bodies spend more maintaining themselves between small meals. Long legs retain open-ground efficiency but arrive more slowly in tight woodland. Existing speed-scaled drain means that slower woodland arrival is **not** an additional per-metre energy penalty compared with short legs.
+
+Pause freezes both recovery processes. Restart/reseed clears all plant pressure, counts and history. There are no forced deaths, genotype targets, guaranteed improvements or automatic creature replacements. Three matched 1,200-second seed surveys went from **0/0/0** starvation deaths to **0/2/1**, with all changed-rule runs ending at 24 living creatures. This is modest survival pressure, **not proof of adaptation or long-term balance**; [VERIFICATION.md](VERIFICATION.md) contains the full before/after results and controlled-test limitations. See the [actual Editor captures](Documentation/SurvivalPressure/README.md) for depleted meadow forage, travel into woodland, a normal meal and the death/restart UI.
 
 See [ecology Editor evidence](Documentation/EcologicalSelection/README.md) and [verification results](VERIFICATION.md). The bounded simulation is an observation, not proof of long-term equilibrium or region-specific genetic adaptation.
 

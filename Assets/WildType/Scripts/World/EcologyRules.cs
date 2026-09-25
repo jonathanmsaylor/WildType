@@ -5,6 +5,11 @@ namespace WildType
     // Local clearance exposes existing stride/turn tradeoffs; no new genes or resource multipliers.
     public static class EcologyRules
     {
+        // One local pressure rule: repeated brightfruit harvests exhaust a plant's fast recovery.
+        // Untouched ripe plants recover their reserve; other habitats remain alternatives.
+        public const float HarvestDelayStep = 45, MaximumGrazingDelay = 120, RipeRestRecovery = .5f;
+        public static float GrazingDelay(Habitat region, float value) => region == Habitat.Meadow
+            ? Genome.Safe(value, 0, 0, MaximumGrazingDelay) : 0;
         public static Habitat Region(Vector3 point) => point.x > 35 ? Habitat.Dry : point.x < -35 ? Habitat.Woodland : Habitat.Meadow;
         public static string Name(Habitat region) => region == Habitat.Dry ? "Amber flats" : region == Habitat.Woodland ? "Fernwood" : "The meadow";
         public static string FoodName(Habitat region) => region == Habitat.Dry ? "Sunpod" : region == Habitat.Woodland ? "Fernberry" : "Brightfruit";
@@ -27,6 +32,6 @@ namespace WildType
         public static string Observation(Habitat region) => region == Habitat.Dry
             ? "Amber flats: rich sunpods, long waits. Keep a reserve."
             : region == Habitat.Woodland ? "Fernwood: small bites, quick regrowth. Sharp turns help."
-            : "Meadow: steady brightfruit and room for longer strides.";
+            : "Meadow: repeated grazing slows brightfruit recovery. Try fresh patches.";
     }
 }

@@ -96,6 +96,13 @@ namespace WildType
             return rolling + rim * (10 + 3 * Mathf.Sin(Mathf.Atan2(z, x) * 9));
         }
         public string Zone(Vector3 p) => EcologyRules.Name(EcologyRules.Region(p));
+        public bool GrazedNearby(Vector3 point, float range)
+        {
+            foreach (var food in foods)
+                if (food && food.Region == Habitat.Meadow && food.GrazingDelay > EcologyRules.HarvestDelayStep &&
+                    (food.transform.position - point).sqrMagnitude <= range * range) return true;
+            return false;
+        }
         void Update()
         {
             if (!Session || !Session.Ready || Session.Paused || !Session.Player || Session.Player.Vitals.Dead) return;
@@ -112,7 +119,12 @@ namespace WildType
             if (here != observedRegion && stableRegion >= 2)
             { observedRegion = here; Session.ShowNotice(EcologyRules.Observation(here), 6); noticeCooldown = 12; }
             else if (emptyTime > 7)
-            { Session.ShowNotice("Little ripe forage nearby. Try beyond this patch.", 5); noticeCooldown = 30; emptyTime = 0; }
+            {
+                Session.ShowNotice(GrazedNearby(player.transform.position, player.Stats.Vision)
+                    ? "Grazed brightfruit needs longer to recover. Try another patch or region."
+                    : "Little ripe forage nearby. Try beyond this patch.", 5);
+                noticeCooldown = 30; emptyTime = 0;
+            }
         }
     }
 }
