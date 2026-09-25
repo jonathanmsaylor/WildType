@@ -22,6 +22,7 @@ namespace WildType
         public GenerationLoop Generations { get; private set; }
         public FamilyCare Care { get; private set; }
         public FamilyNames Names { get; private set; }
+        public DescendantLocator Locator { get; private set; }
         public FeedbackPool Fx { get; private set; }
         public Transform RuntimeRoot { get; private set; }
         public bool Paused { get; private set; }
@@ -38,6 +39,7 @@ namespace WildType
             Generations = gameObject.AddComponent<GenerationLoop>();
             Care = gameObject.AddComponent<FamilyCare>();
             Names = new FamilyNames(this);
+            Locator = gameObject.AddComponent<DescendantLocator>();
             Fx = new GameObject("Bounded feedback pool").AddComponent<FeedbackPool>(); Fx.transform.SetParent(transform); Fx.Configure(particleMaterial);
             GetComponent<StageHud>().Configure(this);
         }
@@ -48,6 +50,7 @@ namespace WildType
             Generations.ResetRun(this);
             Care.ResetRun(this);
             Names.ResetRun();
+            Locator.ResetRun(this);
             World.Populate(this, seed);
             var random = new System.Random(seed);
             Player = Spawn(presets[0].RuntimeCopy(), new Vector3(0, Ecosystem.Height(0, 0) + .2f, 0), true);
@@ -83,7 +86,7 @@ namespace WildType
             if (!Ready || !Player || !descendant || descendant.Session != this || descendant.Vitals.Dead || !descendant.Life ||
                 !Generations.IsLivingDescendant(descendant, Player.Life.Id)) return false;
             Player.SetPlayer(false); descendant.SetPlayer(true); Player = descendant;
-            Care.ClearTracking();
+            Locator.Clear();
             Names.Cancel();
             GameOver = false; SetPaused(false); orbit.Configure(Player, this);
             ShowNotice("Now controlling " + GenerationLoop.ShortId(Player.Life.Id) + " · resources and age preserved", 6);

@@ -6,28 +6,20 @@ namespace WildType
     public sealed class FamilyCare : MonoBehaviour
     {
         StageSession session;
-        CreatureAgent tracked, trackingParent;
-        public CreatureAgent Tracked => IsChild(session ? session.Player : null, tracked) && trackingParent == session.Player ? tracked : null;
         public int Shares { get; private set; }
-        public void ResetRun(StageSession value) { session = value; tracked = trackingParent = null; Shares = 0; }
+        public void ResetRun(StageSession value) { session = value; Shares = 0; }
         bool Living(CreatureAgent a) => a && a.Session == session && a.Life && !a.Vitals.Dead &&
             session.Generations.Owns(a) && session.Generations.Archive.Get(a.Life.Id).Alive;
         public bool IsChild(CreatureAgent parent, CreatureAgent child) => session && Living(parent) && Living(child) &&
             FamilyCareRules.DirectChild(parent.Life.Id, session.Generations.Archive.Get(child.Life.Id));
-        public bool Track(CreatureAgent child)
-        {
-            if (!session.Ready || !IsChild(session.Player, child)) return false;
-            tracked = child; trackingParent = session.Player; return true;
-        }
-        public void ClearTracking() { tracked = trackingParent = null; }
         public bool Visible(CreatureAgent parent, CreatureAgent child) => !Physics.Linecast(
             parent.transform.position + Vector3.up * parent.CurrentHeight * .7f,
             child.transform.position + Vector3.up * child.CurrentHeight * .7f, Ecosystem.WorldMask, QueryTriggerInteraction.Ignore);
         public CreatureAgent NearbyChild(CreatureAgent parent)
         {
             if (!Living(parent)) return null;
-            var pin = parent == session.Player ? Tracked : null;
-            if (pin && !pin.Life.Adult && Vector3.Distance(parent.transform.position, pin.transform.position) <= FamilyCareRules.Range) return pin;
+            var pin = parent == session.Player ? session.Locator.Target : null;
+            if (pin && IsChild(parent, pin) && !pin.Life.Adult && Vector3.Distance(parent.transform.position, pin.transform.position) <= FamilyCareRules.Range) return pin;
             CreatureAgent nearest = null; float best = FamilyCareRules.Range * FamilyCareRules.Range;
             foreach (var child in session.Creatures)
             {

@@ -12,7 +12,10 @@ namespace WildType
         readonly TMP_Text[] labels = new TMP_Text[CueCap];
         readonly CreatureAgent[] children = new CreatureAgent[CueCap];
         readonly CourtshipHeart[] hearts = new CourtshipHeart[GenerationLoop.PopulationCap / 2];
-        TMP_Text foodPrompt, matePrompt;
+        TMP_Text foodPrompt, matePrompt, locatePrompt;
+        CreatureAgent lastLocated;
+        public bool LocateCueVisible => locatePrompt && locatePrompt.gameObject.activeSelf;
+        public bool DirectionCueVisible { get; private set; }
         public bool FoodPromptVisible => foodPrompt && foodPrompt.gameObject.activeSelf;
         public bool MatePromptVisible => matePrompt && matePrompt.gameObject.activeSelf;
         float refresh;
@@ -23,6 +26,9 @@ namespace WildType
             session = value; canvas = root; cameraView = value.orbit.GetComponent<Camera>();
             foodPrompt = TargetLabel(root, "Food interaction prompt", new Color(1, .88f, .43f));
             matePrompt = TargetLabel(root, "Mating prompt", new Color(1, .73f, .81f));
+            locatePrompt = TargetLabel(root, "Descendant locate cue", new Color(1, .9f, .66f));
+            locatePrompt.fontSize = 19; locatePrompt.rectTransform.sizeDelta = new Vector2(430, 58);
+            root.gameObject.AddComponent<DescendantPulse>().Configure(session);
             for (int i = 0; i < labels.Length; i++)
             {
                 var go = new GameObject("Child relationship cue", typeof(RectTransform), typeof(TextMeshProUGUI)); go.transform.SetParent(root, false);
@@ -49,7 +55,9 @@ namespace WildType
         {
             for (int i = 0; i < children.Length; i++) children[i] = null;
             var parent = session.Player; int start = 0;
-            if (session.Care.Tracked) { children[0] = session.Care.Tracked; start = 1; }
+            var selected = session.Locator.Target;
+            if (selected && session.Care.IsChild(parent, selected) && InView(selected) && Vector3.Distance(parent.transform.position, selected.transform.position) <= 25)
+            { children[0] = selected; start = 1; }
             foreach (var child in session.Creatures)
             {
                 if (!session.Care.IsChild(parent, child) || child == children[0] || !InView(child)) continue;
@@ -64,19 +72,21 @@ namespace WildType
             if (!session || !canvas || !cameraView) return;
             VisibleChildren = VisibleHearts = 0;
             bool active = session.Ready && !session.Paused && session.Player && !session.Player.Vitals.Dead;
+            var located = session.Locator.Target;
+            if (located != lastLocated) { lastLocated = located; refresh = 0; }
             refresh -= Time.unscaledDeltaTime;
             bool updateText = refresh <= 0;
             if (active && updateText) { refresh = .1f; ChooseChildren(); }
             var target = active ? session.Care.NearbyChild(session.Player) : null;
             for (int i = 0; i < labels.Length; i++)
             {
-                var child = children[i]; bool pinned = active && child && child == session.Care.Tracked;
-                bool shown = active && session.Care.IsChild(session.Player, child) && (pinned ||
-                    Vector3.Distance(session.Player.transform.position, child.transform.position) <= 25 && InView(child));
+                var child = children[i];
+                bool shown = active && session.Care.IsChild(session.Player, child) &&
+                    Vector3.Distance(session.Player.transform.position, child.transform.position) <= 25 && InView(child);
                 labels[i].gameObject.SetActive(shown); if (!shown) continue;
                 VisibleChildren++;
                 Vector3 point = child.transform.position + Vector3.up * (child.CurrentHeight + .55f);
-                Place(labels[i].rectTransform, point, pinned);
+                Place(labels[i].rectTransform, point, false);
                 // Spread projected neighbours just enough to keep their small labels distinct.
                 for (int j = 0; j < i; j++) if (labels[j].gameObject.activeSelf &&
                     Mathf.Abs(labels[i].rectTransform.anchoredPosition.x - labels[j].rectTransform.anchoredPosition.x) < 230 &&
@@ -84,12 +94,28 @@ namespace WildType
                     labels[i].rectTransform.anchoredPosition += Vector2.up * 58;
                 if (!updateText) continue;
                 float distance = Vector3.Distance(session.Player.transform.position, child.transform.position);
-                Vector3 direction = cameraView.WorldToViewportPoint(point);
-                string bearing = !pinned ? "" : direction.z < 0 ? "Behind · " : direction.x < 0 ? "Left · " : direction.x > 1 ? "Right · " : "";
-                labels[i].text = bearing + (pinned ? "Find: " : "Your child ") + session.Names.Label(child.Life.Id) + $" · {distance:0} m\n" +
+                labels[i].text = "Your child " + session.Names.Label(child.Life.Id) + $" · {distance:0} m\nGen {session.Generations.Archive.Get(child.Life.Id).Generation} · " +
                     (child.Life.Adult ? "Adult" : $"Energy {child.Vitals.Energy:0}/{child.Stats.MaxEnergy:0}" +
                     (child == target && session.Care.Reason(session.Player, child).Length == 0 ? " · " + session.GetComponent<PlayerInputBridge>().CareKey + " share" : " · juvenile"));
                 labels[i].color = child == target ? new Color(1, .88f, .43f) : new Color(.88f, 1, .74f);
+            }
+            DirectionCueVisible = false;
+            bool ordinaryChildCue = false;
+            for (int i = 0; i < children.Length; i++) if (children[i] == located && labels[i].gameObject.activeSelf) ordinaryChildCue = true;
+            locatePrompt.gameObject.SetActive(active && located && !ordinaryChildCue);
+            if (locatePrompt.gameObject.activeSelf)
+            {
+                Vector3 point = located.transform.position + Vector3.up * (located.CurrentHeight + .55f);
+                Vector3 vp = cameraView.WorldToViewportPoint(point);
+                DirectionCueVisible = vp.z <= 0 || vp.x < .04f || vp.x > .96f || vp.y < .07f || vp.y > .93f;
+                Place(locatePrompt.rectTransform, point, DirectionCueVisible);
+                locatePrompt.color = new Color(1, .9f, .66f, .9f * Mathf.Clamp01(session.Locator.Remaining / .6f));
+                if (updateText)
+                {
+                    string bearing = DirectionCueVisible ? Bearing(vp) + " · " : InView(located) ? "" : "Obscured · ";
+                    locatePrompt.text = bearing + session.Names.PersonalName(located.Life.Id) + "\n" + GenerationLoop.ShortId(located.Life.Id) +
+                        $" · Gen {session.Generations.Archive.Get(located.Life.Id).Generation} · {Vector3.Distance(session.Player.transform.position, located.transform.position):0} m";
+                }
             }
             for (int i = 0; i < hearts.Length; i++)
             {
@@ -125,9 +151,10 @@ namespace WildType
             if (matePrompt.gameObject.activeSelf)
             {
                 Place(matePrompt.rectTransform, matePoint, false);
-                if (updateText) matePrompt.text = session.GetComponent<PlayerInputBridge>().MateKey + " mate\n" + GenerationLoop.ShortId(partner.Life.Id) + " · 30% energy";
+                if (updateText) matePrompt.text = session.GetComponent<PlayerInputBridge>().MateKey + " mate\n" + session.Names.Label(partner.Life.Id) + " · 30% energy";
             }
         }
+        public static string Bearing(Vector3 viewport) => viewport.z <= 0 ? "Behind" : viewport.x < .04f ? "Left" : viewport.x > .96f ? "Right" : viewport.y < .07f ? "Below" : "Above";
         TMP_Text TargetLabel(RectTransform root, string name, Color color)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI)); go.transform.SetParent(root, false);

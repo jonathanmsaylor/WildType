@@ -1,3 +1,55 @@
+# WILDTYPE verification — lineage identity and locating — 2026-09-25
+
+## Lineage identity and locating
+
+### Git, scope and implementation
+
+Confirmed local and remote `milestone-family-care` at `d44396ab98210b14b2778b0b84be669e396f35e7`, fetched that branch and created `milestone-lineage-locating` from it. `main` was not merged, advanced or pushed. Twelve pre-existing asset paths appeared dirty; eight had substantive diffs (five procedural mesh assets, two prefabs and the saved Creature scene). Those eight were backed up outside the repository and preserved byte-for-byte. All twelve paths are excluded from this milestone commit. No discard, force-push or unrelated-project edit.
+
+Inspected the saved scene, Git history/status, README/verification, IDs/ancestry, journal, naming, family-care targeting, procedural visuals, input and tests before changing code. Survival, mating costs, AI decisions, genetics/random streams, population limits, controls and zoom are not retuned.
+
+- **DescendantLocator** separates one temporary presentation selection from direct-child care. It uses the existing transitive living-descendant query, validates life/run ownership, resumes play with the same controlled actor, and says **Locating [name] · [ID]**. Repeat selection restarts four simulation seconds; another selection replaces it. Pause freezes the timer. Death, control transfer, restart/reseed and expiry clear it. Dead-player Locate is disabled; continuation still uses the descendant card.
+- **DescendantPulse** softly blends existing renderer colors toward pale gold, at most 38%, with smooth pulses/fades. It caches/restores exact property blocks and never instantiates materials, meshes, lights or per-creature effects. **FamilyWorldCues** adds one reusable temporary name/ID/generation cue, with a small offscreen direction/distance or an honest Obscured indication. Existing nearby direct-child cues remain limited to three. No automatic walking, camera takeover or production teleport.
+- **FamilyCare** retains its existing transfer rules and direct-child check. A selected grandchild is never accepted for care. A selected, nearby juvenile direct child can retain the existing target-priority convenience during the brief selection only.
+- **FamilyNames** assigns every birth a pronounceable default chosen from 24 names by a fixed unsigned hash of the seeded stable ID. This is reproducible cosmetic randomization, with no Unity/System/genetics random-stream draw. Player naming overrides the default while preserving numeric parent birth order; skipping retains the displayed default. AI uses the first recorded parent's birth order. Duplicate first names (and even full names) remain unambiguous through adjacent stable IDs. Growth, death, corpse removal and control transfer do not rename entries; duplicate birth recording is idempotent. Names are run-only and bounded by the 512-record archive.
+- **StageHud / StageSession** expose Locate on every living descendant card, including grandchildren, keep the optional naming prompt, and reset selection on lifecycle transitions. No broad layout redesign or new controls.
+
+### Verification performed
+
+Initial complete Edit Mode: **102/102 passed**, 0.2235877 seconds. Focused Play Mode (existing family-care plus new lineage-locating suite): **12/12 passed**, 73.1247855 seconds. Both Unity processes exited 0.
+
+After removing the temporary Editor helper, the complete suites passed again: **Edit Mode 102/102 in 0.2229888 seconds; Play Mode 32/32 in 406.1159342 seconds**, with **zero failures, skips or inconclusive cases** and both Unity exits 0. The full suites include camera, inheritance, ecology/scarcity, AI, mating, growth, family care, turnover and cap regressions. No project compile/runtime errors were reported. The staged milestone diff passes `git diff --check`; existing whitespace in the user's uncommitted saved-scene changes is intentionally untouched. All ten changed/new C# source/test files matched their reviewed copies, and the eight substantive pre-existing asset diffs retained their backup hashes after verification.
+
+New coverage adds **13 Edit Mode cases** and **four Play Mode tests**. Checks include deterministic clean default names across 512 IDs without altering Unity random state; duplicate names; finite/bounded pulse timing; offscreen bearing; direct child plus grandchild journal buttons; repeat selection and pause; unchanged controlled creature/movement intent; rejection of grandchild care without energy cost; exact property-block restoration with unchanged shared material; cue expiry/death; stable names through growth and corpse cleanup; duplicate birth-recording safety; control transfer; paused restart/reseed and stale-target rejection; AI-initiated mating assigning a default without pausing the player. Existing family-care tests now exercise Locate, including gamepad journal submission. Assertions retain the 24-living/32-object/72-food/512-ancestry bounds and finite resource/position values.
+
+The saved-scene fixtures deliberately freeze/reposition/refill actors when isolating relationships and lifecycle behavior. The AI-name test enables an actual herbivore brain to decide and initiate mating with a co-located eligible partner; it does not fabricate the birth or edit inheritance. These are controlled regressions, not natural ecological observations or a claim of unchanged long-term balance.
+
+The existing 1,200-second autonomous balance regressions also ran with the new presentation/name code:
+
+| Seed | Births | Deaths (starvation / old age / unknown) | End living | Peak objects | Archive records | Max generation |
+|---|---:|---|---:|---:|---:|---:|
+| 917430 | 49 | 1 / 37 / 0 | 24 | 27 | 62 | 8 |
+| 925349 | 52 | 2 / 39 / 0 | 24 | 26 | 65 | 9 |
+| 933268 | 44 | 0 / 33 / 0 | 24 | 26 | 57 | 7 |
+
+All retained 72 food slots and sampled 21–24 living after 120 seconds. Births after the first death were 38 / 41 / 33, respectively. These are regression observations, not a matched balance study: Unity simulation trajectories can vary with timing, and no survival/genetic rules were changed to achieve these outcomes.
+
+### Actual rendered Editor inspection
+
+Used Unity **6000.4.7f1**, DX12 rendering, the actual saved **CreatureStage_Prototype** scene and a **1920×1080 Game view**. The computer-use skill provided native Windows clicks/text/key input. A temporary Editor helper froze founder brains, co-located an eligible partner and sent virtual F through the normal PlayerInputBridge. Native input entered **Dave** and clicked **Name child**; the preview and resulting child were **Dave 1, #014, Gen 1**. The default preview before typing was **Mira 1**, not an unnamed ID.
+
+The helper accelerated juvenile growth, then refilled the adult child's and one partner's reserves once, co-located them and enabled the child's actual AI decision flow. Normal courtship produced **Tavi 1, #015, Gen 2**, without a player naming prompt. The helper placed the relatives at roughly **7 m / 9 m**, froze brains and opened the journal. Both cards displayed readable names, IDs, generation and independent **Locate** buttons. The direct-child relationship query for the grandchild returned false.
+
+Native clicks selected Dave and Tavi separately in the Game view. Each resumed play and highlighted the corresponding creature with a soft pale-gold tint while preserving its visible bands. The original **#001** remained controlled and stationary. Tavi's temporary world label showed **Tavi 1 / #015 · Gen 2 · 9 m**; it did not offer direct-child care. A repeated selection after assisted relocation behind the camera showed **Behind · Tavi 1 / #015 · Gen 2 · 39 m**. No persistent beacon appeared. The helper slowed time to 0.2× only during captures, so the normal four-simulation-second effect could be inspected; expiry cleared the selection. The helper reopened the journal after expiry for inspection convenience—production does not automatically reopen it.
+
+The Console showed **zero warnings and zero errors** during this pass. The temporary helper and its `.meta` were backed up outside the project and removed before final full-suite verification. No scene or asset was saved by the helper. Screenshots: [LineageLocating evidence](Documentation/LineageLocating/README.md). Raw XML/logs and helper backup remain outside Git under `%TEMP%/WildTypeLineageLocate`.
+
+This is **assisted Editor inspection, not unaided human playtesting**. Native naming, Tab and Locate buttons were exercised; births/growth/co-location and capture timing were assisted. Physical gamepad ergonomics, every display resolution/coat/background contrast and a standalone build were not manually verified. The effect is intentionally brief and subtle; long-distance/terrain-hidden targets rely on the temporary direction/name cue and can be selected again. Names have no save persistence, and repeated names intentionally require their IDs for disambiguation. No new ecological-balance claim is made.
+
+---
+
+Historical family-care verification follows; its Find/Unpin and skip-without-name descriptions document the earlier accepted version, superseded by Locate/default naming above.
+
 # WILDTYPE verification — family recognition and juvenile care — 2026-09-24
 
 ## Family recognition and juvenile care

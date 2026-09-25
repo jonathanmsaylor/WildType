@@ -82,9 +82,9 @@ namespace WildType.Tests
             child.Vitals.Eat(1000); Assert.False(session.Care.TryShare(parent, child, out _)); Assert.AreEqual(p, parent.Vitals.Energy);
             child.Vitals.SpendEnergy(20); parent.Vitals.SpendEnergy(parent.Vitals.Energy);
             Assert.False(session.Care.TryShare(parent, child, out _)); Assert.AreEqual(0, parent.Vitals.Energy);
-            parent.Vitals.Eat(1000); Assert.True(session.Care.Track(child));
+            parent.Vitals.Eat(1000); Assert.True(session.Locator.Select(child));
             child.Vitals.Damage(100); p = parent.Vitals.Energy;
-            Assert.False(session.Care.Tracked); Assert.False(session.Care.IsChild(parent, child));
+            Assert.False(session.Locator.Target); Assert.False(session.Care.IsChild(parent, child));
             Assert.False(session.Care.TryShare(parent, child, out _)); Assert.AreEqual(p, parent.Vitals.Energy);
             Object.Destroy(child.gameObject); yield return null; yield return null;
             Assert.False(session.Care.TryShare(parent, child, out _)); Caps();
@@ -103,14 +103,14 @@ namespace WildType.Tests
             Assert.False(session.Care.TryAutonomous(partner));
             InputSystem.QueueStateEvent(pad, new GamepadState().WithButton(GamepadButton.North)); yield return null; yield return null;
             InputSystem.QueueStateEvent(pad, new GamepadState()); yield return new WaitForSecondsRealtime(.2f);
-            Button find = null; foreach (var b in session.GetComponentsInChildren<Button>()) if (b.name == "Find") { find = b; break; }
+            Button find = null; foreach (var b in session.GetComponentsInChildren<Button>()) if (b.name == "Locate") { find = b; break; }
             Assert.True(find); UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(find.gameObject);
             InputSystem.QueueStateEvent(pad, new GamepadState().WithButton(GamepadButton.South)); yield return null; yield return null;
-            InputSystem.QueueStateEvent(pad, new GamepadState()); Assert.AreSame(child, session.Care.Tracked); Assert.False(session.Paused);
-            Assert.True(session.TakeControl(child)); Assert.False(session.Care.Tracked); Assert.False(session.Care.IsChild(child, parent));
+            InputSystem.QueueStateEvent(pad, new GamepadState()); Assert.AreSame(child, session.Locator.Target); Assert.False(session.Paused);
+            Assert.True(session.TakeControl(child)); Assert.False(session.Locator.Target); Assert.False(session.Care.IsChild(child, parent));
             Freeze(); Caps();
             session.SetPaused(true); session.Restart(false); yield return null; yield return new WaitForSeconds(.2f); Freeze();
-            Assert.AreEqual(0, session.Care.Shares); Assert.False(session.Care.Tracked); Assert.AreEqual(0, session.Player.Life.CareGiven); Caps();
+            Assert.AreEqual(0, session.Care.Shares); Assert.False(session.Locator.Target); Assert.AreEqual(0, session.Player.Life.CareGiven); Caps();
             int seed = session.seed; session.SetPaused(true); session.Restart(true); yield return null; yield return new WaitForSeconds(.2f); Freeze();
             Assert.AreNotEqual(seed, session.seed); Assert.AreEqual(0, session.Care.Shares); Assert.False(session.Care.IsChild(parent, child)); Caps();
         }
@@ -130,9 +130,9 @@ namespace WildType.Tests
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Tab)); yield return null; yield return null;
             InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return new WaitForSecondsRealtime(.2f);
             Assert.True(session.Paused); bool found = false;
-            foreach (var button in session.GetComponentsInChildren<Button>()) if (button.name == "Find") { button.onClick.Invoke(); found = true; break; }
-            Assert.True(found); Assert.AreSame(child, session.Care.Tracked); Assert.AreSame(parent, session.Player); Assert.False(session.Paused);
-            Place(child, 0, 35); yield return new WaitForSeconds(.2f); Assert.AreEqual(1, cues.VisibleChildren, "One explicit locator may extend beyond nearby range");
+            foreach (var button in session.GetComponentsInChildren<Button>()) if (button.name == "Locate") { button.onClick.Invoke(); found = true; break; }
+            Assert.True(found); Assert.AreSame(child, session.Locator.Target); Assert.AreSame(parent, session.Player); Assert.False(session.Paused);
+            Place(child, 0, 35); yield return new WaitForSeconds(.2f); Assert.True(cues.LocateCueVisible, "One temporary locator may extend beyond nearby range");
             parent.Vitals.Damage(100); yield return new WaitForSecondsRealtime(.2f);
             var title = GameObject.Find("Journal title").GetComponent<TMP_Text>(); StringAssert.Contains("Choose a descendant", title.text);
             Assert.True(session.TakeControl(child)); child.Vitals.Damage(100); yield return new WaitForSecondsRealtime(.2f);
@@ -165,7 +165,7 @@ namespace WildType.Tests
             Assert.AreEqual(1, session.Names.BirthOrder(first.Life.Id)); Assert.AreEqual(2, session.Names.BirthOrder(second.Life.Id));
             Assert.True(session.Care.IsChild(parent, first)); Assert.True(session.Care.IsChild(parent, second));
             Assert.False(session.Care.TryShare(parent, first, out string reason)); StringAssert.Contains("juvenile", reason);
-            Assert.True(session.Care.Track(second)); Assert.AreSame(second, session.Care.NearbyChild(parent));
+            Assert.True(session.Locator.Select(second)); Assert.AreSame(second, session.Care.NearbyChild(parent));
             yield return new WaitForSeconds(.2f);
             var cues = Object.FindAnyObjectByType<FamilyWorldCues>(); Assert.That(cues.VisibleChildren, Is.InRange(2, FamilyWorldCues.CueCap));
             first.Vitals.Damage(100); Assert.False(session.Care.IsChild(parent, first)); Assert.True(session.Care.IsChild(parent, second));

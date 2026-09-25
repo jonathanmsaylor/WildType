@@ -70,7 +70,7 @@ namespace WildType
             ButtonAt(pause, "Restart Prototype", 193, () => session.Restart(false));
             ButtonAt(pause, "Reseed Ecosystem", 261, () => session.Restart(true));
             ButtonAt(pause, "Quit", 329, session.Quit);
-            Text(pause, "Find: track your child.\nCreature card: take control.\nNo healing or energy refill.", new Vector2(35, -410), new Vector2(300, 110), 18, Color.white);
+            Text(pause, "Locate: briefly reveal a relative.\nCreature card: take control.\nNo healing or energy refill.", new Vector2(35, -410), new Vector2(300, 110), 18, Color.white);
             var selection = Box(pause, "Descendants", new Vector2(360, -15), new Vector2(620, 520), new Vector2(0, 1));
             selection.GetComponent<Image>().color = new Color(.035f, .075f, .075f, .18f);
             descendantTitle = Text(selection, "", new Vector2(16, -12), new Vector2(580, 76), 22, Color.white);
@@ -85,10 +85,7 @@ namespace WildType
                 choiceLabels[i].alignment = TextAlignmentOptions.Left;
                 choiceLabels[i].rectTransform.sizeDelta = new Vector2(475, 72);
                 choiceLabels[i].rectTransform.anchoredPosition = new Vector2(10, -4);
-                var find = ButtonAt(selection, "Find", 92 + i * 84, () => {
-                    if (session.Care.Tracked == choices[slot]) { session.Care.ClearTracking(); session.SetPaused(false); }
-                    else if (session.Care.Track(choices[slot])) { session.SetPaused(false); session.ShowNotice("Following child " + GenerationLoop.ShortId(choices[slot].Life.Id) + " · " + input.JournalKey + " to choose again", 4); }
-                });
+                var find = ButtonAt(selection, "Locate", 92 + i * 84, () => session.Locator.Select(choices[slot]));
                 find.GetComponent<RectTransform>().anchoredPosition = new Vector2(522, -92 - i * 84);
                 find.GetComponent<RectTransform>().sizeDelta = new Vector2(78, 78);
                 find.GetComponentInChildren<TMP_Text>().rectTransform.sizeDelta = new Vector2(78, 40);
@@ -112,6 +109,7 @@ namespace WildType
             if (naming && namingId != session.Names.Pending)
             {
                 namingId = session.Names.Pending; nameInput.text = "";
+                namePreview.text = "Default: " + session.Names.PersonalName(namingId);
                 nameInput.Select(); nameInput.ActivateInputField();
             }
             if (!naming) namingId = default;
@@ -156,8 +154,8 @@ namespace WildType
                     int index = page * choices.Length + i;
                     choices[i] = index < living.Count ? living[index] : null;
                     descendantButtons[i].gameObject.SetActive(choices[i]);
-                    findButtons[i].gameObject.SetActive(choices[i] && session.Care.IsChild(a, choices[i]));
-                    findButtons[i].GetComponentInChildren<TMP_Text>().text = choices[i] && choices[i] == session.Care.Tracked ? "Unpin" : "Find";
+                    findButtons[i].gameObject.SetActive(choices[i]);
+                    findButtons[i].interactable = !session.GameOver;
                     if (!choices[i]) continue;
                     var child = choices[i]; var childRecord = generations.Archive.Get(child.Life.Id);
                     choiceLabels[i].text = $"<size=21>{session.Names.Label(child.Life.Id)} · Gen {childRecord.Generation}</size>\n" +
@@ -252,7 +250,7 @@ namespace WildType
             nameInput.textComponent = Text(view, "", Vector2.zero, new Vector2(536, 44), 24, Color.white);
             nameInput.placeholder = Text(view, "Type a name (optional)", Vector2.zero, new Vector2(536, 44), 24, new Color(1, 1, 1, .55f));
             namePreview = Text(panel, "", new Vector2(30, -168), new Vector2(560, 30), 20, new Color(.88f, .95f, .73f));
-            nameInput.onValueChanged.AddListener(value => namePreview.text = FamilyNames.CleanName(value).Length == 0 ? "Skip to keep the creature ID" : FamilyNames.Format(value, session.Names.BirthOrder(session.Names.Pending)));
+            nameInput.onValueChanged.AddListener(value => namePreview.text = FamilyNames.CleanName(value).Length == 0 ? "Default: " + session.Names.PersonalName(session.Names.Pending) : FamilyNames.Format(value, session.Names.BirthOrder(session.Names.Pending)));
             nameInput.onSubmit.AddListener(value => { if (session.Names.HasPrompt) session.Names.Submit(value); });
             var confirm = ButtonAt(panel, "Name child", 214, () => session.Names.Submit(nameInput.text));
             confirm.GetComponent<RectTransform>().sizeDelta = new Vector2(260, 55); confirm.GetComponentInChildren<TMP_Text>().rectTransform.sizeDelta = new Vector2(260, 42);

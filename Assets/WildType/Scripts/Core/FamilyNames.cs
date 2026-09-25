@@ -8,6 +8,7 @@ namespace WildType
         sealed class Entry { public int order; public string name = ""; }
         readonly Dictionary<CreatureId, Entry> names = new Dictionary<CreatureId, Entry>();
         readonly StageSession session;
+        static readonly string[] GivenNames = { "Mira", "Tavi", "Neri", "Luma", "Kori", "Sela", "Rumi", "Tala", "Bram", "Nilo", "Vela", "Sora", "Milo", "Kira", "Oren", "Fenna", "Liri", "Timo", "Asha", "Runa", "Pavo", "Nola", "Ivo", "Mena" };
         CreatureId pending, parent;
         public bool ShowPrompts { get; set; } = true;
         public CreatureId Pending => pending;
@@ -17,14 +18,27 @@ namespace WildType
         public void ResetRun() { names.Clear(); pending = parent = default; }
         public void RecordBirth(CreatureAgent child, CreatureAgent first, CreatureAgent second)
         {
-            if (!child || names.Count >= LineageArchive.Capacity) return;
+            if (!child || names.Count >= LineageArchive.Capacity || names.ContainsKey(child.Life.Id)) return;
             var donor = first.IsPlayer ? first : second.IsPlayer ? second : first;
             int order = session.Generations.Archive.Get(donor.Life.Id).OffspringCount;
-            names[child.Life.Id] = new Entry { order = order };
+            names[child.Life.Id] = new Entry { order = order, name = DefaultName(child.Life.Id) };
             if (!ShowPrompts || !donor.IsPlayer || donor.Vitals.Dead) return;
             pending = child.Life.Id; parent = donor.Life.Id; session.SetPaused(true);
         }
         public static string Format(string name, int order) => CleanName(name) + " " + System.Math.Max(1, order).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        public static string DefaultName(CreatureId id)
+        {
+            if (!id.IsValid) return "";
+            // Stable ID includes run seed + ordinal. Fixed unsigned hash/avalanche makes an isolated
+            // reproducible cosmetic choice: no Unity Random, System.Random, or genetics RNG consumption.
+            unchecked
+            {
+                uint hash = 2166136261;
+                foreach (char c in id.Value) { hash ^= c; hash *= 16777619; }
+                hash ^= hash >> 16; hash *= 0x7feb352d; hash ^= hash >> 15; hash *= 0x846ca68b; hash ^= hash >> 16;
+                return GivenNames[hash % (uint)GivenNames.Length];
+            }
+        }
         public static string CleanName(string value)
         {
             var result = new StringBuilder(16);
@@ -54,8 +68,9 @@ namespace WildType
         public bool Submit(string value)
         {
             ValidatePrompt(); if (!HasPrompt || !names.TryGetValue(pending, out var entry)) return false;
-            entry.name = CleanName(value); string label = Label(pending);
-            Cancel(); session.ShowNotice(entry.name.Length > 0 ? "Named " + label : "Child keeps ID " + label, 5); return true;
+            string clean = CleanName(value); if (clean.Length > 0) entry.name = clean;
+            string label = Label(pending);
+            Cancel(); session.ShowNotice("Named " + label, 5); return true;
         }
         public void Cancel() { pending = parent = default; if (session.Ready) session.SetPaused(false); }
     }
