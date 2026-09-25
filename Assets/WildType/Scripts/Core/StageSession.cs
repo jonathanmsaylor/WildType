@@ -20,6 +20,8 @@ namespace WildType
         public CreatureAgent Player { get; private set; }
         public Ecosystem World { get; private set; }
         public GenerationLoop Generations { get; private set; }
+        public FamilyCare Care { get; private set; }
+        public FamilyNames Names { get; private set; }
         public FeedbackPool Fx { get; private set; }
         public Transform RuntimeRoot { get; private set; }
         public bool Paused { get; private set; }
@@ -34,6 +36,8 @@ namespace WildType
             Time.timeScale = 1;
             World = GetComponent<Ecosystem>();
             Generations = gameObject.AddComponent<GenerationLoop>();
+            Care = gameObject.AddComponent<FamilyCare>();
+            Names = new FamilyNames(this);
             Fx = new GameObject("Bounded feedback pool").AddComponent<FeedbackPool>(); Fx.transform.SetParent(transform); Fx.Configure(particleMaterial);
             GetComponent<StageHud>().Configure(this);
         }
@@ -42,6 +46,8 @@ namespace WildType
         {
             RuntimeRoot = new GameObject("Runtime ecosystem").transform;
             Generations.ResetRun(this);
+            Care.ResetRun(this);
+            Names.ResetRun();
             World.Populate(this, seed);
             var random = new System.Random(seed);
             Player = Spawn(presets[0].RuntimeCopy(), new Vector3(0, Ecosystem.Height(0, 0) + .2f, 0), true);
@@ -55,7 +61,7 @@ namespace WildType
             }
             orbit.Configure(Player, this);
             GetComponent<PlayerInputBridge>().Configure(this);
-            Ready = true; SetPaused(false); ShowNotice("Eat to build reserves · M mates nearby · F opens your family", 9);
+            Ready = true; SetPaused(false); ShowNotice("Explore, forage and grow a lineage.", 5);
             Debug.Log("WILDTYPE ready | seed " + seed + " | creatures " + Population + " | food cap " + Ecosystem.FoodCap);
         }
         CreatureAgent Spawn(Genome genome, Vector3 at, bool isPlayer)
@@ -77,6 +83,8 @@ namespace WildType
             if (!Ready || !Player || !descendant || descendant.Session != this || descendant.Vitals.Dead || !descendant.Life ||
                 !Generations.IsLivingDescendant(descendant, Player.Life.Id)) return false;
             Player.SetPlayer(false); descendant.SetPlayer(true); Player = descendant;
+            Care.ClearTracking();
+            Names.Cancel();
             GameOver = false; SetPaused(false); orbit.Configure(Player, this);
             ShowNotice("Now controlling " + GenerationLoop.ShortId(Player.Life.Id) + " · resources and age preserved", 6);
             return true;

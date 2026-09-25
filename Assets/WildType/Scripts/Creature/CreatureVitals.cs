@@ -45,6 +45,15 @@ namespace WildType
             if (Dead || float.IsNaN(amount) || float.IsInfinity(amount) || amount < 0 || Energy < amount) return false;
             Energy -= amount; return true;
         }
+        internal bool TransferEnergy(CreatureVitals recipient, float cost, float gain)
+        {
+            if (!recipient || recipient == this || Dead || recipient.Dead || !FamilyCareRules.Transfer(Energy, Stats.MaxEnergy,
+                recipient.Energy, recipient.Stats.MaxEnergy, out float allowedCost, out float allowedGain) ||
+                cost != allowedCost || gain != allowedGain) return false;
+            Energy -= cost;
+            recipient.Energy = Mathf.Min(recipient.Stats.MaxEnergy, recipient.Energy + gain);
+            return true; // No nutrition factor, stamina change or health restoration.
+        }
         public void Damage(float amount, CreatureDeathCause cause = CreatureDeathCause.Unknown)
         {
             if (Dead || float.IsNaN(amount) || float.IsInfinity(amount)) return;

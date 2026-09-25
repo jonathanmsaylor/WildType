@@ -8,15 +8,32 @@ namespace WildType
         StageSession session;
         int pauseFrame = -1;
         int mateFrame = -1;
-        bool pointerWasLocked, guiEscapeHeld, guiFamilyHeld, guiMateHeld;
+        int careFrame = -1;
+        bool pointerWasLocked, guiEscapeHeld, guiFamilyHeld, guiMateHeld, guiCareHeld;
+        public bool UsingGamepad { get; private set; }
+        public string MateKey => UsingGamepad ? "West button" : "F";
+        public string JournalKey => UsingGamepad ? "North button" : "Tab";
+        public string CareKey => UsingGamepad ? "Right shoulder" : "R";
+        public string EatKey => UsingGamepad ? "South button" : "E";
         public void Configure(StageSession value) { session = value; }
         void Update()
         {
             if (!session || !session.Ready) return;
             var keyboard = Keyboard.current; var pad = Gamepad.current; var mouse = Mouse.current;
+            if (session.Names.HasPrompt)
+            {
+                // Name entry is modal: letters F/R/E, Tab and stick motion cannot trigger gameplay.
+                if ((keyboard != null && keyboard.escapeKey.wasPressedThisFrame) || (pad != null && pad.buttonEast.wasPressedThisFrame))
+                { pauseFrame = Time.frameCount; guiEscapeHeld = true; session.Names.Submit(""); }
+                return;
+            }
+            if (pad != null && (pad.leftStick.ReadValue().sqrMagnitude > .1f || pad.rightStick.ReadValue().sqrMagnitude > .1f ||
+                pad.buttonSouth.wasPressedThisFrame || pad.buttonWest.wasPressedThisFrame || pad.buttonNorth.wasPressedThisFrame ||
+                pad.rightShoulder.wasPressedThisFrame || pad.startButton.wasPressedThisFrame)) UsingGamepad = true;
+            if (keyboard != null && keyboard.anyKey.wasPressedThisFrame) UsingGamepad = false;
             if ((keyboard != null && keyboard.escapeKey.wasPressedThisFrame) || (pad != null && pad.startButton.wasPressedThisFrame))
                 TogglePause();
-            if ((keyboard != null && keyboard.fKey.wasPressedThisFrame) || (pad != null && pad.buttonNorth.wasPressedThisFrame))
+            if ((keyboard != null && keyboard.tabKey.wasPressedThisFrame) || (pad != null && pad.buttonNorth.wasPressedThisFrame))
                 TogglePause();
             if (session.Paused || !session.Player || session.Player.Vitals.Dead) return;
             Vector2 move = pad != null ? pad.leftStick.ReadValue() : Vector2.zero;
@@ -32,8 +49,9 @@ namespace WildType
             session.Player.WantsSprint = (keyboard != null && keyboard.leftShiftKey.isPressed) || (pad != null && pad.leftStickButton.isPressed);
             if ((keyboard != null && keyboard.eKey.wasPressedThisFrame) || (pad != null && pad.buttonSouth.wasPressedThisFrame))
                 session.Player.Interaction.TryEat();
-            if ((keyboard != null && keyboard.mKey.wasPressedThisFrame) || (pad != null && pad.buttonWest.wasPressedThisFrame))
+            if ((keyboard != null && keyboard.fKey.wasPressedThisFrame) || (pad != null && pad.buttonWest.wasPressedThisFrame))
                 RequestMate();
+            if ((keyboard != null && keyboard.rKey.wasPressedThisFrame) || (pad != null && pad.rightShoulder.wasPressedThisFrame)) RequestCare();
             bool locked = Cursor.lockState == CursorLockMode.Locked;
             Vector2 look = mouse != null && locked && pointerWasLocked ? mouse.delta.ReadValue() * .13f : Vector2.zero;
             pointerWasLocked = locked;
@@ -51,12 +69,19 @@ namespace WildType
             // Editor Game-view routing can consume brief taps before the Input System update.
             // Held-key and frame latches keep both routes from repeating/toggling twice.
             var key = Event.current.keyCode;
-            if (key != KeyCode.Escape && key != KeyCode.F && key != KeyCode.M) return;
+            if (session && session.Names.HasPrompt)
+            {
+                if (Event.current.type == EventType.KeyDown && key == KeyCode.Escape) { pauseFrame = Time.frameCount; guiEscapeHeld = true; session.Names.Submit(""); Event.current.Use(); }
+                return;
+            }
+            if (key != KeyCode.Escape && key != KeyCode.Tab && key != KeyCode.F && key != KeyCode.R) return;
             if (Event.current.type == EventType.KeyUp)
-            { if (key == KeyCode.Escape) guiEscapeHeld = false; if (key == KeyCode.F) guiFamilyHeld = false; if (key == KeyCode.M) guiMateHeld = false; }
+            { if (key == KeyCode.Escape) guiEscapeHeld = false; if (key == KeyCode.Tab) guiFamilyHeld = false; if (key == KeyCode.F) guiMateHeld = false; if (key == KeyCode.R) guiCareHeld = false; }
             if (Event.current.type != EventType.KeyDown) return;
-            if (key == KeyCode.M) { if (!guiMateHeld) { guiMateHeld = true; RequestMate(); } }
-            else if (key == KeyCode.F) { if (!guiFamilyHeld) { guiFamilyHeld = true; TogglePause(); } }
+            UsingGamepad = false;
+            if (key == KeyCode.F) { if (!guiMateHeld) { guiMateHeld = true; RequestMate(); } }
+            else if (key == KeyCode.Tab) { if (!guiFamilyHeld) { guiFamilyHeld = true; TogglePause(); } }
+            else if (key == KeyCode.R) { if (!guiCareHeld) { guiCareHeld = true; RequestCare(); } }
             else if (!guiEscapeHeld) { guiEscapeHeld = true; TogglePause(); }
         }
         void RequestMate()
@@ -64,6 +89,11 @@ namespace WildType
             if (!session || !session.Ready || session.Paused || !session.Player || session.Player.Vitals.Dead || mateFrame == Time.frameCount) return;
             mateFrame = Time.frameCount; session.Generations.TryPlayerMate();
         }
-        void OnApplicationFocus(bool focused) { if (!focused) { guiEscapeHeld = guiFamilyHeld = guiMateHeld = false; pointerWasLocked = false; } }
+        void RequestCare()
+        {
+            if (!session || !session.Ready || session.Paused || !session.Player || session.Player.Vitals.Dead || careFrame == Time.frameCount) return;
+            careFrame = Time.frameCount; session.Care.TryPlayerShare();
+        }
+        void OnApplicationFocus(bool focused) { if (!focused) { guiEscapeHeld = guiFamilyHeld = guiMateHeld = guiCareHeld = false; pointerWasLocked = false; } }
     }
 }

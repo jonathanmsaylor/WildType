@@ -1,4 +1,69 @@
-# WILDTYPE verification — survival pressure and ecological balance — 2026-09-24
+# WILDTYPE verification — family recognition and juvenile care — 2026-09-24
+
+## Family recognition and juvenile care
+
+### Integration, scope and rules
+
+Confirmed accepted `d768797775ad0a7b802eaec0f50899e5d3e2e0df` locally and remotely with a clean working tree. Fetched origin, fast-forwarded `main` from `9091ed0` to `d768797`, and pushed normally. Local checkpoint: `checkpoint-before-family-care-20260924`. New branch: `milestone-family-care`. No history rewriting, discarded user edits, scene replacement, packages, paid services, external art, zoom changes or separate RunAudit/Godot edits. Subsequent source copies were hash-guarded and backed up outside the project.
+
+Inspected IDs, immutable ancestry/archive, generation reservations, vitals, interaction, AI feeding/mating, input, HUD, saved scene and existing tests before implementation. Reused the existing two-parent genetics, juvenile growth, food/survival and descendant-control systems without retuning them.
+
+- `FamilyCareRules`: direct living-child relationship and finite, bounded usable-energy accounting. Maximum parent cost **18**, child efficiency **80%**, parent reserve **25% of maximum**, minimum child gain **1**. Capacity-limited or reserve-limited gifts are smaller. No nutrition multiplier, health/stamina restoration or new energy source.
+- `FamilyCare`, `CreatureVitals`, `CreatureLife`, `StageSession`: validate same-run membership, living adult donor, living direct juvenile recipient, **3.5 m**, clear path, no courtship, lifetime and **8-second donor cooldown**. Transfer is instantaneous after revalidation, not a delayed target job. Cooldowns use the existing simulation clock. Each creature keeps a bounded scalar care counter/timer; restart destroys them. One player locator is revalidated on every use and cleared on control transfer/reset.
+- `HerbivoreBrain`: existing staggered decisions may share locally when parent energy is at least **65%**, a nearby juvenile is below **50%**, and the same shared validation succeeds. No long-range child pursuit, AI-only energy, teleporting, new genome or guaranteed outcome. Ordinary feeding and mating continue.
+- `FamilyWorldCues` / `CourtshipHeart`: three reused direct-child labels, one of which can be an explicitly pinned locator; nearby unpinned children require visible range **25 m**. Juveniles display usable energy; adults keep their ID cue. At most **12** procedural heart graphics pulse/bob between courting pairs within 40 m. Two reused target prompts identify usable food/mating. No creature mesh/material allocation per frame or VisualRoot changes.
+- `PlayerInputBridge` / `GenerationLoop` / `StageHud`: **F mate**, **Tab journal**, **R share**, **E interact/eat**, **Escape menu**; gamepad west/north/right-shoulder/south/start respectively. Other bindings remain. Input hints show one device's binding. Journal Find/Unpin preserves control; descendant rows still transfer control without refill. Empty-lineage death title now says **No living descendants / Restart or reseed**.
+
+The user's follow-up UI requests are included: remove the permanent lower-left controls legend; show usable E/F/R target prompts instead. Normal survival/family/turnover panel dimensions are **300×270 / 340×255 / 500×190**, with background alpha **.36** rather than .9. Family essentials are spaced 20-point text; full inheritance comparisons expand only in the journal. The right journal column is widened to 620 points with **four larger cards per page**, 21-point identity and 18-point detail lines; Find remains independent of control transfer. Menu/nested panels are lighter, with text outlines for contrast. Turnover retains all four events and cumulative counts. Keyboard/mouse/gamepad control reference remains in README.
+
+Player births now open an optional paused naming prompt. Names use **numeric per-parent birth order**, e.g. Dave 1 / Dave 2, not a number word. Stable IDs remain alongside names; offspring order counts previous dead/unnamed siblings and is retained after control changes. Strings are cleaned/bounded to 16 characters plus suffix, dictionary bounded by the 512-record archive; restart/reseed clears them. No save persistence, genetics change or random-name generation. Keyboard types text; gamepad can navigate/confirm/skip, with no on-screen keyboard. F/R/E/Tab gameplay input is gated while naming.
+
+When food and a child overlap, E (gamepad south) remains food-only and R (right shoulder) remains care-only. Prompts explicitly say **E eat** plus food name and **R share** beside the child's identity, rather than an ambiguous interaction label. The overlap test checks both prompts and proves E consumes food without sharing, then R spends energy on care.
+
+### Verification performed
+
+Final verification after removing the temporary Editor helper: complete **Edit Mode 89/89 passed in 0.1905257 seconds** and complete **Play Mode 27/27 passed in 365.359442 seconds**, with both Unity processes exiting 0. This includes the existing camera, inheritance, lifecycle, ecology, scarcity, turnover and cap regressions. The user's final food/child ambiguity request then changed one presentation string from E interact to E eat and added an overlap regression; that affected family suite was rerun separately (result below). No motor, zoom, resource or AI rule changed in that final wording adjustment.
+
+Final affected-suite rerun: **FamilyCarePlayTests 8/8 passed in 30.9541078 seconds**, Unity exit 0 (`explicit-actions-final.xml`). Together with the complete run, **28 distinct Play Mode tests** have passed: the original complete 27, with seven family cases rerun and one new overlap case added. No temporary helper remains in Assets. `git diff --check` passed. Source evidence, `.meta` files, README and this report are included; generated caches and raw test logs/XML remain outside Git.
+
+New Edit Mode coverage: 11 cases for direct versus transitive/same-lineage family, dead/invalid identities, energy conservation, reserve and recipient caps, partial gifts, full/empty/negative/nonfinite rejection; five further cases cover numeric name suffixes and safe bounded text. Initial pre-naming complete Edit run: **84/84 passed**.
+
+New Play Mode coverage: eight saved-scene tests for actual R and right-shoulder care, held/repeated input, exact cost versus gain without healing, pause/cooldown, range and obstruction, full/dead/destroyed/unrelated targets, starvation reserve, autonomous sharing through the brain, gamepad journal Find submission, tracking/control transfer, restart/reseed, rendered heart geometry, F/Tab remapping, multiple children, juvenile-to-adult recognition, no-descendant wording, contextual food availability and smaller/translucent text layout. Naming coverage checks paused resources, gameplay-letter blocking, actual TMP submit callback, Dave 1, inherited ID retention, journal card fit, descendant control, restart clearing and gamepad skip. Multiple-child coverage asserts birth order 1 then 2. Non-naming reproduction fixtures explicitly disable only the prompt to keep simulation time advancing; the naming test re-enables production behavior. A food/child overlap case verifies both explicit target prompts and independent E/R actions. Existing growth, mating, inheritance, turnover and cap assertions remain. The existing inheritance-panel test now opens the journal to inspect the same detailed comparisons, matching the requested compact normal HUD.
+
+The matched meal-gap fixture compares the child's actual paid transfer against an isolated Vitals component with the **same phenotype and original energy**, then advances equal food-free time. It demonstrates additional reserve/nonfatal starvation margin, not a probability estimate or guaranteed survival. Other controlled tests explicitly freeze/reposition/feed actors to isolate lifecycle and UI behavior; they are not ecosystem balance observations.
+
+The complete-suite 1,200-second autonomous regression surveys with care enabled observed:
+
+| Seed | Births | Deaths (starvation / age / unknown) | End living | Peak objects | Retained ancestry | Max generation |
+|---|---:|---|---:|---:|---:|---:|
+| 917430 | 49 | 1 / 37 / 0 | 24 | 26 | 62 | 12 |
+| 925349 | 50 | 1 / 38 / 0 | 24 | 26 | 63 | 9 |
+| 933268 | 44 | 0 / 33 / 0 | 24 | 26 | 57 | 7 |
+
+All three sampled 21–24 living after the first 120 seconds and kept all 72 food slots; pending-birth, 32-object and 512-ancestry assertions remained enabled. Births continued after deaths. These are regression observations with evolving populations, not matched before/after evidence of care's survival benefit or long-term balance. Care can change AI decisions and trajectories; no trait spread or death cause was forced.
+
+Initial focused failures were fixture assumptions: the autonomous newborn had eaten before it was frozen, so a valid partial transfer cost less than 18; a second child was placed 3.61 m away, outside the 3.5 m rule. Corrected setup/positions without relaxing gameplay rules. Actual rendered inspection found the custom heart's legacy mesh path produced no visible geometry despite active state; switched to VertexHelper mesh generation and added a rendered-mesh assertion. A temporary new assertion used an obsolete GetMesh overload; corrected it to this installed Unity version and reimported successfully. The six-test focused rerun passed **6/6 in 22.5170371 seconds**, including the new contextual HUD checks.
+
+The added food/child overlap test initially assumed slot zero was still ripe, but the newborn had already consumed it before the fixture froze its AI. Corrected the test to select an actually available plant; no food regrowth, care or input rule was changed to satisfy it.
+
+### Actual Editor observations and limitations
+
+Used Unity 6000.4.7f1 Personal and the **actual saved CreatureStage_Prototype scene**, with rendering. An explicitly temporary Editor fixture froze the twelve founder brains, placed one existing eligible founder within mating range, and supplied virtual F/R/Tab keyboard events through the real PlayerInputBridge. Initial half-speed capture made the two-second courtship observable. It did not edit genomes, spawn a replacement child, refill resources or override the new child's AI. Native Windows input was used for Tab and the journal Find/descendant buttons. This is **assisted Editor inspection, not unaided human playtesting**.
+
+- Normal F courtship produced one inherited child, #014, with its real parent IDs. The repaired procedural pink heart was visibly rendered between the parents; it disappeared after courtship.
+- The autonomous child ate a real nearby plant immediately. R subsequently charged the parent about **3.2 energy** and delivered about **2.6**, rather than giving a full 14.4 into an almost-full reserve. The notice and child energy cue showed the result. Full 18→14.4 accounting is separately tested with a hungry child.
+- Clicked **Find** in the actual Game view: the parent remained controlled and a single child locator followed #014 as it moved away. Native **Tab** opened the journal. The child retained its brain and reached adulthood at about **31.54 s**, with **76.278/98.45 energy**, 100 health and one ordinary meal in the observed run. This survival is not attributed solely to the small gift.
+- Triggered parent death explicitly to inspect continuation (not a natural-death claim), then clicked the living adult descendant row. Control moved to #014 with resources/age preserved. A second deliberately triggered death, with no descendants, displayed **No living descendants / Restart or reseed**. The turnover panel correctly marked both fixture deaths **cause unknown**, not starvation or age.
+- In the final naming/layout pass, clicked the real TMP name field, typed **Dave** with native Windows input and observed preview **Dave 1**. Clicked **Name child**; the child cue and widened journal card both showed **#014 · Dave 1**, with real juvenile energy/health and region. The journal's larger text and separate Find button were visibly readable without overflow at the inspected 1920×1080 Game-view resolution. No Console errors or warnings were shown in this pass.
+- In the compact-HUD pass, virtual gamepad movement walked the actual parent to a ripe plant; the contextual prompt appeared above it. A sustained virtual E event consumed the real plant through PlayerInputBridge, and the prompt disappeared. Native brief E taps did not reliably register with this automation's timing; this is not a claim of physical keyboard/controller testing. The final wording was clarified from E interact to E eat for food/child disambiguation.
+
+Screenshots and further final UI inspection results: [FamilyCare evidence](Documentation/FamilyCare/README.md). Raw XML/logs and the removed helper backup live outside source control under `%TEMP%/WildTypeFamilyCare`.
+
+Care is intentionally modest and local. Youngsters can leave the parent quickly; AI does not chase them. The juvenile window remains 18–42 simulation seconds. A successful gift buys time, not protection, healing or guaranteed adult reproduction. The explicit player Find locator is convenient live location information, not AI omniscience or persistent tracking. No physical gamepad usability session, standalone build or long-term parental-care balance claim is made.
+
+---
+
+Historical accepted survival-pressure verification follows.
 
 ## Survival pressure and ecological balance
 

@@ -6,6 +6,10 @@ namespace WildType
     {
         CreatureAgent actor;
         double birthTime, readyAt;
+        double careReadyAt;
+        public int CareGiven { get; private set; }
+        public float CareCooldown => Mathf.Max(0, (float)(careReadyAt - actor.Session.Generations.Clock));
+        public void RecordCare() { careReadyAt = actor.Session.Generations.Clock + FamilyCareRules.Cooldown; CareGiven++; }
         float deathAge, appliedScale = -1;
         public CreatureId Id { get; private set; }
         public float Age => actor.Vitals.Dead ? deathAge : (float)System.Math.Max(0, actor.Session.Generations.Clock - birthTime);

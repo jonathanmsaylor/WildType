@@ -13,6 +13,7 @@ namespace WildType.Tests
         {
             yield return SceneManager.LoadSceneAsync("CreatureStage_Prototype");
             session = Object.FindAnyObjectByType<StageSession>(); session.autoPauseOnFocusLoss = false; session.SetPaused(false);
+            session.Names.ShowPrompts = false;
             session.GetComponent<PlayerInputBridge>().enabled = false;
             yield return null; FreezeBrains();
         }
@@ -71,6 +72,8 @@ namespace WildType.Tests
             Assert.True(session.TakeControl(grandchild)); FreezeBrains();
             parent.Vitals.Damage(100); yield return new WaitForSeconds(.2f);
             Assert.AreEqual(snapshot, session.Generations.Archive.Changes(child.Life.Id), "Parent values must survive death");
+            // Detailed comparisons now live in the journal; normal play keeps a compact family summary.
+            session.SetPaused(true); yield return new WaitForSecondsRealtime(.2f);
             TMP_Text family = null;
             foreach (var label in session.GetComponentsInChildren<TMP_Text>()) if (label.name == "Inherited traits") family = label;
             Assert.NotNull(family); StringAssert.Contains("GENERATION 2", family.text);

@@ -1,6 +1,6 @@
 # WILDTYPE — Creature Stage vertical slice
 
-A Unity implementation, independent of the earlier Godot project. **Current milestone: survival pressure and ecological balance.** Explore, eat, reproduce and continue through living descendants in a bounded, roughly 250 m-wide Creature-stage ecosystem. Start with twelve autonomous herbivores; total living population is capped at 24.
+A Unity implementation, independent of the earlier Godot project. **Current milestone: family recognition and juvenile care.** Explore, eat, reproduce, optionally support your children, and continue through living descendants in a bounded, roughly 250 m-wide Creature-stage ecosystem. Start with twelve autonomous herbivores; total living population is capped at 24.
 
 ## Editor and opening
 
@@ -18,8 +18,9 @@ Configured for Force Text serialization, Visible Meta Files, Linear color, 0.02 
 | Orbit camera | Mouse | Right stick |
 | Sprint | Left Shift | Left-stick press (L3) |
 | Eat nearby food | E | South button (A / Cross) |
-| Mate with eligible nearby adult | M | West button (X / Square) |
-| Family journal / descendant selection | F | North button (Y / Triangle) |
+| Mate with eligible nearby adult | F | West button (X / Square) |
+| Family journal / descendant selection | Tab | North button (Y / Triangle) |
+| Share energy with nearby juvenile child | R | Right shoulder (RB / R1) |
 | Zoom | Mouse wheel | — |
 | Pause/resume | Escape | Start |
 | Menu navigation | Mouse / keyboard | D-pad / stick and south button |
@@ -53,19 +54,45 @@ Focus the Game view for input. Focus loss pauses the simulation. Food interactio
 ### Playing generations (2A.2)
 
 1. Eat brightfruit to build **energy** reserves. Stamina is a separate, quickly recovering sprint resource.
-2. Approach another adult. The bottom mating hint reports readiness, partner distance, energy requirement, cooldown or capacity. Press **M / west button** within **3.5 m** of an eligible partner; stay close for **two seconds**. Moving away, death or loss of eligibility cancels courtship without a birth charge.
+2. Approach another adult. **F mate** appears over an eligible nearby partner; an unavailable request explains its reason in the notice line. Press **F** (gamepad west button) within **3.5 m** of an eligible partner; stay close for **two seconds**. A pulsing heart hovers between partners. Moving away, death or loss of eligibility cancels courtship without a birth charge.
 3. Both parents must be adults, have **60+ health**, meet their inherited energy threshold (50–90% maximum), be compatible, and have no cooldown or other courtship. Birth costs **30% of each parent's maximum energy** and applies each parent's inherited cooldown (about 35–104 seconds). One child is born per completed courtship. AI seeks partners through its normal staggered decision loop; AI never initiates mating on the player's behalf.
 4. Each child receives its own two-parent genome with probabilistic, signed mutations—never guaranteed improvement. Juveniles start at **48% adult size**, **55% energy**, and mature in **18–42 simulation seconds** according to inherited lifespan. They eat, spend resources, move more slowly, can starve, grow to inherited adult dimensions and eventually reproduce. Natural lifespan is **240–900 seconds**; pause freezes all life timers.
-5. Press **F / north button** to open the family journal. The lineage panel shows your generation, parents, age, living direct children, inherited adult appearance/stat comparisons for both parents, and a recorded notable mutation when present. The selector lists **all living descendants**, including grandchildren and juveniles, with generation, resources, coat, adult size and leg proportions. Select one to take control; the former player becomes AI if alive. No healing, aging reset or resource refill occurs.
+5. Press **Tab** (gamepad north button) to open the family journal. The lineage panel shows your generation, parents, age, living direct children, inherited adult appearance/stat comparisons for both parents, and a recorded notable mutation when present. The selector lists **all living descendants**, including grandchildren and juveniles, with generation, resources, coat, adult size, leg proportions, region and distance. Select a creature row to take control; the former player becomes AI if alive. **Find** instead locates a direct child without transferring control. No healing, aging reset or resource refill occurs.
 6. Death pauses the world and offers the same descendant choices. With no descendants, restart or reseed explicitly; the game never creates a hidden replacement. Taking a branch means future choices are descendants of that newly controlled creature, not its siblings or ancestors.
 
 Limits: **24 living creatures**, **32 creature objects including corpses**, **72 food slots**, **512 particles**, and **512 retained lineage records per run**. Pending courtships reserve capacity. Dead parents remain in the bounded value-data archive; full archive stops new births with a clear message rather than deleting ancestry. Restart/reseed clears the entire run, including age, reservations and family records. No automatic population replenishment.
+
+### Family recognition and juvenile care
+
+Nearby living **direct children** have a small ID/relationship cue within 25 m when visible. At most three cues appear, not labels over the whole population. Juvenile cues show actual usable energy; adult children remain recognizable. In the journal, **Find** pins one direct child and resumes play without changing your creature. The locator remains available beyond the nearby range, including a behind/left/right cue when offscreen. **Unpin** removes it. It is a player convenience, not information available to AI. Death, restarting, reseeding and descendant-control transfer invalidate the old relationship/locator safely.
+
+Approach a juvenile child within **3.5 m** and press **R** (gamepad right shoulder). The highlighted child's ID and bottom hint identify the recipient and preview the cost. A pinned nearby juvenile takes priority; otherwise the nearest visible juvenile direct child is chosen. Change the pinned child in the journal when several are close. Sharing is deliberate and optional, not automatic for the player.
+
+Each successful share spends **up to 18 usable parent energy** and gives the child **80%** of that (normally **14.4**). The parent retains at least **25% of maximum energy**; smaller missing capacity or spare reserves reduce the transfer. At least one usable energy must fit. Nutrition/metabolism does not multiply the gift, and it never changes health or stamina. Both creatures must be living members of this run, the donor an adult, the recipient its direct juvenile child, in range and unobstructed, and neither courting. An **eight-simulation-second donor cooldown** and pressed-button input prevent repeated gifts from a held key. Pause freezes the timer. There are no delayed jobs that can feed a subsequently dead target.
+
+Autonomous parents opportunistically share during their existing bounded decision step only when at least **65% full** and the nearby juvenile is below **50%**. They use the exact same cost, reserve, proximity, eligibility and cooldown rules. They do not remotely track children or interrupt foraging with long-range pursuit. Children retain their inherited genomes, ordinary AI, growth, meals, mortality and reproduction. Care buys some time between meals; it neither heals old damage nor guarantees adulthood. Ignoring care remains valid. Adult children cannot receive juvenile care.
+
+Contextual hints use one binding per action: **E interact/eat, F mate, R share, Tab journal, Escape menu**. Gamepad hints switch to the most recently used input type; movement, sprint, orbit, wheel zoom and menu navigation remain. The old M mating/F journal duplicates are removed. The death title offers descendant selection only when living descendants exist; otherwise it clearly offers restart/reseed. Turnover totals/history, survival-pressure rules, inheritance and all existing caps are unchanged.
+
+The permanent bottom-left control legend is gone. **E eat** plus the food's name appears above a nearby ripe plant only while you can eat it; **F mate** appears by a ready nearby partner; **R share** appears beside the target child's identity only when care is valid. If food and a child are both nearby, **E always eats food and R always shares with the child**: no hidden priority switch or accidental parental-energy donation. Gamepad south eats and right shoulder shares. Failed requests still explain why in the existing notice line. The family panel offers Tab for the journal; Escape also opens/closes the menu. The control table above retains every function for reference.
+
+Normal-play panels are smaller and lighter: survival **300 × 270**, family **340 × 255**, turnover **500 × 190** in the 1920 × 1080 reference layout. Background opacity is **36%**, down from 90%, with subtle text outlines. The family essentials use 20-point text with extra spacing, rather than a dense 16-point list. Detailed parent/child trait comparisons expand only while the journal is open, not over the ordinary play scene. Menu and nested-panel opacities are also reduced. Four turnover entries and all cumulative counts remain available.
+
+See [running-Editor evidence](Documentation/FamilyCare/README.md) and [verification details](VERIFICATION.md), including assisted-fixture limitations.
+
+The journal's right side now has **four larger cards per page** in a wider 620-point column: a 21-point identity/name heading, then 18-point resources and region/trait details. Find is separate from the control-transfer card. All living descendants remain accessible through paging.
+
+### Naming newborn children
+
+When the currently controlled creature has a child, a skippable naming prompt pauses the simulation. Enter a name and choose **Name child** or press Enter; the numeric birth order is added automatically: **Dave 1**, **Dave 2**, or **Alice 3** for the third child of that parent. The counter includes earlier unnamed/dead children, not just currently living children. It is fixed at birth and does not change when control transfers or siblings die. This is the controlled parent's birth order, not the total world-birth counter.
+
+Names appear beside stable IDs in child cues and journal cards, and on the controlled descendant's family panel. IDs, parentage, genomes and genetics are untouched. Names are limited to 16 typed characters (letters, numbers, spaces, hyphens and apostrophes); the suffix is additional. Skip or Escape (gamepad east button) keeps the stable ID. Typing F/R/E or moving sticks cannot trigger gameplay while naming. Gamepad can navigate/confirm or skip; arbitrary text entry uses the keyboard, with no new on-screen keyboard. Names exist only during this run and clear on restart/reseed; no persistence is added. The compact birth/death history continues to use stable IDs.
 
 ### Visible, playable inheritance
 
 Look for a broad, thick-bodied amber Bulwark versus the slimmer, long-legged blue/violet Strider. The existing teal Meadow Grazer lies between them. Body size now changes torso width/depth proportionally as well as total scale; leg length changes limb length/thickness, torso elongation and the width of three high-contrast coat bands. Bands wrap over the back and sides rather than floating as tiny dorsal pieces. Coat RGB still comes directly from the inherited genome. These are deterministic expressions of **existing genes**, not new genes, cosmetic random rolls or generation bonuses.
 
-Mate two compatible adults, press **F**, and select their child. The on-screen lineage panel reads **parent A / B -> child**, comparing coat, adult size, leg proportion, sprint speed, steering rate, energy reserve and idle food cost. The parent's values are recorded at birth and survive its death. Juveniles begin small but keep the same adult shape and bands throughout growth. Breed that descendant again to see the next combination; there is no guaranteed improvement. Recorded mutations show before/after values without claiming they are beneficial.
+Mate two compatible adults, press **Tab**, and select their child. The on-screen lineage panel reads **parent A / B -> child**, comparing coat, adult size, leg proportion, sprint speed, steering rate, energy reserve and idle food cost. The parent's values are recorded at birth and survive its death. Juveniles begin small but keep the same adult shape and bands throughout growth. Breed that descendant again to see the next combination; there is no guaranteed improvement. Recorded mutations show before/after values without claiming they are beneficial.
 
 Two visible traits have opposing effects, **all other genes equal**:
 
@@ -125,8 +152,8 @@ All original game code/content is under **Assets/WildType**.
 - **VisualRoot:** CreatureAppearance derives immutable deterministic adult presentation inputs; CreatureVisual builds and animates the prototype model. Gameplay never depends on individual body-part objects. Replace this child/component with an adapter for a future rig without rewriting survival, genomes, AI or physics. InheritanceSummary stores compact parent/child comparisons in the existing lineage archive.
 - **World:** EcologyRules owns region/food/clearance constants; Ecosystem owns the bounded food registry, deterministic placement, visible-forage query and restrained observations; FoodPlant owns depletion/regrowth and procedural regional appearance.
 - **AI:** HerbivoreBrain sets the same movement intent and uses the same interactions as the player. Its periodic nearest-food query is the future spatial-grid seam.
-- **Core:** StageSession coordinates startup/control transfer; GenerationLoop owns the simulation clock, partner reservations, birth validation and archive; PlayerInputBridge reads controls; FeedbackPool owns bounded effects.
-- **UI:** StageHud owns TMP displays and pause controls.
+- **Core:** StageSession coordinates startup/control transfer; GenerationLoop owns the simulation clock, partner reservations, birth validation and archive; FamilyCare coordinates validated sharing and one player locator, using pure FamilyCareRules and per-life cooldowns; FamilyNames stores bounded run-only names and birth order without modifying identity/genetics; PlayerInputBridge reads controls; FeedbackPool owns bounded effects.
+- **UI:** StageHud owns TMP displays and pause controls. FamilyWorldCues reuses three child labels and up to twelve procedural CourtshipHeart graphics; it does not modify VisualRoot or allocate creature meshes/materials per frame.
 - **Editor:** PrototypeBuilder creates authored meshes, materials, prefabs, presets and the saved scene. Rebuilding replaces these generated prototype assets; do not use it over subsequent hand-authored changes without reviewing them first.
 - **Tests:** Edit Mode data/unit tests and Play Mode full-scene regression/soak.
 
@@ -149,7 +176,7 @@ The legacy 102-check/600-second survival regression explicitly disables the gene
 - No persistence, sound, rebinding interface, gamepad rumble, or in-game graphics menu. URP quality can be adjusted in editor settings for weaker hardware.
 - Genome and food layout randomization is deterministic on this runtime, not promised across future engine versions.
 - Food depletion/regrowth is bounded, but this is a prototype balance rather than a tuned natural-selection simulation. Woodland clearance is a region-wide approximation, not collision with individually simulated branches. High agility, food abundance and founder geography can outweigh leg length; sparse dry sites may still be too generous or harsh across other seeds.
-- Generations and ancestry are session-only: no save/load, species tracking, mate sex, gestation, kinship restriction, parental care, predators, creature editor, other stages, multiplayer or open world. Genetically compatible relatives may mate in this milestone. The lineage archive cap requires a restart for extremely long runs.
+- Generations and ancestry are session-only: no save/load, species tracking, mate sex, gestation, kinship restriction, predators, creature editor, other stages, multiplayer or open world. Care is a modest energy transfer, not following, packs, nests or protection. Genetically compatible relatives may mate in this milestone. The lineage archive cap requires a restart for extremely long runs.
 
 ## Next milestone
 

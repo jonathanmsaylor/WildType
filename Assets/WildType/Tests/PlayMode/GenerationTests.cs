@@ -25,6 +25,7 @@ namespace WildType.Tests
             InputSystem.settings = input;
             yield return SceneManager.LoadSceneAsync("CreatureStage_Prototype");
             session = Object.FindAnyObjectByType<StageSession>(); loop = session.Generations;
+            session.Names.ShowPrompts = false;
             session.autoPauseOnFocusLoss = false; session.SetPaused(false);
             keyboard = InputSystem.AddDevice<Keyboard>(); pad = InputSystem.AddDevice<Gamepad>();
             yield return null; FreezeBrains();
@@ -55,7 +56,7 @@ namespace WildType.Tests
         {
             var parent = session.Player; var partner = session.Creatures[1]; Place(partner, 2, 0);
             float energy = parent.Vitals.Energy; string genome = JsonUtility.ToJson(parent.Genome);
-            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.M)); yield return null; yield return null;
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.F)); yield return null; yield return null;
             InputSystem.QueueStateEvent(keyboard, new KeyboardState()); Assert.AreEqual(1, loop.PendingBirths);
             session.SetPaused(true); double clock = loop.Clock;
             yield return new WaitForSecondsRealtime(.2f); Assert.AreEqual(clock, loop.Clock); Assert.AreEqual(0, loop.Births);
@@ -71,7 +72,7 @@ namespace WildType.Tests
             Assert.False(loop.TryMate(parent, partner, out _)); Assert.False(loop.TryMate(child, partner, out _));
             var food = session.World.Foods[0]; food.Configure(session.World, 25); Place(child, food.transform.position.x + .5f, food.transform.position.z);
             float before = child.Vitals.Energy; Assert.True(child.Interaction.TryEat(food)); Assert.Greater(child.Vitals.Energy, before);
-            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.F)); yield return null; yield return null;
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Tab)); yield return null; yield return null;
             InputSystem.QueueStateEvent(keyboard, new KeyboardState()); Assert.True(session.Paused);
             float savedEnergy = child.Vitals.Energy, savedHealth = child.Vitals.Health;
             Assert.True(session.TakeControl(child)); Assert.AreSame(child, session.Player); Assert.False(session.Paused);
@@ -86,7 +87,7 @@ namespace WildType.Tests
             yield return Mate(child, nextPartner);
             Assert.AreEqual(2, loop.Births); var grandchild = ChildOf(child);
             Assert.AreEqual(2, loop.Archive.Get(grandchild.Life.Id).Generation);
-            Debug.Log("WILDTYPE_GENERATIONS: M/F input, paused courtship, birth, juvenile eating/growth, transfer without refill, generation 2 verified");
+            Debug.Log("WILDTYPE_GENERATIONS: F/Tab input, paused courtship, birth, juvenile eating/growth, transfer without refill, generation 2 verified");
         }
         [UnityTest] public IEnumerator GamepadMatingAndActualFamilyButtonTransfer()
         {
@@ -102,7 +103,7 @@ namespace WildType.Tests
             foreach (var button in buttons)
             {
                 var label = button.GetComponentInChildren<TMPro.TMP_Text>();
-                if (label && label.text.StartsWith(GenerationLoop.ShortId(child.Life.Id) + " ·"))
+                if (label && label.text.StartsWith("<size=21>" + GenerationLoop.ShortId(child.Life.Id) + " ·"))
                 { button.onClick.Invoke(); clicked = true; break; }
             }
             Assert.True(clicked, "The family journal must render and wire a real descendant button");

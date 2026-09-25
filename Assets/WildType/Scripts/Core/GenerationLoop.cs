@@ -35,7 +35,7 @@ namespace WildType
         }
         public bool Reserved(CreatureAgent actor)
         { foreach (var pair in pairs) if (pair.first == actor || pair.second == actor) return true; return false; }
-        bool Owns(CreatureAgent actor)
+        public bool Owns(CreatureAgent actor)
         {
             if (!actor || actor.Session != session || !actor.Life || Archive == null || Archive.Get(actor.Life.Id) == null) return false;
             foreach (var member in session.Creatures) if (member == actor) return true;
@@ -95,7 +95,7 @@ namespace WildType
             if (reason.Length > 0) return reason;
             reason = CapacityReason(true); if (reason.Length > 0) return reason;
             var partner = FindPartner(player, MateRange, true);
-            if (partner) return "M / X: mate with " + ShortId(partner.Life.Id) + " (cost 30% energy)";
+            if (partner) return session.GetComponent<PlayerInputBridge>().MateKey + ": mate with " + ShortId(partner.Life.Id) + " (cost 30% energy)";
             partner = FindPartner(player, MateRange, false);
             if (partner) return "Nearby: " + PairReason(player, partner, true, true);
             partner = FindPartner(player, player.Stats.Vision, true);
@@ -107,6 +107,11 @@ namespace WildType
             if (!partner) { session.ShowNotice(PlayerHint(), 4); return false; }
             bool result = TryMate(session.Player, partner, out string reason);
             session.ShowNotice(result ? "Courtship — stay close for two seconds" : reason, 4); return result;
+        }
+        public CreatureAgent ReadyPlayerPartner()
+        {
+            if (!enabled || !session || !session.Ready || session.Paused || IndividualReason(session.Player).Length > 0 || CapacityReason(true).Length > 0) return null;
+            return FindPartner(session.Player, MateRange, true);
         }
         public bool TryMate(CreatureAgent first, CreatureAgent second, out string reason)
         {
@@ -156,9 +161,10 @@ namespace WildType
             var child = session.SpawnChild(result.Genome, point, record);
             child.Vitals.SpendEnergy(child.Stats.MaxEnergy * .45f);
             Turnover.RecordBirth(record);
+            session.Names.RecordBirth(child, first, second);
             if (first.IsPlayer || second.IsPlayer)
                 session.ShowNotice($"Born: {ShortId(record.CreatureId)} · generation {record.Generation}" +
-                    (result.MajorMutationCount > 0 ? " · notable mutation" : "") + " · F opens family", 7);
+                    (result.MajorMutationCount > 0 ? " · notable mutation" : "") + " · " + session.GetComponent<PlayerInputBridge>().JournalKey + " opens family", 7);
             if (Vector3.Distance(point, session.Player.transform.position) < 30)
                 session.Fx.Burst(point + Vector3.up, child.Genome.camouflage, 12, .8f);
             return true;
@@ -208,6 +214,14 @@ namespace WildType
             return count;
         }
         public bool IsLivingDescendant(CreatureAgent actor, CreatureId ancestor) => Owns(actor) && !actor.Vitals.Dead && Archive.IsDescendant(actor.Life.Id, ancestor);
+        public bool CourtshipAt(int index, out CreatureAgent first, out CreatureAgent second)
+        {
+            first = second = null;
+            if (index < 0 || index >= pairs.Count) return false;
+            var pair = pairs[index];
+            if (!Owns(pair.first) || !Owns(pair.second) || pair.first.Vitals.Dead || pair.second.Vitals.Dead) return false;
+            first = pair.first; second = pair.second; return true;
+        }
         public static string ShortId(CreatureId id)
         { int colon = id.Value.LastIndexOf(':'); return id.IsValid ? "#" + id.Value.Substring(colon + 1) : "—"; }
     }

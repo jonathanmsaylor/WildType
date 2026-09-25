@@ -56,6 +56,10 @@ namespace WildType
             if (decision <= 0)
             {
                 decision = .35f + (float)random.NextDouble() * .15f;
+                // Opportunistic local care, using the same paid transfer as the player.
+                // No pursuit overrides, remote family scan or energy subsidy.
+                if (actor.Session.Care.TryAutonomous(actor))
+                { actor.DesiredDirection = Vector3.zero; actor.WantsSprint = false; actor.Intent = "Sharing with child"; return; }
                 if (hungry)
                 {
                     var seen = actor.Session.World.Forage(actor, rejected);
