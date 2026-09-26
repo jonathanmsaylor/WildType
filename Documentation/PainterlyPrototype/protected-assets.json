@@ -1,0 +1,27 @@
+[
+  {
+    "Path": "Assets/WildType/Materials/Interaction gold.mat",
+    "SHA256": "4297FF229276B9A0F3165110DF6CBAE3BAF893697C02367CC062DEB49462D28F",
+    "Bytes": 3826
+  },
+  {
+    "Path": "Assets/WildType/Scenes/CreatureStage_Prototype.unity",
+    "SHA256": "160946960F0410F1C301D72B881A73DA1CC7659C12AC06501301545037478B64",
+    "Bytes": 601614
+  },
+  {
+    "Path": "Assets/WildType/ScriptableObjects/Amber Bulwark.asset",
+    "SHA256": "2A58674D432E0614019EF7D8F8A3F08DDDB3613FDC65E286E52242D94788B0C5",
+    "Bytes": 809
+  },
+  {
+    "Path": "Assets/WildType/ScriptableObjects/Meadow Grazer.asset",
+    "SHA256": "32DCC8D3D3CB434D5C4F5757EB8009059BD303A90ED6753E0C1C03DBAAEBDC80",
+    "Bytes": 800
+  },
+  {
+    "Path": "Assets/WildType/ScriptableObjects/Violet Strider.asset",
+    "SHA256": "213ED18D9C29A56BB49EC003F18A0AB7CD8BA75C187C3C74CE3AF7CE45C56570",
+    "Bytes": 808
+  }
+]

@@ -1,6 +1,16 @@
 # WILDTYPE — Creature Stage vertical slice
 
-A Unity implementation, independent of the earlier Godot project. **Current milestone: lineage continuity and founder names**, on `milestone-lineage-continuity` (based on Chronicle `982075e`; `main` is deliberately unchanged). Explore, eat, reproduce, recognize and locate your family, read their recorded lives, optionally support your children, and continue through living descendants in a bounded, roughly 250 m-wide Creature-stage ecosystem. Start with twelve autonomous herbivores; total living population is capped at 24.
+A Unity implementation, independent of the earlier Godot project. **Current milestone: painterly creature and meadow prototype**, on `milestone-painterly-prototype`, based on pushed lineage continuity `d4d77e8`. `main` is deliberately unchanged. Explore, eat, reproduce, recognize and locate your family, read their recorded lives, optionally support your children, and continue through living descendants in a bounded, roughly 250 m-wide Creature-stage ecosystem. Start with twelve autonomous herbivores; total living population is capped at 24.
+
+## Reversible painterly comparison
+
+Open **WildType > Open painterly comparison**, or `Assets/WildType/Scenes/CreatureStage_PainterlyPreview.unity`, then press Play. Focus Game view and tap **F6** to alternate painterly/original presentation at the same camera position without restarting the simulation. All normal gameplay controls remain unchanged. The original prototype scene is still the first build scene; the preview is a separate second scene. Presentation is constructed on entering Play Mode, not baked into the edit-time scene.
+
+The study adds a continuous haunch/body/neck/muzzle silhouette, leaf-shaped ears, tapered jointed legs and tail, procedural coat brush variation and inherited bands. Existing size, leg length, coat, markings and juvenile growth remain genome-driven. A roughly **68 m-wide meadow patch around the starting area** adds bent grass, wildflowers, branching trees at existing trunk locations, ground color washes and distant atmospheric ridges. The rest of the ecosystem intentionally retains the original look. Existing food models, colliders, navigation, resource rules and genetics are unchanged.
+
+This is an original Unity-generated style study, not a finished art pipeline or a recreation of the reference painting. No external art, textures, packs, paid tools or services were used. Geometry is generated once per actor/patch; a shared material and property blocks avoid per-frame mesh/material creation. The comparison scene disables static mesh batching so reversible mesh swaps remain readable. Do not run the old prototype builder to create this preview: it would rebuild the original scene.
+
+See [comparison images, lineage checks, lighting investigation and limitations](Documentation/PainterlyPrototype/REPORT.md). The user's original saved scene and four other pre-existing dirty files remain byte-for-byte intact and uncommitted.
 
 ## Editor and opening
 

@@ -17,6 +17,7 @@ namespace WildType
         MaterialPropertyBlock colors;
         public CreatureAppearance Appearance { get; private set; }
         public Mesh MarkingsMesh => markingsMesh;
+        public float Feeding => feed;
         public void Build(CreatureAgent creature)
         {
             colors = new MaterialPropertyBlock();

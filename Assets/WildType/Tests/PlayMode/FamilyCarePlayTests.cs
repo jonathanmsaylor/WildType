@@ -79,6 +79,8 @@ namespace WildType.Tests
             obstacle.transform.localScale = new Vector3(1, 5, .25f); Physics.SyncTransforms();
             Assert.False(session.Care.TryShare(parent, child, out reason)); StringAssert.Contains("obstacle", reason);
             Assert.AreEqual(p, parent.Vitals.Energy); Object.Destroy(obstacle); yield return null;
+            // Destruction yields a frame: normal metabolism may run before this next synchronous rejection.
+            p = parent.Vitals.Energy;
             child.Vitals.Eat(1000); Assert.False(session.Care.TryShare(parent, child, out _)); Assert.AreEqual(p, parent.Vitals.Energy);
             child.Vitals.SpendEnergy(20); parent.Vitals.SpendEnergy(parent.Vitals.Energy);
             Assert.False(session.Care.TryShare(parent, child, out _)); Assert.AreEqual(0, parent.Vitals.Energy);

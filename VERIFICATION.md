@@ -1,4 +1,21 @@
-# WILDTYPE verification — lineage continuity — 2026-09-25
+# WILDTYPE verification — painterly prototype — 2026-09-25
+
+Branch: **milestone-painterly-prototype**, based on pushed continuity **d4d77e89c0545db5552ee148bf49191d937f5c9d**. Main is unchanged. See the [full prototype report with inline Game-view images](Documentation/PainterlyPrototype/REPORT.md).
+
+## Current milestone results
+
+- Final complete suites: **119/119 Edit Mode and 40/40 Play Mode passed**, zero failed/skipped. Play Mode took 502.75 seconds. All temporary inspection helpers were removed before these suites. An initial 37/40 Play run exposed three test-fixture/accounting issues; all four focused rerun checks and both final full suites passed after test-only corrections documented in the report. The preview capacity fixture reached 24 living creatures with 72 food slots and retained the 32-object/512-ancestry bounds.
+- Independent saved-scene lineage check: native F produced a child in an initial unassisted run. A separate assisted multi-generation session used real inheritance/mating with positioning, resource refill and accelerated normal growth explicitly disclosed. Native journal clicks verified sibling #015 after taking #014, Locate without control transfer/care, and adult child #016 remaining listed after producing #017. Both relevant Chronicle pages and the complete Living descendants page were inspected. No lineage defect reproduced; thirteen named Gen 0 founders verified. No deaths forced and no survival tuning.
+- Actual rendered preview inspected at **1920×1080**, including three founder appearances and an inherited juvenile growing into its adult form. Native F6 toggles and journal Locate worked. Brief native W/E taps were inconclusive; do not treat automated movement/food checks as human playtesting.
+- Matched frozen-camera performance, 16 creatures/72 food slots, 300 frames per look after warm-up: original median **3.376 ms**, p95 **3.921 ms**; study median **3.029 ms**, p95 **3.550 ms**. Editor frame intervals, not isolated GPU timings or a 24-moving-creature/build benchmark.
+- Isolated sun-component experiment: with/without screenshots are byte-identical. URP recreates removed additional-light-data during rendering. Recommend restoring the default component in a separate deliberate review; its intended removal remains unknown, so the original scene is untouched and uncommitted.
+- All five pre-existing dirty asset hashes remain unchanged. Seven accepted mesh/prefab changes remain inherited from `4809a9d`. No RunAudit, main, zoom, gameplay rules, package or external-asset changes.
+
+The new scene is reversible and leaves the existing prototype intact. It is a modest procedural study, not reference-level finished art: visible limb joins, simple grass/flowers, provisional ridges, original scenery beyond the central patch, and no LOD/build benchmark. See the report for precise assistance, evidence, provenance and limitations.
+
+---
+
+# Previous milestone: lineage continuity — 2026-09-25
 
 ## Starting state / protection
 
