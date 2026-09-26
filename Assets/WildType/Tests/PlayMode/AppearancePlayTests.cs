@@ -74,9 +74,12 @@ namespace WildType.Tests
             Assert.AreEqual(snapshot, session.Generations.Archive.Changes(child.Life.Id), "Parent values must survive death");
             // Detailed comparisons now live in the journal; normal play keeps a compact family summary.
             session.SetPaused(true); yield return new WaitForSecondsRealtime(.2f);
+            session.GetComponent<StageHud>().ShowDetails(grandchild.Life.Id); yield return new WaitForSecondsRealtime(.2f);
+            foreach(var button in session.GetComponentsInChildren<UnityEngine.UI.Button>()) if(button.name=="More details") { button.onClick.Invoke(); break; }
+            yield return new WaitForSecondsRealtime(.2f);
             TMP_Text family = null;
             foreach (var label in session.GetComponentsInChildren<TMP_Text>()) if (label.name == "Inherited traits") family = label;
-            Assert.NotNull(family); StringAssert.Contains("GENERATION 2", family.text);
+            Assert.NotNull(family); StringAssert.Contains("Gen 2", family.text);
             StringAssert.Contains("ADULT: parent A / B -> child", family.text);
             family.ForceMeshUpdate(); Assert.False(family.isTextOverflowing, "Inheritance panel must remain readable");
             Assert.LessOrEqual(session.Population + session.Generations.PendingBirths, GenerationLoop.PopulationCap);

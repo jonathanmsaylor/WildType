@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,304 +9,214 @@ namespace WildType
 {
     public sealed class StageHud : MonoBehaviour
     {
-        StageSession session;
-        TMP_Text readout, prompt, notice, panelTitle, region, family, mating, descendantTitle, turnover;
-        RectTransform familyBox;
-        PlayerInputBridge input;
-        readonly StringBuilder turnoverText = new StringBuilder(640);
-        Image energy, stamina, health;
-        GameObject pausePanel;
-        GameObject namePanel;
-        TMP_InputField nameInput;
-        TMP_Text namePreview;
-        CreatureId namingId;
-        Button resume, nextPage, chronicleToggle;
-        bool chronicle;
-        LineageArchive journalArchive;
-        CreatureId journalFocus;
-        int journalRevision = -1;
-        readonly System.Collections.Generic.List<CreatureLineageRecord> chronicleRecords = new System.Collections.Generic.List<CreatureLineageRecord>(LineageArchive.Capacity);
-        readonly Button[] descendantButtons = new Button[4];
-        readonly Button[] findButtons = new Button[4];
-        readonly CreatureAgent[] choices = new CreatureAgent[4];
-        readonly CreatureAgent[] locateChoices = new CreatureAgent[4];
-        TMP_Text[] choiceLabels = new TMP_Text[4];
-        int page;
-        FoodPlant highlighted;
-        float refresh;
+        public enum JournalView { Living, Chronicle, Details, Guide, Events }
+        public JournalView View { get; private set; }
+        public bool TipsVisible { get; private set; } = true;
+        StageSession session; PlayerInputBridge input;
+        GameObject ordinary, pausePanel, namePanel, cardsPanel, detailsPanel, guidePanel, eventsPanel;
+        TMP_Text identity, region, status, notice, care, tips, briefEvents, title, scope, detailLeft, detailRight, guide, turnover, namePreview;
+        TMP_InputField nameInput; CreatureId namingId, focusId, detailId;
+        readonly TMP_Text[] resources = new TMP_Text[3]; readonly Image[] bars = new Image[3];
+        readonly RectTransform[] rows = new RectTransform[3]; readonly TMP_Text[] labels = new TMP_Text[3];
+        readonly Button[] control = new Button[3], locate = new Button[3], inspect = new Button[3];
+        readonly CreatureAgent[] choices = new CreatureAgent[3], located = new CreatureAgent[3];
+        readonly CreatureId[] rowIds = new CreatureId[3];
+        readonly List<CreatureLineageRecord> records = new List<CreatureLineageRecord>(LineageArchive.Capacity);
+        readonly List<Button> navigation = new List<Button>();
+        LineageArchive archive; Button resume, nextPage, previousPage, detailPage, tipsButton, livingTab;
+        int page, detailSection; float refresh; FoodPlant highlighted;
+        bool ate, born, completed; Vector3 startingPoint;
+        readonly StringBuilder builder = new StringBuilder(1600);
         public void Configure(StageSession value)
         {
-            session = value;
-            input = GetComponent<PlayerInputBridge>();
-            var root = new GameObject("WildType HUD", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-            root.transform.SetParent(transform);
-            var canvas = root.GetComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            var scaler = root.GetComponent<CanvasScaler>(); scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920, 1080); scaler.matchWidthOrHeight = .5f;
-            root.AddComponent<FamilyWorldCues>().Configure(session, root.GetComponent<RectTransform>());
-            var info = Box(root.transform, "Survival", new Vector2(24, -24), new Vector2(300, 270), new Vector2(0, 1));
-            Text(info, "W I L D T Y P E", new Vector2(20, -13), new Vector2(260, 32), 25, new Color(.88f, .95f, .73f));
-            energy = Bar(info, "Energy", 52, new Color(.66f, .84f, .32f));
-            stamina = Bar(info, "Stamina", 90, new Color(.26f, .73f, .82f));
-            health = Bar(info, "Health", 128, new Color(.93f, .51f, .36f));
-            readout = Text(info, "", new Vector2(20, -175), new Vector2(260, 86), 18, Color.white);
-            region = Text(root.transform, "", new Vector2(-28, -26), new Vector2(560, 64), 20, Color.white, new Vector2(1, 1));
-            region.alignment = TextAlignmentOptions.Right;
-            var turnoverBox = Box(root.transform, "Recent turnover", new Vector2(-24, 24), new Vector2(500, 190), new Vector2(1, 0));
-            Text(turnoverBox, "RECENT BIRTHS / DEATHS · last 4", new Vector2(14, -10), new Vector2(472, 24), 17, new Color(.87f, .93f, .81f));
-            turnover = Text(turnoverBox, "", new Vector2(14, -35), new Vector2(472, 147), 16, Color.white);
-            turnover.gameObject.name = "Turnover events";
-            familyBox = Box(root.transform, "Lineage", new Vector2(24, -314), new Vector2(340, 255), new Vector2(0, 1));
-            family = Text(familyBox, "", new Vector2(20, -18), new Vector2(300, 219), 20, new Color(.92f, .98f, .88f));
-            family.lineSpacing = 6;
-            family.gameObject.name = "Inherited traits";
-            family.textWrappingMode = TextWrappingModes.Normal;
-            mating = Text(root.transform, "", new Vector2(0, 165), new Vector2(1100, 40), 23, new Color(.82f, .97f, .86f), new Vector2(.5f, 0));
-            mating.alignment = TextAlignmentOptions.Center;
-            prompt = Text(root.transform, "", new Vector2(0, 110), new Vector2(900, 42), 27, new Color(1, .85f, .4f), new Vector2(.5f, 0));
-            prompt.alignment = TextAlignmentOptions.Center;
-            notice = Text(root.transform, "", new Vector2(0, -44), new Vector2(850, 50), 27, new Color(.87f, .98f, .72f), new Vector2(.5f, 1));
-            notice.alignment = TextAlignmentOptions.Center;
-            var pause = Box(root.transform, "Pause", Vector2.zero, new Vector2(1000, 550), new Vector2(.5f, .5f));
-            pause.GetComponent<Image>().color = new Color(.035f, .075f, .075f, .55f);
-            pausePanel = pause.gameObject;
-            panelTitle = Text(pause, "FIELD JOURNAL", new Vector2(35, -25), new Vector2(300, 90), 23, Color.white);
-            panelTitle.textWrappingMode = TextWrappingModes.Normal;
-            panelTitle.gameObject.name = "Journal title";
-            resume = ButtonAt(pause, "Resume", 125, () => session.SetPaused(false));
-            ButtonAt(pause, "Restart Prototype", 193, () => session.Restart(false));
-            ButtonAt(pause, "Reseed Ecosystem", 261, () => session.Restart(true));
-            ButtonAt(pause, "Quit", 329, session.Quit);
-            Text(pause, "Locate: briefly reveal a relative.\nCreature card: take control.\nNo healing or energy refill.", new Vector2(35, -410), new Vector2(300, 110), 18, Color.white);
-            var selection = Box(pause, "Descendants", new Vector2(360, -15), new Vector2(620, 520), new Vector2(0, 1));
-            selection.GetComponent<Image>().color = new Color(.035f, .075f, .075f, .18f);
-            descendantTitle = Text(selection, "", new Vector2(16, -12), new Vector2(580, 76), 22, Color.white);
-            descendantTitle.textWrappingMode = TextWrappingModes.Normal;
-            for (int i = 0; i < descendantButtons.Length; i++)
-            {
-                int slot = i;
-                var button = ButtonAt(selection, "", 92 + i * 84, () => { if (session.TakeControl(choices[slot])) { page = 0; refresh = 0; } });
-                button.GetComponent<RectTransform>().anchoredPosition = new Vector2(15, -92 - i * 84);
-                button.GetComponent<RectTransform>().sizeDelta = new Vector2(495, 78);
-                descendantButtons[i] = button; choiceLabels[i] = button.GetComponentInChildren<TMP_Text>(); choiceLabels[i].fontSize = 18;
-                choiceLabels[i].alignment = TextAlignmentOptions.Left;
-                choiceLabels[i].rectTransform.sizeDelta = new Vector2(475, 72);
-                choiceLabels[i].rectTransform.anchoredPosition = new Vector2(10, -4);
-                var find = ButtonAt(selection, "Locate", 92 + i * 84, () => session.Locator.Select(locateChoices[slot]));
-                find.GetComponent<RectTransform>().anchoredPosition = new Vector2(522, -92 - i * 84);
-                find.GetComponent<RectTransform>().sizeDelta = new Vector2(78, 78);
-                find.GetComponentInChildren<TMP_Text>().rectTransform.sizeDelta = new Vector2(78, 40);
-                find.GetComponentInChildren<TMP_Text>().fontSize = 18;
-                findButtons[i] = find;
+            session=value; input=GetComponent<PlayerInputBridge>();
+            var root=new GameObject("WildType HUD",typeof(Canvas),typeof(CanvasScaler),typeof(GraphicRaycaster));root.transform.SetParent(transform,false);
+            root.GetComponent<Canvas>().renderMode=RenderMode.ScreenSpaceOverlay;
+            var scale=root.GetComponent<CanvasScaler>();scale.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;scale.referenceResolution=new Vector2(1920,1080);scale.matchWidthOrHeight=1;
+            root.AddComponent<FamilyWorldCues>().Configure(session,root.GetComponent<RectTransform>());
+            ordinary=new GameObject("Ordinary play",typeof(RectTransform));ordinary.transform.SetParent(root.transform,false);
+            var stretch=ordinary.GetComponent<RectTransform>();stretch.anchorMin=Vector2.zero;stretch.anchorMax=Vector2.one;stretch.offsetMin=stretch.offsetMax=Vector2.zero;
+            var survival=Box(ordinary.transform,"Survival",24,-24,340,235,new Vector2(0,1),.66f);
+            Text(survival,"W I L D T Y P E",18,-12,304,34,26);
+            string[] names={"Energy","Health","Stamina"};Color[] colors={new Color(.68f,.85f,.39f),new Color(.96f,.65f,.49f),new Color(.45f,.8f,.92f)};
+            for(int i=0;i<3;i++){
+                resources[i]=Text(survival,"",18,-53-i*56,304,32,24);resources[i].name=names[i]+" value";
+                var track=Box(survival,names[i]+" track",18,-89-i*56,304,8,new Vector2(0,1),.85f);
+                bars[i]=Box(track,names[i]+" fill",0,0,304,8,new Vector2(0,1),1).GetComponent<Image>();bars[i].color=colors[i];
             }
-            nextPage = ButtonAt(selection, "Next page", 452, () => { page++; refresh = 0; });
-            nextPage.GetComponent<RectTransform>().anchoredPosition = new Vector2(15, -452);
-            chronicleToggle = ButtonAt(selection, "Chronicle", 452, () => { chronicle = !chronicle; page = 0; refresh = 0; });
-            chronicleToggle.GetComponent<RectTransform>().anchoredPosition = new Vector2(335, -452);
-            chronicleToggle.GetComponent<RectTransform>().sizeDelta = new Vector2(265, 55);
-            chronicleToggle.GetComponentInChildren<TMP_Text>().rectTransform.sizeDelta = new Vector2(265, 42);
-            pausePanel.SetActive(false);
-            BuildNaming(root.transform);
-            var events = new GameObject("UI input", typeof(EventSystem), typeof(InputSystemUIInputModule));
-            events.transform.SetParent(root.transform);
+            var family=Box(ordinary.transform,"Lineage",24,-271,340,150,new Vector2(0,1),.52f);
+            identity=Text(family,"",18,-13,304,125,24);identity.name="Family identity";
+            region=Text(ordinary.transform,"",-24,-26,590,72,24,new Vector2(1,1));region.alignment=TextAlignmentOptions.Right;Shade(region);
+            status=Banner(ordinary.transform,"Survival warning",0,-130,890,115,new Vector2(.5f,1));
+            notice=Banner(ordinary.transform,"Action feedback",0,-32,870,85,new Vector2(.5f,1));
+            care=Banner(ordinary.transform,"Care cost",0,190,820,86,new Vector2(.5f,0));
+            tips=Banner(ordinary.transform,"First steps",24,24,645,100,new Vector2(0,0));tips.alignment=TextAlignmentOptions.Left;
+            briefEvents=Banner(ordinary.transform,"Recent lives",-24,24,560,145,new Vector2(1,0));briefEvents.alignment=TextAlignmentOptions.Left;briefEvents.fontSize=22;
+            BuildJournal(root.transform);BuildNaming(root.transform);
+            var events=new GameObject("UI input",typeof(EventSystem),typeof(InputSystemUIInputModule));events.transform.SetParent(root.transform);
             events.GetComponent<InputSystemUIInputModule>().AssignDefaultActions();
         }
+        void BuildJournal(Transform root)
+        {
+            var panel=Box(root,"Pause",0,0,1560,900,new Vector2(.5f,.5f),.94f);pausePanel=panel.gameObject;
+            title=Text(panel,"FAMILY JOURNAL\nSimulation paused",28,-24,1460,90,28);title.name="Journal title";
+            resume=ButtonAt(panel,"Resume",28,134,292,56,()=>session.SetPaused(false));
+            livingTab=ButtonAt(panel,"Living descendants",28,202,292,56,()=>Show(JournalView.Living));
+            ButtonAt(panel,"Chronicle",28,270,292,56,()=>Show(JournalView.Chronicle));
+            ButtonAt(panel,"Details",28,338,292,56,()=>ShowDetails(session.Player.Life.Id));
+            ButtonAt(panel,"Recent births / deaths",28,406,292,56,()=>Show(JournalView.Events));
+            ButtonAt(panel,"Getting started",28,474,292,56,()=>Show(JournalView.Guide));
+            tipsButton=ButtonAt(panel,"Hide tips",28,542,292,56,()=>{TipsVisible=!(TipsVisible&&!completed);completed=false;refresh=0;});
+            ButtonAt(panel,"Restart same seed",28,634,292,56,()=>session.Restart(false));
+            ButtonAt(panel,"Reseed new run",28,702,292,56,()=>session.Restart(true));
+            ButtonAt(panel,"Quit",28,770,292,56,session.Quit);
+            Text(panel,"Restart / reseed clears this run's family history.",28,-836,292,54,20);
+            var cardArea=Box(panel,"Descendants",348,-130,1184,740,new Vector2(0,1),0);cardsPanel=cardArea.gameObject;
+            scope=Text(cardArea,"",16,-4,1138,130,25);scope.name="Family scope";
+            for(int i=0;i<3;i++){
+                int slot=i;rows[i]=Box(cardArea,"Relative card",16,-145-i*164,1140,152,new Vector2(0,1),.5f);
+                labels[i]=Text(rows[i],"",18,-10,754,130,23);labels[i].name="Relative identity";
+                // Cards are text, never a hidden control-transfer button.
+                locate[i]=ButtonAt(rows[i],"Locate",798,8,320,40,()=>session.Locator.Select(located[slot]),22,"Highlight · Locate");
+                control[i]=ButtonAt(rows[i],"Take control",798,55,320,40,()=>{if(session.TakeControl(choices[slot])){page=0;refresh=0;}},22);
+                inspect[i]=ButtonAt(rows[i],"Relative details",798,102,320,40,()=>ShowDetails(rowIds[slot]),22,"Details");
+            }
+            previousPage=ButtonAt(cardArea,"Previous page",16,654,240,52,()=>{page=Mathf.Max(0,page-1);refresh=0;});
+            nextPage=ButtonAt(cardArea,"Next page",270,654,240,52,()=>{page++;refresh=0;});
+            Text(cardArea,"Highlight resumes play; you stay in your creature.\nTake control switches creatures; age and resources stay.",530,-646,630,86,23);
+            var detailArea=Box(panel,"Details view",348,-130,1184,740,new Vector2(0,1),0);detailsPanel=detailArea.gameObject;
+            detailLeft=Text(detailArea,"",20,-8,552,645,23);detailLeft.name="Inherited traits";detailLeft.lineSpacing=3;
+            detailRight=Text(detailArea,"",600,-8,552,645,23);detailRight.name="Exact traits";detailRight.lineSpacing=3;
+            detailPage=ButtonAt(detailArea,"More details",20,678,480,52,()=>{detailSection=(detailSection+1)%DetailPages();refresh=0;});
+            var guideArea=Box(panel,"Getting started view",348,-130,1184,740,new Vector2(0,1),0);guidePanel=guideArea.gameObject;
+            guide=Text(guideArea,"",20,-8,1144,664,25);
+            ButtonAt(guideArea,"Skip / return to family",20,678,440,52,()=>{TipsVisible=false;Show(JournalView.Living);});
+            var eventArea=Box(panel,"Recent history",348,-130,1184,740,new Vector2(0,1),0);eventsPanel=eventArea.gameObject;
+            turnover=Text(eventArea,"",20,-8,1134,710,25);turnover.name="Turnover events";turnover.lineSpacing=7;
+            pausePanel.SetActive(false);
+        }
+        public void Show(JournalView view)
+        {
+            View=view;page=0;refresh=0;
+            if(session.Ready&&!session.Paused)session.SetPaused(true);
+        }
+        public void ShowDetails(CreatureId id){detailId=id;detailSection=0;Show(JournalView.Details);}
         void Update()
         {
-            if (!session || !session.Ready || !session.Player) return;
-            session.Names.ValidatePrompt();
-            bool naming = session.Names.HasPrompt;
-            namePanel.SetActive(naming);
-            if (naming && namingId != session.Names.Pending)
-            {
-                namingId = session.Names.Pending; nameInput.text = "";
-                namePreview.text = "Default: " + session.Names.PersonalName(namingId);
-                nameInput.Select(); nameInput.ActivateInputField();
-            }
-            if (!naming) namingId = default;
-            bool opening = session.Paused && !naming && !pausePanel.activeSelf;
-            if (opening) refresh = 0;
-            pausePanel.SetActive(session.Paused && !naming);
-            if (opening && EventSystem.current) EventSystem.current.SetSelectedGameObject(resume.gameObject);
-            resume.interactable = !session.GameOver;
-            refresh -= Time.unscaledDeltaTime; if (refresh > 0) return; refresh = .1f;
-            panelTitle.text = "FAMILY JOURNAL\nSimulation paused";
-            var a = session.Player; var v = a.Vitals;
-            var generations = session.Generations; var record = generations.Archive.Get(a.Life.Id);
-            if (journalArchive != generations.Archive || journalFocus != a.Life.Id)
-            {
-                journalArchive = generations.Archive; journalFocus = a.Life.Id;
-                chronicle = false; page = 0; journalRevision = -1; chronicleRecords.Clear();
-            }
-            familyBox.sizeDelta = new Vector2(session.Paused ? 410 : 340, session.Paused ? 650 : 255);
-            family.rectTransform.sizeDelta = new Vector2(session.Paused ? 370 : 300, session.Paused ? 614 : 219);
-            family.fontSize = session.Paused ? 17 : 20; family.lineSpacing = session.Paused ? 4 : 6;
-            string personalName = session.Names.PersonalName(a.Life.Id);
-            family.text = (personalName.Length > 0 ? personalName + "\n" : "") + $"{GenerationLoop.ShortId(a.Life.Id)} · GENERATION {record.Generation}\n" +
-                $"{(a.Life.Adult ? "Adult" : "Juvenile")} · Age {a.Life.Age:0} / {a.Stats.LifespanSeconds:0}s\n\n" +
-                $"Parents {GenerationLoop.ShortId(record.FirstParentId)} + {GenerationLoop.ShortId(record.SecondParentId)}\n" +
-                $"Living children {generations.LivingChildren(a.Life.Id)} / born {record.OffspringCount}\n\n";
-            family.text += session.Paused ? generations.Archive.Changes(a.Life.Id) + InheritanceSummary.NotableMutation(record.ImportantMutations) :
-                $"{CreatureAppearance.CoatName(a.Genome.camouflage)} · size {a.Genome.bodySize:0.00} · legs {a.Genome.legLength:0.00}\n\n{input.JournalKey} · Family journal";
-            if (session.Paused) familyBox.sizeDelta = new Vector2(410, Mathf.Clamp(family.preferredHeight + 36, 255, 650));
-            else if (personalName.Length > 0) { family.rectTransform.sizeDelta = new Vector2(300, 275); familyBox.sizeDelta = new Vector2(340, Mathf.Clamp(family.preferredHeight + 36, 255, 311)); }
-            mating.text = "";
-            var careTarget = session.Care.NearbyChild(a);
-            if (!session.Paused && careTarget && !generations.Reserved(a))
-            {
-                string reason = session.Care.Reason(a, careTarget);
-                if (reason.Length == 0 && FamilyCareRules.Transfer(v.Energy, a.Stats.MaxEnergy, careTarget.Vitals.Energy, careTarget.Stats.MaxEnergy, out float cost, out float gain))
-                    mating.text = $"{input.CareKey}: share with {GenerationLoop.ShortId(careTarget.Life.Id)} · you −{cost:0.0} → child +{gain:0.0} energy";
-            }
-            if (session.Paused)
-            {
-                var living = generations.LivingDescendants(a.Life.Id);
-                if (session.GameOver) panelTitle.text = living.Count == 0 ? "LIFE ENDED\nNo living descendants\nRestart or reseed" : "LIFE ENDED\nChoose a descendant or restart";
-                if (chronicle && journalRevision != journalArchive.Revision)
-                { session.CollectFamilyHistory(chronicleRecords); journalRevision = journalArchive.Revision; }
-                int count = chronicle ? chronicleRecords.Count : living.Count;
-                int pageSize = chronicle ? 3 : choices.Length;
-                int pages = Mathf.Max(1, Mathf.CeilToInt(count / (float)pageSize)); page %= pages;
-                nextPage.gameObject.SetActive(pages > 1);
-                chronicleToggle.GetComponentInChildren<TMP_Text>().text = chronicle ? "Living descendants" : "Chronicle";
-                descendantTitle.fontSize = 20;
-                descendantTitle.text = $"Living descendants of {session.Names.Label(a.Life.Id)}\n" +
-                    (living.Count == 0 ? "None living · Other family lives are in Chronicle." : $"{living.Count} living · page {page + 1}/{pages} · Select to control.") +
-                    "\nEarlier controlled creatures' children: Chronicle.";
-                if (chronicle) descendantTitle.text = $"Family chronicle · page {page + 1}/{pages}\nRelationships to {session.Names.Label(a.Life.Id)} (you)\nIncludes children of earlier controlled creatures.";
-                for (int i = 0; i < choices.Length; i++)
-                {
-                    int index = page * pageSize + i;
-                    float rowY = 92 + i * (chronicle ? 112 : 84), rowHeight = chronicle ? 106 : 78;
-                    var cardRect = descendantButtons[i].GetComponent<RectTransform>();
-                    cardRect.anchoredPosition = new Vector2(15, -rowY); cardRect.sizeDelta = new Vector2(495, rowHeight);
-                    choiceLabels[i].rectTransform.sizeDelta = new Vector2(475, rowHeight - 6);
-                    var locateRect = findButtons[i].GetComponent<RectTransform>();
-                    locateRect.anchoredPosition = new Vector2(522, -rowY); locateRect.sizeDelta = new Vector2(78, rowHeight);
-                    if (chronicle)
-                    {
-                        var entry = i < pageSize && index < count ? chronicleRecords[index] : null;
-                        var actor = entry == null ? null : LineageChronicle.LivingActor(session, entry);
-                        choices[i] = actor && generations.IsLivingDescendant(actor, a.Life.Id) ? actor : null;
-                        locateChoices[i] = actor && session.CanLocateFamily(actor) ? actor : null;
-                        descendantButtons[i].gameObject.SetActive(entry != null);
-                        descendantButtons[i].interactable = choices[i];
-                        findButtons[i].gameObject.SetActive(locateChoices[i]); findButtons[i].interactable = !session.GameOver;
-                        choiceLabels[i].fontSize = 18;
-                        // Keep archived records readable even though they cannot be clicked.
-                        var colors = descendantButtons[i].colors; colors.disabledColor = Color.white; descendantButtons[i].colors = colors;
-                        if (entry != null) choiceLabels[i].text = LineageChronicle.Card(session, entry, actor, choices[i]);
-                        continue;
-                    }
-                    choices[i] = index < living.Count ? living[index] : null;
-                    locateChoices[i] = choices[i];
-                    descendantButtons[i].interactable = true; choiceLabels[i].fontSize = 18;
-                    descendantButtons[i].gameObject.SetActive(choices[i]);
-                    findButtons[i].gameObject.SetActive(choices[i]);
-                    findButtons[i].interactable = !session.GameOver;
-                    if (!choices[i]) continue;
-                    var child = choices[i]; var childRecord = generations.Archive.Get(child.Life.Id);
-                    choiceLabels[i].text = $"<size=21>{session.Names.Label(child.Life.Id)} · Gen {childRecord.Generation}</size>\n" +
-                        $"{(child.Life.Adult ? "Adult" : "Juvenile")} · Energy {child.Vitals.Energy:0}/{child.Stats.MaxEnergy:0} · HP {child.Vitals.Health:0} · {Vector3.Distance(a.transform.position, child.transform.position):0} m\n" +
-                        $"{session.World.Zone(child.transform.position)} · {CreatureAppearance.CoatName(child.Genome.camouflage)} · size {child.Genome.bodySize:0.00} / legs {child.Genome.legLength:0.00}";
-                }
-                if (opening && !chronicle && session.GameOver && living.Count > 0 && EventSystem.current)
-                    EventSystem.current.SetSelectedGameObject(descendantButtons[0].gameObject);
-            }
-            energy.fillAmount = v.Energy / a.Stats.MaxEnergy; stamina.fillAmount = v.Stamina / a.Stats.MaxStamina; health.fillAmount = v.Health / 100;
-            energy.rectTransform.localScale = new Vector3(energy.fillAmount, 1, 1);
-            stamina.rectTransform.localScale = new Vector3(stamina.fillAmount, 1, 1);
-            health.rectTransform.localScale = new Vector3(health.fillAmount, 1, 1);
-            stamina.color = v.SprintLocked ? new Color(1, .6f, .22f) : new Color(.26f, .73f, .82f);
-            readout.text = $"Energy {v.Energy:0}/{a.Stats.MaxEnergy:0} · HP {v.Health:0}\nStamina {v.Stamina:0}/{a.Stats.MaxStamina:0}\n{a.Motor.Speed:0.0} m/s · {a.State}";
-            region.text = session.World.Zone(a.transform.position) + $"\nPopulation {session.Population}/{GenerationLoop.PopulationCap} · Births {generations.Births} · Deaths {generations.Deaths}";
-            RefreshTurnover(generations.Turnover);
-            if (highlighted) highlighted.Highlight(false);
-            highlighted = a.Interaction.Nearest();
-            if (highlighted && !session.Paused && v.Energy < a.Stats.MaxEnergy - .5f) highlighted.Highlight(true);
-            prompt.text = !session.Paused && v.Energy <= 0 ? "STARVING — find ripe forage" : "";
-            notice.text = session.Paused ? "" : session.CurrentNotice;
+            if(!session||!session.Ready||!session.Player)return;
+            session.Names.ValidatePrompt();bool naming=session.Names.HasPrompt;namePanel.SetActive(naming);
+            if(naming&&namingId!=session.Names.Pending){namingId=session.Names.Pending;nameInput.text="";namePreview.text="Keep default: "+session.Names.PersonalName(namingId);nameInput.Select();nameInput.ActivateInputField();}
+            if(!naming)namingId=default;
+            bool opening=session.Paused&&!naming&&!pausePanel.activeSelf;
+            pausePanel.SetActive(session.Paused&&!naming);ordinary.SetActive(!session.Paused);
+            if(opening){refresh=0;if(born)completed=true;}
+            refresh-=Time.unscaledDeltaTime;if(refresh>0)return;refresh=.1f;
+            var a=session.Player;var v=a.Vitals;var loop=session.Generations;
+            if(archive!=loop.Archive){archive=loop.Archive;View=JournalView.Living;page=0;detailSection=0;detailId=default;ate=born=completed=false;TipsVisible=true;startingPoint=a.transform.position;records.Clear();}
+            if(focusId!=a.Life.Id){focusId=a.Life.Id;page=0;View=JournalView.Living;detailId=focusId;}
+            var record=archive.Get(focusId);ate|=a.Interaction.MealsEaten>0;born|=record.OffspringCount>0;
+            float[] values={v.Energy,v.Health,v.Stamina},maximum={a.Stats.MaxEnergy,100,a.Stats.MaxStamina};string[] names={"Energy","Health","Stamina"};
+            for(int i=0;i<3;i++){resources[i].text=$"{names[i]}  {values[i]:0}/{maximum[i]:0}";bars[i].rectTransform.localScale=new Vector3(Mathf.Clamp01(values[i]/maximum[i]),1,1);}
+            identity.text=$"<b>{session.Names.PersonalName(focusId)}</b>\n{GenerationLoop.ShortId(focusId)} · Gen {record.Generation} · {(a.Life.Adult?"Adult":"Juvenile")}\n{loop.LivingChildren(focusId)} living children\n{(input.UsingGamepad?"North":input.JournalKey)} · Family journal";
+            region.text=session.World.Zone(a.transform.position)+$"\nPopulation {session.Population}/24 · Births {loop.Births} · Deaths {loop.Deaths}";
+            SetBanner(status,GameplayText.Status(v.Energy,a.Stats.MaxEnergy,v.Health,v.SprintLocked));
+            SetBanner(notice,session.CurrentNotice);
+            SetBanner(care,GameplayText.Care(session,a,session.Care.NearbyChild(a),input.CareKey));
+            string step=born?$"New child! {input.JournalKey} → family journal.\nHighlight finds it; Take control switches to it.":ate?$"Find a well-fed adult partner.\n{input.MateKey} tries mating; failures explain why.":Vector3.Distance(startingPoint,a.transform.position)>3?$"Find ripe fruit; {input.EatKey} eats when close.\nFood restores energy, not health.":input.UsingGamepad?"Move: left stick · Look: right stick\nNorth → Getting started / Hide tips (pauses).":"Move: W A S D · Look: mouse\nTab → Getting started / Hide tips (pauses).";
+            SetBanner(tips,TipsVisible&&!completed?step:"");RefreshTurnover();
+            if(highlighted)highlighted.Highlight(false);highlighted=a.Interaction.Nearest();if(highlighted&&!session.Paused&&a.Interaction.EatReason(highlighted).Length==0)highlighted.Highlight(true);
+            if(session.Paused&&!naming){RefreshJournal();if(opening)Select(session.GameOver?livingTab:resume);RepairNavigation();}
         }
-        void RefreshTurnover(TurnoverHistory history)
+        void RefreshJournal()
         {
-            turnoverText.Clear();
-            foreach (var entry in history.Recent)
-            {
-                if (turnoverText.Length > 0) turnoverText.Append('\n');
-                turnoverText.Append(entry.Kind == TurnoverKind.Birth ? "<color=#C5E893>Born</color> " : "<color=#FFB99B>Died</color> ");
-                turnoverText.Append(GenerationLoop.ShortId(entry.CreatureId)).Append(" · Gen ").Append(entry.Generation);
-                if (entry.Kind == TurnoverKind.Death)
-                {
-                    if (entry.Cause == CreatureDeathCause.Starvation) turnoverText.Append(" · starvation");
-                    else if (entry.Cause == CreatureDeathCause.OldAge) turnoverText.Append(" · old age");
-                    else turnoverText.Append(" · cause unknown");
-                }
-                turnoverText.Append('\n');
-                if (entry.FirstParentId.IsValid || entry.SecondParentId.IsValid)
-                    turnoverText.Append("Parents ").Append(GenerationLoop.ShortId(entry.FirstParentId)).Append(" + ").Append(GenerationLoop.ShortId(entry.SecondParentId)).Append(" · ");
-                else turnoverText.Append("Founder · ");
-                turnoverText.Append("Lineage ").Append(GenerationLoop.ShortId(entry.FounderId));
+            var a=session.Player;var living=session.Generations.LivingDescendants(a.Life.Id);
+            title.text="FAMILY JOURNAL · Simulation paused — no energy is spent while reading";
+            if(session.GameOver){archive.TryDeath(a.Life.Id,out var death);bool known=archive.TryDeath(a.Life.Id,out _);title.text=$"LIFE ENDED · {session.Names.PersonalName(a.Life.Id)} · {(known?LineageChronicle.Cause(death.Cause):"cause unknown")}\n"+(living.Count==0?"No living descendants. Restart or reseed to begin again.":"Choose a descendant with Take control, or restart. No replacement is created.");}
+            resume.interactable=!session.GameOver;SetButtonText(tipsButton,TipsVisible&&!completed?"Hide first-step tips":"Show first-step tips");
+            bool cards=View==JournalView.Living||View==JournalView.Chronicle;
+            cardsPanel.SetActive(cards);detailsPanel.SetActive(View==JournalView.Details);guidePanel.SetActive(View==JournalView.Guide);eventsPanel.SetActive(View==JournalView.Events);
+            guide.text=GameplayText.Guide(input.UsingGamepad);
+            if(View==JournalView.Details){RefreshDetails();return;}if(!cards)return;
+            records.Clear();if(View==JournalView.Chronicle)session.CollectFamilyHistory(records);else foreach(var actor in living)records.Add(archive.Get(actor.Life.Id));
+            int pages=Mathf.Max(1,Mathf.CeilToInt(records.Count/3f));page=Mathf.Clamp(page,0,pages-1);
+            scope.text=View==JournalView.Chronicle?$"Family chronicle · page {page+1}/{pages}\nRelationships to {session.Names.Label(a.Life.Id)} (you).\nIncludes earlier controlled branches. Siblings: highlight only, no care or control.":$"Living descendants of {session.Names.Label(a.Life.Id)}\n{living.Count} living · page {page+1}/{pages}. Children, grandchildren and later descendants.\nAfter a control switch this list follows your new creature; other family stays in Chronicle.";
+            previousPage.interactable=page>0;nextPage.interactable=page<pages-1;
+            for(int i=0;i<3;i++){
+                int index=page*3+i;bool shown=index<records.Count;rows[i].gameObject.SetActive(shown);choices[i]=located[i]=null;rowIds[i]=default;if(!shown)continue;
+                var entry=records[index];var actor=LineageChronicle.LivingActor(session,entry);rowIds[i]=entry.CreatureId;
+                bool canControl=actor&&session.Generations.IsLivingDescendant(actor,a.Life.Id);bool canLocate=actor&&session.CanLocateFamily(actor)&&!session.GameOver;
+                choices[i]=canControl?actor:null;located[i]=canLocate?actor:null;
+                control[i].interactable=canControl;locate[i].gameObject.SetActive(canLocate);locate[i].interactable=canLocate;
+                labels[i].text=LineageChronicle.Card(session,entry,actor,canControl);
             }
-            turnover.text = turnoverText.Length == 0 ? "No births or deaths yet this run." : turnoverText.ToString();
         }
-        RectTransform Box(Transform parent, string label, Vector2 position, Vector2 size, Vector2 anchor)
+        int DetailPages(){var record=archive.Get(detailId);int mutations=record?.ImportantMutations?.Length??0;return 3+Mathf.CeilToInt(Mathf.Max(0,mutations-6)/6f);}
+        void RefreshDetails()
         {
-            var obj = new GameObject(label, typeof(RectTransform), typeof(Image)); obj.transform.SetParent(parent, false);
-            var rect = obj.GetComponent<RectTransform>(); rect.anchorMin = rect.anchorMax = anchor;
-            rect.pivot = anchor; rect.sizeDelta = size; rect.anchoredPosition = position;
-            obj.GetComponent<Image>().color = new Color(.035f, .075f, .075f, .36f); return rect;
+            var entry=archive.Get(detailId)??archive.Get(session.Player.Life.Id);var actor=LineageChronicle.LivingActor(session,entry);
+            string age=actor?$"Age {actor.Life.Age:0}s":archive.TryDeath(entry.CreatureId,out var d)?$"Lived {entry.AgeAt(d.Time):0}s · {LineageChronicle.Cause(d.Cause)}":"Age unavailable · no recorded death";
+            string heading=$"<b>{session.Names.PersonalName(entry.CreatureId)}</b> · {GenerationLoop.ShortId(entry.CreatureId)} · Gen {entry.Generation}\n"+LineageChronicle.Relationship(archive,session.Player.Life.Id,entry)+" · "+age+"\n\n";
+            if(detailSection==0){detailLeft.text=heading+(actor?GameplayText.Build(actor.Genome)+$"\nEnergy {actor.Vitals.Energy:0.0}/{actor.Stats.MaxEnergy:0.0} · Health {actor.Vitals.Health:0.0}/100\nStamina {actor.Vitals.Stamina:0.0}/{actor.Stats.MaxStamina:0.0}\n{session.World.Zone(actor.transform.position)} · {Vector3.Distance(session.Player.transform.position,actor.transform.position):0} m away\n\n"+GameplayText.Tradeoffs:"Actor unavailable. No living stats inferred.\nUse recorded inheritance on the next page.");detailRight.text=actor?GameplayText.Numbers(actor):"No current resource or movement values available.";}
+            if(detailSection==1){detailLeft.text=heading+archive.Changes(entry.CreatureId);detailRight.text=GameplayText.Mutations(entry.ImportantMutations,0,6)+"\n\nParent A: "+session.Names.Label(entry.FirstParentId)+"\nParent B: "+session.Names.Label(entry.SecondParentId)+"\n\nParent values are birth-time records.\nMutation is probabilistic, not a promised benefit.";}
+            if(detailSection==2){detailLeft.text=heading+(actor?GameplayText.Genes(actor.Genome):"Exact current genome unavailable after actor cleanup.\nThe recorded parent comparisons remain on page 2.");detailRight.text="READING THESE NUMBERS\n\nEnergy: stored food used for living, moving, mating and care. At zero, health falls.\n\nHealth: damage is not healed by food or care. At zero, this life ends.\n\nStamina: sprinting uses it; walking or resting recovers it. It is not food.\n\nThese are different resources. No single number measures genetic success.";}
+            if(detailSection>=3){detailLeft.text=heading+"Additional recorded mutations";detailRight.text=GameplayText.Mutations(entry.ImportantMutations,(detailSection-2)*6,6);}
+            SetButtonText(detailPage,$"Next details page · {detailSection+1}/{DetailPages()}");
         }
-        TMP_Text Text(Transform parent, string content, Vector2 position, Vector2 size, int fontSize, Color color, Vector2? anchorOverride = null)
+        void RefreshTurnover()
         {
-            var obj = new GameObject("Text", typeof(RectTransform), typeof(TextMeshProUGUI)); obj.transform.SetParent(parent, false);
-            var rect = obj.GetComponent<RectTransform>(); Vector2 anchor = anchorOverride ?? new Vector2(0, 1);
-            rect.anchorMin = rect.anchorMax = anchor; rect.pivot = anchor; rect.sizeDelta = size; rect.anchoredPosition = position;
-            var text = obj.GetComponent<TextMeshProUGUI>(); text.font = session.hudFont; text.fontSize = fontSize; text.color = color; text.text = content;
-            text.outlineWidth = .12f;
-            text.raycastTarget = false; text.textWrappingMode = TextWrappingModes.NoWrap; return text;
+            builder.Clear();builder.Append("RECENT BIRTHS / DEATHS · last 4\n\n");var shortText=new StringBuilder("RECENT LIVES · journal for details\n");int n=0;
+            foreach(var e in session.Generations.Turnover.Recent){
+                string kind=e.Kind==TurnoverKind.Birth?"Born":"Died";string cause=e.Kind==TurnoverKind.Death?" · "+LineageChronicle.Cause(e.Cause):"";
+                builder.Append(kind).Append(" · ").Append(session.Names.PersonalName(e.CreatureId)).Append(" · ").Append(GenerationLoop.ShortId(e.CreatureId)).Append(" · Gen ").Append(e.Generation).Append(cause).Append('\n');
+                builder.Append("Parents ").Append(GenerationLoop.ShortId(e.FirstParentId)).Append(" + ").Append(GenerationLoop.ShortId(e.SecondParentId)).Append(" · Lineage ").Append(GenerationLoop.ShortId(e.FounderId)).Append("\n\n");
+                if(n++<2)shortText.Append(kind).Append(' ').Append(session.Names.PersonalName(e.CreatureId)).Append(' ').Append(GenerationLoop.ShortId(e.CreatureId)).Append(cause).Append('\n');
+            }
+            if(n==0)builder.Append("No births or deaths recorded this run.");turnover.text=builder.ToString();SetBanner(briefEvents,n>0?shortText.ToString().TrimEnd():"");
         }
-        Image Bar(Transform parent, string label, float y, Color color)
+        void RepairNavigation()
         {
-            Text(parent, label.ToUpperInvariant(), new Vector2(20, -y), new Vector2(260, 20), 14, color);
-            var track = Box(parent, label + " track", new Vector2(20, -y - 21), new Vector2(260, 8), new Vector2(0, 1));
-            track.GetComponent<Image>().color = new Color(.12f, .2f, .2f);
-            var fill = Box(track, label + " fill", Vector2.zero, new Vector2(260, 8), new Vector2(0, 1)).GetComponent<Image>();
-            fill.color = color; fill.type = Image.Type.Filled; fill.fillMethod = Image.FillMethod.Horizontal; return fill;
+            // A bounded ordered ring works with arrows/D-pad even after paging or hiding a button.
+            var active=new List<Button>();foreach(var b in navigation)if(b&&b.gameObject.activeInHierarchy&&b.interactable)active.Add(b);
+            for(int i=0;i<active.Count;i++){var n=new Navigation{mode=Navigation.Mode.Explicit};n.selectOnUp=n.selectOnLeft=active[(i+active.Count-1)%active.Count];n.selectOnDown=n.selectOnRight=active[(i+1)%active.Count];active[i].navigation=n;}
+            if(EventSystem.current){var selected=EventSystem.current.currentSelectedGameObject;var s=selected?selected.GetComponent<Selectable>():null;if(!s||!s.IsActive()||!s.IsInteractable())if(active.Count>0)Select(active[0]);}
         }
-        Button ButtonAt(Transform parent, string title, float y, UnityEngine.Events.UnityAction callback)
+        static void Select(Button button){if(EventSystem.current&&button&&button.interactable)EventSystem.current.SetSelectedGameObject(button.gameObject);}
+        static void SetButtonText(Button button,string value)=>button.GetComponentInChildren<TMP_Text>().text=value;
+        static void SetBanner(TMP_Text text,string value){text.text=value;text.transform.parent.gameObject.SetActive(value.Length>0);}
+        RectTransform Box(Transform parent,string name,float x,float y,float w,float h,Vector2 anchor,float alpha)
         {
-            var rect = Box(parent, title, new Vector2(35, -y), new Vector2(300, 55), new Vector2(0, 1));
-            var button = rect.gameObject.AddComponent<Button>(); button.targetGraphic = rect.GetComponent<Image>();
-            rect.GetComponent<Image>().color = new Color(.17f, .3f, .26f, .48f);
-            var label = Text(rect, title, new Vector2(0, -8), new Vector2(300, 42), 24, Color.white); label.alignment = TextAlignmentOptions.Center;
-            button.onClick.AddListener(callback); return button;
+            var go=new GameObject(name,typeof(RectTransform),typeof(Image));go.transform.SetParent(parent,false);var r=go.GetComponent<RectTransform>();r.anchorMin=r.anchorMax=r.pivot=anchor;r.anchoredPosition=new Vector2(x,y);r.sizeDelta=new Vector2(w,h);go.GetComponent<Image>().color=new Color(.035f,.065f,.07f,alpha);return r;
+        }
+        TMP_Text Text(Transform parent,string value,float x,float y,float w,float h,int size,Vector2? anchor=null)
+        {
+            var go=new GameObject("Text",typeof(RectTransform),typeof(TextMeshProUGUI));go.transform.SetParent(parent,false);var t=go.GetComponent<TextMeshProUGUI>();var r=t.rectTransform;r.anchorMin=r.anchorMax=r.pivot=anchor??new Vector2(0,1);r.anchoredPosition=new Vector2(x,y);r.sizeDelta=new Vector2(w,h);t.font=session.hudFont;t.fontSize=size;t.color=new Color(.96f,.97f,.92f);t.text=value;t.raycastTarget=false;t.textWrappingMode=TextWrappingModes.Normal;return t;
+        }
+        static void Shade(TMP_Text t){var shadow=t.gameObject.AddComponent<Shadow>();shadow.effectColor=new Color(0,0,0,.85f);shadow.effectDistance=new Vector2(1,-1);}
+        TMP_Text Banner(Transform parent,string name,float x,float y,float w,float h,Vector2 anchor)
+        {
+            var panel=Box(parent,name,x,y,w,h,anchor,.76f);var t=Text(panel,"",14,-10,w-28,h-20,25);t.alignment=TextAlignmentOptions.Center;return t;
+        }
+        Button ButtonAt(Transform parent,string name,float x,float y,float w,float h,UnityEngine.Events.UnityAction action,int size=24,string label=null)
+        {
+            var r=Box(parent,name,x,-y,w,h,new Vector2(0,1),1);r.GetComponent<Image>().color=new Color(.17f,.27f,.27f,1);var b=r.gameObject.AddComponent<Button>();b.targetGraphic=r.GetComponent<Image>();
+            var colors=b.colors;colors.highlightedColor=new Color(.75f,.83f,.68f);colors.selectedColor=new Color(.75f,.83f,.68f);colors.disabledColor=new Color(.5f,.5f,.5f);b.colors=colors;
+            var t=Text(r,label??name,8,-3,w-16,h-6,size);t.alignment=TextAlignmentOptions.Center;b.onClick.AddListener(action);navigation.Add(b);return b;
         }
         void BuildNaming(Transform root)
         {
-            var panel = Box(root, "Name your child", Vector2.zero, new Vector2(620, 290), new Vector2(.5f, .5f));
-            panel.GetComponent<Image>().color = new Color(.035f, .075f, .075f, .72f);
-            namePanel = panel.gameObject;
-            Text(panel, "WELCOME TO THE FAMILY", new Vector2(30, -22), new Vector2(560, 38), 26, Color.white);
-            Text(panel, "Name your child · birth order is added automatically", new Vector2(30, -67), new Vector2(560, 30), 19, Color.white);
-            var field = Box(panel, "Child name", new Vector2(30, -108), new Vector2(560, 48), new Vector2(0, 1));
-            nameInput = field.gameObject.AddComponent<TMP_InputField>();
-            nameInput.targetGraphic = field.GetComponent<Image>(); nameInput.characterLimit = 16;
-            var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(RectMask2D)); viewport.transform.SetParent(field, false);
-            var view = viewport.GetComponent<RectTransform>(); view.anchorMin = Vector2.zero; view.anchorMax = Vector2.one;
-            view.offsetMin = new Vector2(12, 2); view.offsetMax = new Vector2(-12, -2);
-            nameInput.textViewport = view;
-            nameInput.textComponent = Text(view, "", Vector2.zero, new Vector2(536, 44), 24, Color.white);
-            nameInput.placeholder = Text(view, "Type a name (optional)", Vector2.zero, new Vector2(536, 44), 24, new Color(1, 1, 1, .55f));
-            namePreview = Text(panel, "", new Vector2(30, -168), new Vector2(560, 30), 20, new Color(.88f, .95f, .73f));
-            nameInput.onValueChanged.AddListener(value => namePreview.text = FamilyNames.CleanName(value).Length == 0 ? "Default: " + session.Names.PersonalName(session.Names.Pending) : FamilyNames.Format(value, session.Names.BirthOrder(session.Names.Pending)));
-            nameInput.onSubmit.AddListener(value => { if (session.Names.HasPrompt) session.Names.Submit(value); });
-            var confirm = ButtonAt(panel, "Name child", 214, () => session.Names.Submit(nameInput.text));
-            confirm.GetComponent<RectTransform>().sizeDelta = new Vector2(260, 55); confirm.GetComponentInChildren<TMP_Text>().rectTransform.sizeDelta = new Vector2(260, 42);
-            var skip = ButtonAt(panel, "Skip", 214, () => session.Names.Submit(""));
-            skip.GetComponent<RectTransform>().anchoredPosition = new Vector2(325, -214); skip.GetComponent<RectTransform>().sizeDelta = new Vector2(260, 55);
-            skip.GetComponentInChildren<TMP_Text>().rectTransform.sizeDelta = new Vector2(260, 42);
-            namePanel.SetActive(false);
+            var panel=Box(root,"Name your child",0,0,800,400,new Vector2(.5f,.5f),.94f);namePanel=panel.gameObject;
+            Text(panel,"WELCOME TO THE FAMILY · Simulation paused",28,-24,744,40,27);
+            Text(panel,"Name your child, or keep its default. Birth order is added:\nDave becomes Dave 1 for your first child. No energy is spent here.",28,-78,744,68,24);
+            var field=Box(panel,"Child name",28,-162,744,56,new Vector2(0,1),1);nameInput=field.gameObject.AddComponent<TMP_InputField>();nameInput.targetGraphic=field.GetComponent<Image>();nameInput.characterLimit=16;
+            var viewport=new GameObject("Viewport",typeof(RectTransform),typeof(RectMask2D));viewport.transform.SetParent(field,false);var view=viewport.GetComponent<RectTransform>();view.anchorMin=Vector2.zero;view.anchorMax=Vector2.one;view.offsetMin=new Vector2(12,2);view.offsetMax=new Vector2(-12,-2);
+            nameInput.textViewport=view;nameInput.textComponent=Text(view,"",0,0,720,52,26);nameInput.placeholder=Text(view,"Type a name (optional; keyboard)",0,0,720,52,26);
+            namePreview=Text(panel,"",28,-242,744,38,24);
+            nameInput.onValueChanged.AddListener(value=>namePreview.text=FamilyNames.CleanName(value).Length==0?"Keep default: "+session.Names.PersonalName(session.Names.Pending):FamilyNames.Format(value,session.Names.BirthOrder(session.Names.Pending)));
+            nameInput.onSubmit.AddListener(value=>{if(session.Names.HasPrompt)session.Names.Submit(value);});
+            var confirm=ButtonAt(panel,"Name child",28,310,350,56,()=>session.Names.Submit(nameInput.text));var skip=ButtonAt(panel,"Skip",422,310,350,56,()=>session.Names.Submit(""),24,"Keep default / Skip");
+            var nav=new Navigation{mode=Navigation.Mode.Explicit,selectOnDown=confirm,selectOnRight=skip};nameInput.navigation=nav;
+            confirm.navigation=new Navigation{mode=Navigation.Mode.Explicit,selectOnUp=nameInput,selectOnRight=skip,selectOnDown=skip};skip.navigation=new Navigation{mode=Navigation.Mode.Explicit,selectOnUp=nameInput,selectOnLeft=confirm,selectOnDown=confirm};namePanel.SetActive(false);
         }
-        void OnDestroy() { if (highlighted) highlighted.Highlight(false); }
+        void OnDestroy(){if(highlighted)highlighted.Highlight(false);}
     }
 }

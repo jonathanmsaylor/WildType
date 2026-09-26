@@ -61,8 +61,8 @@ namespace WildType.Tests
             yield return WaitReady(children[0],session.Creatures[4]);yield return Birth(children[0],session.Creatures[4]);var grandchild=session.Creatures.Last();
             Assert.AreEqual("Dave 1",session.Names.PersonalName(grandchild.Life.Id));Assert.AreEqual(1,session.Generations.LivingDescendants(children[0].Life.Id).Count);
             yield return Open(true);Button("Next page").onClick.Invoke();yield return new WaitForSecondsRealtime(.2f);
-            StringAssert.Contains("Sibling · Living",Text());StringAssert.Contains("locate only",Text());
-            var siblingCard=session.GetComponentsInChildren<Button>().First(b=>b.GetComponentInChildren<TMP_Text>().text.Contains("Dave 2"));
+            StringAssert.Contains("Sibling · Living",Text());StringAssert.Contains("highlight only",Text());
+            var siblingCard=session.GetComponentsInChildren<TMP_Text>().First(t=>t.name=="Relative identity"&&t.text.Contains("Dave 2")).transform.parent.GetComponentsInChildren<Button>().First(b=>b.name=="Take control");
             Assert.False(siblingCard.interactable);siblingCard.onClick.Invoke();Assert.AreSame(children[0],session.Player);
             var locates=session.GetComponentsInChildren<Button>().Where(b=>b.name=="Locate").ToArray();Assert.Greater(locates.Length,0);locates[0].onClick.Invoke();
             Assert.AreSame(children[1],session.Locator.Target);Assert.AreSame(children[0],session.Player);Assert.False(session.Paused);

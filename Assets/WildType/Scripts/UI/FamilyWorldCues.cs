@@ -27,14 +27,14 @@ namespace WildType
             foodPrompt = TargetLabel(root, "Food interaction prompt", new Color(1, .88f, .43f));
             matePrompt = TargetLabel(root, "Mating prompt", new Color(1, .73f, .81f));
             locatePrompt = TargetLabel(root, "Descendant locate cue", new Color(1, .9f, .66f));
-            locatePrompt.fontSize = 19; locatePrompt.rectTransform.sizeDelta = new Vector2(430, 58);
+            locatePrompt.fontSize = 22; locatePrompt.rectTransform.sizeDelta = new Vector2(500, 66);
             root.gameObject.AddComponent<DescendantPulse>().Configure(session);
             for (int i = 0; i < labels.Length; i++)
             {
                 var go = new GameObject("Child relationship cue", typeof(RectTransform), typeof(TextMeshProUGUI)); go.transform.SetParent(root, false);
-                var t = go.GetComponent<TextMeshProUGUI>(); t.font = session.hudFont; t.fontSize = 19;
+                var t = go.GetComponent<TextMeshProUGUI>(); t.font = session.hudFont; t.fontSize = 22;
                 t.alignment = TextAlignmentOptions.Center; t.color = new Color(.88f, 1, .74f); t.outlineWidth = .18f;
-                t.raycastTarget = false; t.textWrappingMode = TextWrappingModes.NoWrap; t.rectTransform.sizeDelta = new Vector2(430, 58);
+                t.raycastTarget = false; t.textWrappingMode = TextWrappingModes.NoWrap; t.rectTransform.sizeDelta = new Vector2(500, 66);
                 labels[i] = t; go.SetActive(false);
             }
             for (int i = 0; i < hearts.Length; i++)
@@ -89,9 +89,9 @@ namespace WildType
                 Place(labels[i].rectTransform, point, false);
                 // Spread projected neighbours just enough to keep their small labels distinct.
                 for (int j = 0; j < i; j++) if (labels[j].gameObject.activeSelf &&
-                    Mathf.Abs(labels[i].rectTransform.anchoredPosition.x - labels[j].rectTransform.anchoredPosition.x) < 230 &&
-                    Mathf.Abs(labels[i].rectTransform.anchoredPosition.y - labels[j].rectTransform.anchoredPosition.y) < 55)
-                    labels[i].rectTransform.anchoredPosition += Vector2.up * 58;
+                    Mathf.Abs(labels[i].rectTransform.anchoredPosition.x - labels[j].rectTransform.anchoredPosition.x) < 500 &&
+                    Mathf.Abs(labels[i].rectTransform.anchoredPosition.y - labels[j].rectTransform.anchoredPosition.y) < 68)
+                    labels[i].rectTransform.anchoredPosition += Vector2.up * 70;
                 if (!updateText) continue;
                 float distance = Vector3.Distance(session.Player.transform.position, child.transform.position);
                 labels[i].text = "Your child " + session.Names.Label(child.Life.Id) + $" · {distance:0} m\nGen {session.Generations.Archive.Get(child.Life.Id).Generation} · " +
@@ -143,7 +143,7 @@ namespace WildType
             if (foodPrompt.gameObject.activeSelf)
             {
                 Place(foodPrompt.rectTransform, foodPoint, false);
-                if (updateText) foodPrompt.text = session.GetComponent<PlayerInputBridge>().EatKey + " eat\n" + food.DisplayName;
+                if (updateText) foodPrompt.text = session.GetComponent<PlayerInputBridge>().EatKey + " eat " + food.DisplayName + $"\n+{Mathf.Min(session.Player.Stats.MaxEnergy-session.Player.Vitals.Energy,food.nutrition*session.Player.Stats.NutritionFactor):0.0} energy";
             }
             var partner = active ? session.Generations.ReadyPlayerPartner() : null;
             Vector3 matePoint = partner ? partner.transform.position + Vector3.up * (partner.CurrentHeight + .7f) : Vector3.zero;
@@ -151,16 +151,18 @@ namespace WildType
             if (matePrompt.gameObject.activeSelf)
             {
                 Place(matePrompt.rectTransform, matePoint, false);
-                if (updateText) matePrompt.text = session.GetComponent<PlayerInputBridge>().MateKey + " mate\n" + session.Names.Label(partner.Life.Id) + " · 30% energy";
+                if (updateText) matePrompt.text = session.GetComponent<PlayerInputBridge>().MateKey + " mate · " + session.Names.PersonalName(partner.Life.Id) + $"\nYou spend {session.Player.Stats.MaxEnergy*GenerationLoop.ParentEnergyCost:0.0} energy at birth";
             }
         }
         public static string Bearing(Vector3 viewport) => viewport.z <= 0 ? "Behind" : viewport.x < .04f ? "Left" : viewport.x > .96f ? "Right" : viewport.y < .07f ? "Below" : "Above";
         TMP_Text TargetLabel(RectTransform root, string name, Color color)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI)); go.transform.SetParent(root, false);
-            var text = go.GetComponent<TextMeshProUGUI>(); text.font = session.hudFont; text.fontSize = 23; text.color = color;
+            var text = go.GetComponent<TextMeshProUGUI>(); text.font = session.hudFont; text.fontSize = 24; text.color = color;
             text.outlineWidth = .18f; text.alignment = TextAlignmentOptions.Center; text.raycastTarget = false;
-            text.textWrappingMode = TextWrappingModes.NoWrap; text.rectTransform.sizeDelta = new Vector2(340, 64); go.SetActive(false); return text;
+            text.textWrappingMode = TextWrappingModes.Normal; text.rectTransform.sizeDelta = new Vector2(480, 80);
+            var shadow=go.AddComponent<UnityEngine.UI.Shadow>();shadow.effectColor=new Color(0,0,0,.95f);shadow.effectDistance=new Vector2(2,-2);
+            go.SetActive(false); return text;
         }
         bool PointVisible(Vector3 point)
         {

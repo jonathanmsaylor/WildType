@@ -49,10 +49,10 @@ namespace WildType
             switch (reason)
             {
                 case ReproductionRejection.None: return "";
-                case ReproductionRejection.Juvenile: return $"Adult in {Mathf.CeilToInt(actor.Stats.MaturityAge - actor.Life.Age)}s";
-                case ReproductionRejection.InsufficientEnergy: return $"Need {actor.Stats.MaxEnergy * actor.Stats.ReproductionEnergyFraction:0} energy";
-                case ReproductionRejection.Cooldown: return $"Mating cooldown {Mathf.CeilToInt(actor.Life.Cooldown)}s";
-                case ReproductionRejection.LowHealth: return "Need at least 60 health";
+                case ReproductionRejection.Juvenile: return $"Still growing — adult in {Mathf.CeilToInt(actor.Stats.MaturityAge - actor.Life.Age)}s";
+                case ReproductionRejection.InsufficientEnergy: return $"Need {actor.Stats.MaxEnergy * actor.Stats.ReproductionEnergyFraction:0.0} energy to mate — eat ripe fruit first";
+                case ReproductionRejection.Cooldown: return $"Recovering from mating — try again in {Mathf.CeilToInt(actor.Life.Cooldown)}s";
+                case ReproductionRejection.LowHealth: return "Need at least 60 health to mate; eating restores energy, not health";
                 case ReproductionRejection.Reserved: return "Courting — stay nearby";
                 case ReproductionRejection.Dead: return "Creature has died";
                 default: return "Invalid creature data";
@@ -73,7 +73,15 @@ namespace WildType
             var result = ReproductionEligibility.Evaluate(first.Life.Candidate(checkReserved && Reserved(first)),
                 second.Life.Candidate(checkReserved && Reserved(second)), GeneticDistance.Between(first.Genome, second.Genome),
                 settings.compatibilityThreshold, session.Population, PopulationCap);
-            if (!result.Eligible) return result.Rejection == ReproductionRejection.Incompatible ? "Genomes too different" : "Partner not ready: " + result.Rejection;
+            if (!result.Eligible)
+            {
+                if (result.Rejection == ReproductionRejection.Incompatible) return "Genomes too different — look for another partner";
+                string own = IndividualReason(first);
+                if (own.Length > 0 && (checkReserved || !Reserved(first))) return own;
+                string other = IndividualReason(second);
+                if (other.Length > 0 && (checkReserved || !Reserved(second))) return "Partner: " + other;
+                return "Partner not ready: " + result.Rejection;
+            }
             if (checkRange && Vector3.Distance(first.transform.position, second.transform.position) > MateRange) return "Move within 3.5 m of partner";
             return "";
         }
@@ -96,7 +104,7 @@ namespace WildType
             if (reason.Length > 0) return reason;
             reason = CapacityReason(true); if (reason.Length > 0) return reason;
             var partner = FindPartner(player, MateRange, true);
-            if (partner) return session.GetComponent<PlayerInputBridge>().MateKey + ": mate with " + ShortId(partner.Life.Id) + " (cost 30% energy)";
+            if (partner) return session.GetComponent<PlayerInputBridge>().MateKey + ": mate with " + session.Names.PersonalName(partner.Life.Id) + $" — costs you {player.Stats.MaxEnergy * ParentEnergyCost:0.0} energy at birth";
             partner = FindPartner(player, MateRange, false);
             if (partner) return "Nearby: " + PairReason(player, partner, true, true);
             partner = FindPartner(player, player.Stats.Vision, true);

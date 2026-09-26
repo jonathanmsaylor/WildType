@@ -44,10 +44,10 @@ namespace WildType.Tests
             yield return Family(); var id=child.Life.Id; string name=session.Names.Label(id);
             child.Vitals.SpendEnergy(child.Vitals.Energy);child.Vitals.Tick(30,0,false);
             Assert.True(child.Vitals.Dead);yield return new WaitForSeconds(4.3f);Assert.False(child);
-            yield return Open();string text=Text();StringAssert.Contains(name,text);StringAssert.Contains("Deceased · starvation",text);
+            yield return Open();string text=Text();StringAssert.Contains(session.Names.PersonalName(id),text);StringAssert.Contains(GenerationLoop.ShortId(id),text);StringAssert.Contains("Deceased · starvation",text);
             StringAssert.Contains("Parents #001 + #002 · Children born 1",text);StringAssert.Contains("Gen 2",text);
             var locate=session.GetComponentsInChildren<Button>().Where(b=>b.name=="Locate").ToArray();Assert.AreEqual(1,locate.Length);
-            var deadCard=session.GetComponentsInChildren<Button>().First(b=>b.GetComponentInChildren<TMP_Text>().text.Contains("Deceased · starvation"));
+            var deadCard=session.GetComponentsInChildren<TMP_Text>().First(t=>t.text.Contains("Deceased · starvation")&&t.name=="Relative identity").transform.parent.GetComponentsInChildren<Button>().First(b=>b.name=="Take control");
             Assert.False(deadCard.interactable);deadCard.onClick.Invoke();Assert.AreSame(parent,session.Player);
             foreach(var label in session.GetComponentsInChildren<TMP_Text>().Where(t=>t.text.Contains("Children born")))
             {label.ForceMeshUpdate();Assert.LessOrEqual(label.preferredHeight,label.rectTransform.rect.height+1);Assert.LessOrEqual(label.preferredWidth,label.rectTransform.rect.width+1);}
@@ -59,7 +59,7 @@ namespace WildType.Tests
             yield return Family();var childId=child.Life.Id;child.Vitals.Damage(100);yield return new WaitForSeconds(4.3f);
             Assert.True(session.TakeControl(grandchild));yield return Open();
             StringAssert.Contains("Family chronicle · page 1/2",Text());Button("Next page").onClick.Invoke();yield return new WaitForSecondsRealtime(.2f);
-            StringAssert.Contains("Parent · Deceased · cause unknown",Text());StringAssert.Contains(session.Names.Label(childId),Text());
+            StringAssert.Contains("Parent · Deceased · cause unknown",Text());StringAssert.Contains(session.Names.PersonalName(childId),Text());StringAssert.Contains(GenerationLoop.ShortId(childId),Text());
             Assert.AreEqual(0,session.GetComponentsInChildren<Button>().Count(b=>b.name=="Locate"));
             session.Restart(false);yield return null;yield return new WaitForSecondsRealtime(.3f);Freeze();yield return Open();
             StringAssert.Contains("page 1/1",Text());StringAssert.DoesNotContain("Deceased",Text());Assert.AreEqual(13,session.Names.Count);

@@ -34,9 +34,9 @@ namespace WildType
             string state = died ? "Deceased · " + Cause(death.Cause) : actor ? (actor.Life.Adult ? "Living adult" : "Living juvenile") : "Unavailable · no recorded death";
             string time = died ? $"Lived {record.AgeAt(death.Time):0}s" : actor ? $"Age {actor.Life.Age:0}s" : "Birth recorded";
             string parents = record.Generation == 0 ? "Founder" : "Parents " + GenerationLoop.ShortId(record.FirstParentId) + " + " + GenerationLoop.ShortId(record.SecondParentId);
-            return $"<size=20>{session.Names.Label(record.CreatureId)} · Gen {record.Generation}</size>\n" +
+            return $"<b>{session.Names.PersonalName(record.CreatureId)}</b> · {GenerationLoop.ShortId(record.CreatureId)} · Gen {record.Generation}\n" +
                 relation + " · " + state + "\n" + parents + $" · Children born {record.OffspringCount}\n" +
-                time + (canControl ? " · select to control" : actor && session.CanLocateFamily(actor) ? " · locate only" : " · record only");
+                time + (canControl ? " · control eligible" : actor && session.CanLocateFamily(actor) ? " · highlight only" : " · record only");
         }
     }
 }

@@ -102,8 +102,8 @@ namespace WildType.Tests
             var buttons = session.GetComponentsInChildren<UnityEngine.UI.Button>(); bool clicked = false;
             foreach (var button in buttons)
             {
-                var label = button.GetComponentInChildren<TMPro.TMP_Text>();
-                if (label && label.text.StartsWith("<size=21>" + GenerationLoop.ShortId(child.Life.Id) + " ·"))
+                var label = button.transform.parent.GetComponentInChildren<TMPro.TMP_Text>();
+                if (button.name=="Take control" && label && label.text.Contains(GenerationLoop.ShortId(child.Life.Id)))
                 { button.onClick.Invoke(); clicked = true; break; }
             }
             Assert.True(clicked, "The family journal must render and wire a real descendant button");
@@ -151,15 +151,18 @@ namespace WildType.Tests
             yield return new WaitForSeconds(2.2f); Assert.False(victim, "Corpse has been removed");
             Assert.AreEqual(1, loop.Deaths); Assert.AreEqual(victimId, loop.Turnover.Recent[1].CreatureId);
             session.SetPaused(true); yield return new WaitForSecondsRealtime(.15f);
+            session.GetComponent<StageHud>().Show(StageHud.JournalView.Events); yield return new WaitForSecondsRealtime(.15f);
             TMPro.TMP_Text eventText = null; bool countersVisible = false;
-            foreach (var label in session.GetComponentsInChildren<TMPro.TMP_Text>())
+            foreach (var label in session.GetComponentsInChildren<TMPro.TMP_Text>(true))
             {
                 if (label.name == "Turnover events") eventText = label;
-                if (label.text.Contains("Population 13/24 · Births 1 · Deaths 1")) countersVisible = true;
+                if ((label.text??"").Contains("Population 13/24 · Births 1 · Deaths 1")) countersVisible = true;
             }
-            Assert.True(countersVisible); Assert.NotNull(eventText); Assert.True(eventText.gameObject.activeInHierarchy);
-            StringAssert.Contains("Died</color> " + GenerationLoop.ShortId(victimId) + " · Gen 0 · starvation", eventText.text);
-            StringAssert.Contains("Born</color> " + GenerationLoop.ShortId(birth.CreatureId) + " · Gen 1", eventText.text);
+            // Counters remain in ordinary play; full records are deliberately moved to the paused journal.
+            Assert.True(countersVisible);
+            Assert.NotNull(eventText); Assert.True(eventText.gameObject.activeInHierarchy);
+            StringAssert.Contains(GenerationLoop.ShortId(victimId) + " · Gen 0 · starvation", eventText.text);
+            StringAssert.Contains(GenerationLoop.ShortId(birth.CreatureId) + " · Gen 1", eventText.text);
             StringAssert.Contains("Parents " + GenerationLoop.ShortId(parentId), eventText.text);
             StringAssert.Contains("Lineage " + GenerationLoop.ShortId(death.FounderId), eventText.text);
             eventText.ForceMeshUpdate(); Assert.False(eventText.isTextOverflowing);

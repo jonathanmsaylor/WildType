@@ -191,14 +191,13 @@ namespace WildType.Tests
             Assert.AreEqual("Dave 1", session.Names.PersonalName(id)); Assert.AreEqual(id, child.Life.Id);
             Assert.False(session.Paused); Assert.False(session.Names.HasPrompt);
             session.SetPaused(true); yield return new WaitForSecondsRealtime(.2f); Canvas.ForceUpdateCanvases();
-            var selection = GameObject.Find("Descendants").GetComponent<RectTransform>(); Assert.AreEqual(620, selection.sizeDelta.x);
+            var selection = GameObject.Find("Descendants").GetComponent<RectTransform>(); Assert.AreEqual(1184, selection.sizeDelta.x);
             bool found = false;
-            foreach (var b in selection.GetComponentsInChildren<Button>())
+            foreach (var label in selection.GetComponentsInChildren<TMP_Text>())
             {
-                var label = b.GetComponentInChildren<TMP_Text>();
                 if (!label.text.Contains("Dave 1")) continue;
                 found = true; Assert.GreaterOrEqual(label.fontSize, 18); label.ForceMeshUpdate(); Assert.False(label.isTextOverflowing);
-                Assert.AreEqual(78, b.GetComponent<RectTransform>().sizeDelta.y);
+                Assert.AreEqual(152, label.transform.parent.GetComponent<RectTransform>().sizeDelta.y);
             }
             Assert.True(found); Assert.True(session.TakeControl(child)); Assert.AreEqual("Dave 1", session.Names.PersonalName(id));
             session.SetPaused(true); session.Restart(false); yield return null; yield return new WaitForSecondsRealtime(.3f); Freeze();
@@ -215,9 +214,9 @@ namespace WildType.Tests
             yield return new WaitForSeconds(.2f); Assert.True(cues.MatePromptVisible);
             Assert.False(GameObject.Find("Controls"), "No permanent bottom-left control legend");
             var lineage = GameObject.Find("Lineage").GetComponent<RectTransform>(); Assert.AreEqual(340, lineage.sizeDelta.x);
-            Assert.LessOrEqual(lineage.GetComponent<Image>().color.a, .4f);
-            var family = GameObject.Find("Inherited traits").GetComponent<TMP_Text>();
-            Assert.AreEqual(20, family.fontSize); family.ForceMeshUpdate(); Assert.False(family.isTextOverflowing);
+            Assert.LessOrEqual(lineage.GetComponent<Image>().color.a, .66f);
+            var family = GameObject.Find("Family identity").GetComponent<TMP_Text>();
+            Assert.AreEqual(24, family.fontSize); family.ForceMeshUpdate(); Assert.False(family.isTextOverflowing);
             var food = session.World.Foods[0];
             Place(parent, food.transform.position.x, food.transform.position.z - 1.5f); session.orbit.Configure(parent, session);
             parent.Vitals.Eat(1000); yield return new WaitForSeconds(.2f); Assert.False(cues.FoodPromptVisible, "Full creature has no eat prompt");

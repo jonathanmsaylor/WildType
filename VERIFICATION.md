@@ -1,4 +1,19 @@
-# WILDTYPE verification — painterly prototype — 2026-09-25
+# WILDTYPE verification — gameplay clarity — 2026-09-25
+
+Branch: **milestone-gameplay-clarity**, based on pushed painterly prototype **168d0f04daae5b78f71c0709ff09c2c4bc207a51**. Main is unchanged. See [the clarity report and actual Game-view evidence](Documentation/GameplayClarity/REPORT.md).
+
+Presentation-only scope: labeled survival resources, truthful contextual costs/failure messages, explicit Highlight versus Take control, paused guidance, exact stats/genes/parent comparisons in Details, and a shorter ordinary turnover summary with all four records retained in the journal. The brief-E-tap Editor fallback now matches the existing guarded F/R routes. Genetics, ecology, survival formulas, reproduction, care accounting, ancestry/caps, painterly F6 and zoom are unchanged.
+
+- Final complete suites after helper removal: **129/129 Edit Mode**, **44/44 Play Mode**, **zero failed/skipped**. Execution durations: 0.25 seconds and 510.89 seconds respectively, excluding startup/import. Ten new Edit cases and four new Play cases cover status/cost truthfulness, details, guide/pause/reset, relationships, separate action eligibility, virtual-device navigation and text/layout checks. Intermediate failures and fixes are documented in the report.
+- Rendered native inspection: original and painterly saved scenes at **1920×1080**; original naming, journal, Details, care quote and death states also at **1366×768**. Actual E meals, F courtship/birth, R transfer (18.0 cost / 14.4 gain), journal Highlight, descendant control, death with/without descendants, restart and painterly F6 were exercised. Partner/food/child placement, resources and fatal damage were explicitly assisted; not an unassisted survival session or human usability study.
+- Virtual gamepad navigation and additional **1280×720 layout calculations** passed. No physical gamepad or rendered 1280×720 session was performed. Custom-name typing and the full birth/death sequence were not repeated in the painterly scene. Its actual meal, guide and F6 were inspected.
+- The existing ecology regression finished its bounded 1,200-second run with 52 births, 41 deaths, 24 living, peak 24, 26 actor objects and 65 archive records. Existing caps and gameplay suites passed. These are regression observations, not selection/balance claims from a UI change.
+
+The five pre-existing dirty assets, including the original saved scene's unresolved sun-component change, are backed up, hash-checked, left intact and excluded from this milestone's commit. Native rendered inspection uses those preserved local assets. The temporary setup/capture helper is not delivered. Automated and assisted checks are not a novice human usability study; custom gamepad name entry still needs a keyboard.
+
+---
+
+# Previous verification — painterly prototype — 2026-09-25
 
 Branch: **milestone-painterly-prototype**, based on pushed continuity **d4d77e89c0545db5552ee148bf49191d937f5c9d**. Main is unchanged. See the [full prototype report with inline Game-view images](Documentation/PainterlyPrototype/REPORT.md).
 

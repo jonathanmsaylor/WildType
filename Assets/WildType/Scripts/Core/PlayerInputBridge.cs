@@ -9,7 +9,8 @@ namespace WildType
         int pauseFrame = -1;
         int mateFrame = -1;
         int careFrame = -1;
-        bool pointerWasLocked, guiEscapeHeld, guiFamilyHeld, guiMateHeld, guiCareHeld;
+        int eatFrame = -1;
+        bool pointerWasLocked, guiEscapeHeld, guiFamilyHeld, guiMateHeld, guiCareHeld, guiEatHeld;
         public bool UsingGamepad { get; private set; }
         public string MateKey => UsingGamepad ? "West button" : "F";
         public string JournalKey => UsingGamepad ? "North button" : "Tab";
@@ -48,7 +49,7 @@ namespace WildType
             session.Player.DesiredDirection = forward * move.y + right * move.x;
             session.Player.WantsSprint = (keyboard != null && keyboard.leftShiftKey.isPressed) || (pad != null && pad.leftStickButton.isPressed);
             if ((keyboard != null && keyboard.eKey.wasPressedThisFrame) || (pad != null && pad.buttonSouth.wasPressedThisFrame))
-                session.Player.Interaction.TryEat();
+                RequestEat();
             if ((keyboard != null && keyboard.fKey.wasPressedThisFrame) || (pad != null && pad.buttonWest.wasPressedThisFrame))
                 RequestMate();
             if ((keyboard != null && keyboard.rKey.wasPressedThisFrame) || (pad != null && pad.rightShoulder.wasPressedThisFrame)) RequestCare();
@@ -74,15 +75,21 @@ namespace WildType
                 if (Event.current.type == EventType.KeyDown && key == KeyCode.Escape) { pauseFrame = Time.frameCount; guiEscapeHeld = true; session.Names.Submit(""); Event.current.Use(); }
                 return;
             }
-            if (key != KeyCode.Escape && key != KeyCode.Tab && key != KeyCode.F && key != KeyCode.R) return;
+            if (key != KeyCode.Escape && key != KeyCode.Tab && key != KeyCode.F && key != KeyCode.R && key != KeyCode.E) return;
             if (Event.current.type == EventType.KeyUp)
-            { if (key == KeyCode.Escape) guiEscapeHeld = false; if (key == KeyCode.Tab) guiFamilyHeld = false; if (key == KeyCode.F) guiMateHeld = false; if (key == KeyCode.R) guiCareHeld = false; }
+            { if (key == KeyCode.Escape) guiEscapeHeld = false; if (key == KeyCode.Tab) guiFamilyHeld = false; if (key == KeyCode.F) guiMateHeld = false; if (key == KeyCode.R) guiCareHeld = false; if (key == KeyCode.E) guiEatHeld = false; }
             if (Event.current.type != EventType.KeyDown) return;
             UsingGamepad = false;
             if (key == KeyCode.F) { if (!guiMateHeld) { guiMateHeld = true; RequestMate(); } }
             else if (key == KeyCode.Tab) { if (!guiFamilyHeld) { guiFamilyHeld = true; TogglePause(); } }
             else if (key == KeyCode.R) { if (!guiCareHeld) { guiCareHeld = true; RequestCare(); } }
+            else if (key == KeyCode.E) { if (!guiEatHeld) { guiEatHeld = true; RequestEat(); } }
             else if (!guiEscapeHeld) { guiEscapeHeld = true; TogglePause(); }
+        }
+        void RequestEat()
+        {
+            if (!session || !session.Ready || session.Paused || !session.Player || session.Player.Vitals.Dead || eatFrame == Time.frameCount) return;
+            eatFrame = Time.frameCount; session.Player.Interaction.TryEat();
         }
         void RequestMate()
         {
@@ -94,6 +101,6 @@ namespace WildType
             if (!session || !session.Ready || session.Paused || !session.Player || session.Player.Vitals.Dead || careFrame == Time.frameCount) return;
             careFrame = Time.frameCount; session.Care.TryPlayerShare();
         }
-        void OnApplicationFocus(bool focused) { if (!focused) { guiEscapeHeld = guiFamilyHeld = guiMateHeld = guiCareHeld = false; pointerWasLocked = false; } }
+        void OnApplicationFocus(bool focused) { if (!focused) { guiEscapeHeld = guiFamilyHeld = guiMateHeld = guiCareHeld = guiEatHeld = false; pointerWasLocked = false; } }
     }
 }
