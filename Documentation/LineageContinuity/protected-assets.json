@@ -1,0 +1,151 @@
+[
+  {
+    "Path": "Assets/WildType/Art/Prototype/Grass.asset",
+    "SHA256": "05E96041B5088C615C0210087C20EB3AA56DC8872CC5031E46535733ADB98819",
+    "Bytes": 1340123,
+    "CommittedSHA256": "8452bf2adc6a103220d4b77b30d9bd08155eafd5dff12445978303df4008dc96",
+    "normalizedEqual": false,
+    "changedLines": [
+      {
+        "line": 9,
+        "before": "  m_Name: Grass",
+        "after": "  m_Name: Batched meadow grass"
+      }
+    ]
+  },
+  {
+    "Path": "Assets/WildType/Art/Prototype/Scenery Fern canopy.asset",
+    "SHA256": "C8D760AD17ECD2F26527B5EB80CA49EFB70B59EEC6D95F53ACF08E605A909F10",
+    "Bytes": 29687223,
+    "CommittedSHA256": "3585ed5aac0d0bb58f08bd8dea868a45c4f0515ee9f6ae51fde8f5b51a134bb2",
+    "normalizedEqual": false,
+    "changedLines": [
+      {
+        "line": 9,
+        "before": "  m_Name: Scenery Fern canopy",
+        "after": "  m_Name: Fern canopy combined"
+      }
+    ]
+  },
+  {
+    "Path": "Assets/WildType/Art/Prototype/Scenery Warm bark.asset",
+    "SHA256": "AD16E696EC33C08766443F64F34C363C1F092AE8B46F097A7A02F4C5640CEFD5",
+    "Bytes": 1534411,
+    "CommittedSHA256": "6b7f945cf4aba2c43a5fce0a603ba4043057e4ff791a94eeda328c043ca7e85c",
+    "normalizedEqual": false,
+    "changedLines": [
+      {
+        "line": 9,
+        "before": "  m_Name: Scenery Warm bark",
+        "after": "  m_Name: Warm bark combined"
+      }
+    ]
+  },
+  {
+    "Path": "Assets/WildType/Art/Prototype/Scenery Weathered rock.asset",
+    "SHA256": "2E3030C96C29E4EBD51841CB54E832FE857AA13ECD9902D8B32F8D11307DBEEF",
+    "Bytes": 17357023,
+    "CommittedSHA256": "4cd0235b2650e655330f806ad2fcf8921b5288ab47f81805f651364acf9cc316",
+    "normalizedEqual": false,
+    "changedLines": [
+      {
+        "line": 9,
+        "before": "  m_Name: Scenery Weathered rock",
+        "after": "  m_Name: Weathered rock combined"
+      }
+    ]
+  },
+  {
+    "Path": "Assets/WildType/Art/Prototype/Terrain.asset",
+    "SHA256": "217FE31F21B02E1F8BDD4ED7AF07115DB8AA7E5EBBB6AD3E83D48E044A3BACF1",
+    "Bytes": 1198499,
+    "CommittedSHA256": "1664574e8b8741d6b21fc2e6129b51aad54355d7bf50ff02532d3a5e18b887ba",
+    "normalizedEqual": false,
+    "changedLines": [
+      {
+        "line": 9,
+        "before": "  m_Name: Terrain",
+        "after": "  m_Name: Rolling ecosystem terrain"
+      }
+    ]
+  },
+  {
+    "Path": "Assets/WildType/Materials/Interaction gold.mat",
+    "SHA256": "4297FF229276B9A0F3165110DF6CBAE3BAF893697C02367CC062DEB49462D28F",
+    "Bytes": 3826,
+    "CommittedSHA256": "4297ff229276b9a0f3165110df6cbae3baf893697c02367cc062deb49462d28f",
+    "normalizedEqual": true,
+    "changedLines": []
+  },
+  {
+    "Path": "Assets/WildType/Prefabs/Environment/PrototypeTree.prefab",
+    "SHA256": "F087E60DCDA3236B3FB2624BC1885E0EE06619803A830B5C22A820F54FC962D8",
+    "Bytes": 12273,
+    "CommittedSHA256": "c13cb7514ce82d1de037bab2595af85ec2ff8dac286d11cc8699ed4d32f71b7c",
+    "normalizedEqual": false,
+    "documents": [
+      19,
+      19
+    ],
+    "differences": []
+  },
+  {
+    "Path": "Assets/WildType/Prefabs/Food/Brightfruit.prefab",
+    "SHA256": "60051A9F380F98F6F6109F912979C5A90B7959845A28DF5E35DB3F4BEC4ABA42",
+    "Bytes": 29213,
+    "CommittedSHA256": "79026425e318ec8072d11f8e8d0b957d1ce92ae3eeb4e3cd8ac8e833b86c02b7",
+    "normalizedEqual": false,
+    "documents": [
+      45,
+      45
+    ],
+    "differences": []
+  },
+  {
+    "Path": "Assets/WildType/Scenes/CreatureStage_Prototype.unity",
+    "SHA256": "160946960F0410F1C301D72B881A73DA1CC7659C12AC06501301545037478B64",
+    "Bytes": 601614,
+    "CommittedSHA256": "28db6c6ddedb2a53ccc1cb4ea51b5343bc5511bf83dde904f842498803eb3471",
+    "normalizedEqual": false,
+    "documents": [
+      1234,
+      1233
+    ],
+    "differences": [
+      {
+        "key": "/Afternoon sun:1",
+        "before": "GameObject:\n  m_ObjectHideFlags: 0\n  m_CorrespondingSourceObject: {fileID: 0}\n  m_PrefabInstance: {fileID: 0}\n  m_PrefabAsset: {fileID: 0}\n  serializedVersion: 6\n  m_Component:\n  - component: {ref: /Afternoon sun:4}\n  - component: {ref: /Afternoon sun:108}\n  - component: {ref: /Afternoon sun:114}\n  m_Layer: 0\n  m_Name: Afternoon sun\n  m_TagString: Untagged\n  m_Icon: {fileID: 0}\n  m_NavMeshLayer: 0\n  m_StaticEditorFlags: 0\n  m_IsActive: 1\n",
+        "after": "GameObject:\n  m_ObjectHideFlags: 0\n  m_CorrespondingSourceObject: {fileID: 0}\n  m_PrefabInstance: {fileID: 0}\n  m_PrefabAsset: {fileID: 0}\n  serializedVersion: 6\n  m_Component:\n  - component: {ref: /Afternoon sun:4}\n  - component: {ref: /Afternoon sun:108}\n  m_Layer: 0\n  m_Name: Afternoon sun\n  m_TagString: Untagged\n  m_Icon: {fileID: 0}\n  m_NavMeshLayer: 0\n  m_StaticEditorFlags: 0\n  m_IsActive: 1\n"
+      },
+      {
+        "key": "/Afternoon sun:114",
+        "before": "MonoBehaviour:\n  m_ObjectHideFlags: 0\n  m_CorrespondingSourceObject: {fileID: 0}\n  m_PrefabInstance: {fileID: 0}\n  m_PrefabAsset: {fileID: 0}\n  m_GameObject: {ref: /Afternoon sun:1}\n  m_Enabled: 1\n  m_EditorHideFlags: 0\n  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}\n  m_Name: \n  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData\n  m_UsePipelineSettings: 1\n  m_AdditionalLightsShadowResolutionTier: 2\n  m_CustomShadowLayers: 0\n  m_LightCookieSize: {x: 1, y: 1}\n  m_LightCookieOffset: {x: 0, y: 0}\n  m_SoftShadowQuality: 0\n  m_RenderingLayersMask:\n    serializedVersion: 0\n    m_Bits: 1\n  m_ShadowRenderingLayersMask:\n    serializedVersion: 0\n    m_Bits: 1\n  m_Version: 4\n  m_LightLayerMask: 1\n  m_ShadowLayerMask: 1\n  m_RenderingLayers: 1\n  m_ShadowRenderingLayers: 1\n",
+        "after": null
+      }
+    ]
+  },
+  {
+    "Path": "Assets/WildType/ScriptableObjects/Amber Bulwark.asset",
+    "SHA256": "2A58674D432E0614019EF7D8F8A3F08DDDB3613FDC65E286E52242D94788B0C5",
+    "Bytes": 809,
+    "CommittedSHA256": "2a58674d432e0614019ef7d8f8a3f08dddb3613fdc65e286e52242d94788b0c5",
+    "normalizedEqual": true,
+    "changedLines": []
+  },
+  {
+    "Path": "Assets/WildType/ScriptableObjects/Meadow Grazer.asset",
+    "SHA256": "32DCC8D3D3CB434D5C4F5757EB8009059BD303A90ED6753E0C1C03DBAAEBDC80",
+    "Bytes": 800,
+    "CommittedSHA256": "32dcc8d3d3cb434d5c4f5757eb8009059bd303a90ed6753e0c1c03dbaaebdc80",
+    "normalizedEqual": true,
+    "changedLines": []
+  },
+  {
+    "Path": "Assets/WildType/ScriptableObjects/Violet Strider.asset",
+    "SHA256": "213ED18D9C29A56BB49EC003F18A0AB7CD8BA75C187C3C74CE3AF7CE45C56570",
+    "Bytes": 808,
+    "CommittedSHA256": "213ed18d9c29a56bb49ec003f18a0ab7cd8ba75c187c3c74ce3af7ce45c56570",
+    "normalizedEqual": true,
+    "changedLines": []
+  }
+]
