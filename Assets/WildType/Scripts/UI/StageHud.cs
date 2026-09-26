@@ -9,7 +9,7 @@ namespace WildType
 {
     public sealed partial class StageHud : MonoBehaviour
     {
-        public enum JournalView { Living, Chronicle, Details, Guide, Events, Records, Menu }
+        public enum JournalView { Living, Chronicle, Details, Guide, Events, Records, Menu, Profile }
         public JournalView View { get; private set; }
         public bool TipsVisible { get; private set; } = true;
         StageSession session; PlayerInputBridge input;
@@ -56,7 +56,7 @@ namespace WildType
             care=Banner(ordinary.transform,"Care cost",0,190,820,86,new Vector2(.5f,0));
             tips=Banner(ordinary.transform,"First steps",24,24,645,100,new Vector2(0,0));tips.alignment=TextAlignmentOptions.Left;
             briefEvents=Banner(ordinary.transform,"Recent lives",-24,24,560,145,new Vector2(1,0));briefEvents.alignment=TextAlignmentOptions.Left;briefEvents.fontSize=22;
-            BuildJournal(root.transform);BuildNaming(root.transform);
+            BuildBiomeNotice(ordinary.transform);BuildJournal(root.transform);BuildNaming(root.transform);
             var events=new GameObject("UI input",typeof(EventSystem),typeof(InputSystemUIInputModule));events.transform.SetParent(root.transform);
             events.GetComponent<InputSystemUIInputModule>().AssignDefaultActions();
         }
@@ -93,7 +93,7 @@ namespace WildType
             detailLeft=Text(detailArea,"",20,-8,552,645,23);detailLeft.name="Inherited traits";detailLeft.lineSpacing=3;
             detailRight=Text(detailArea,"",600,-8,552,645,23);detailRight.name="Exact traits";detailRight.lineSpacing=3;
             detailPage=ButtonAt(detailArea,"More details",20,682,540,48,()=>{detailSection=(detailSection+1)%DetailPages();ClearHelp();refresh=0;});
-            BuildGeneCards(detailArea); BuildFamilyTree(panel);
+            BuildGeneCards(detailArea); BuildFamilyTree(panel);BuildProfile(panel);
             var guideArea=Box(panel,"Getting started view",348,-130,1184,740,new Vector2(0,1),0);guidePanel=guideArea.gameObject;
             guide=Text(guideArea,"",20,-8,1144,606,25);
             tipsButton=ButtonAt(guideArea,"Hide tips",600,678,560,52,()=>{TipsVisible=!(TipsVisible&&!completed);completed=false;refresh=0;});
@@ -124,6 +124,7 @@ namespace WildType
         void Update()
         {
             if(!session||!session.Ready||!session.Player)return;
+            UpdateBiomeNotice();
             session.Names.ValidatePrompt();bool naming=session.Names.HasPrompt;namePanel.SetActive(naming);
             if(naming&&namingId!=session.Names.Pending){namingId=session.Names.Pending;nameInput.text="";RefreshNaming();nameInput.Select();nameInput.ActivateInputField();}
             if(!naming)namingId=default;
@@ -138,6 +139,10 @@ namespace WildType
             float[] values={v.Energy,v.Health,v.Stamina},maximum={a.Stats.MaxEnergy,100,a.Stats.MaxStamina};string[] names={"Energy","Health","Stamina"};
             for(int i=0;i<3;i++){resources[i].text=$"{names[i]}  {JournalReadout.Whole(values[i])}/{JournalReadout.Whole(maximum[i])}";bars[i].rectTransform.localScale=new Vector3(Mathf.Clamp01(values[i]/maximum[i]),1,1);}
             identity.text=$"<b>{session.Names.PersonalName(focusId)}</b>\nGen {record.Generation} · {(a.Life.Adult?"Adult":"Juvenile")}\n{loop.LivingChildren(focusId)} living children\n{(input.UsingGamepad?"North":input.JournalKey)} · Family journal";
+            // Accepted names remain intact; let the small family panel grow only when its name wraps.
+            float identityHeight=Mathf.Max(125,identity.GetPreferredValues(identity.text,identity.rectTransform.rect.width,Mathf.Infinity).y+2);
+            identity.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,identityHeight);
+            ((RectTransform)identity.transform.parent).SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,identityHeight+25);
             region.text=session.World.Zone(a.transform.position)+$"\nPopulation {session.Population}/24 · Births {loop.Births} · Deaths {loop.Deaths}";
             SetBanner(status,GameplayText.Status(v.Energy,a.Stats.MaxEnergy,v.Health,v.SprintLocked));
             SetBanner(notice,session.CurrentNotice);
@@ -157,8 +162,9 @@ namespace WildType
             runMenu.SetActive(View==JournalView.Menu);
             cardsPanel.SetActive(cards);detailsPanel.SetActive(View==JournalView.Details);guidePanel.SetActive(View==JournalView.Guide);eventsPanel.SetActive(View==JournalView.Events);
             treePanel.SetActive(View==JournalView.Chronicle);
+            profilePanel.SetActive(View==JournalView.Profile);
             guide.text=GameplayText.Guide(input.UsingGamepad);
-            if(View==JournalView.Details){RefreshDetails();return;}if(View==JournalView.Chronicle){RefreshFamilyTree();return;}if(!cards)return;
+            if(View==JournalView.Profile){RefreshProfile();return;}if(View==JournalView.Details){RefreshDetails();return;}if(View==JournalView.Chronicle){RefreshFamilyTree();return;}if(!cards)return;
             records.Clear();if(View==JournalView.Records)session.CollectFamilyHistory(records);else foreach(var actor in living)records.Add(archive.Get(actor.Life.Id));
             int pages=Mathf.Max(1,Mathf.CeilToInt(records.Count/3f));page=Mathf.Clamp(page,0,pages-1);
             scope.text=View==JournalView.Records?$"All Family Records · {records.Count} relatives · Page {page+1}/{pages}\nEarlier branches stay here. Select Details for the full record.":$"{session.Names.PersonalName(a.Life.Id)}'s Descendants · {living.Count} living · Page {page+1}/{pages}\nYour children and their children. Earlier branches stay in Family Tree.";
@@ -233,7 +239,7 @@ namespace WildType
             var panel=Box(root,"Name your child",0,0,800,400,new Vector2(.5f,.5f),.94f);namePanel=panel.gameObject;
             nameTitle=Text(panel,"",28,-24,744,40,27);
             nameInstructions=Text(panel,"",28,-78,744,68,24);
-            var field=Box(panel,"Child name",28,-162,744,56,new Vector2(0,1),1);nameInput=field.gameObject.AddComponent<TMP_InputField>();nameInput.targetGraphic=field.GetComponent<Image>();nameInput.characterLimit=16;
+            var field=Box(panel,"Child name",28,-162,744,56,new Vector2(0,1),1);nameInput=field.gameObject.AddComponent<TMP_InputField>();nameInput.targetGraphic=field.GetComponent<Image>();nameInput.contentType=TMP_InputField.ContentType.Standard;nameInput.characterValidation=TMP_InputField.CharacterValidation.None;nameInput.characterLimit=FamilyNames.NameLimit;
             var viewport=new GameObject("Viewport",typeof(RectTransform),typeof(RectMask2D));viewport.transform.SetParent(field,false);var view=viewport.GetComponent<RectTransform>();view.anchorMin=Vector2.zero;view.anchorMax=Vector2.one;view.offsetMin=new Vector2(12,2);view.offsetMax=new Vector2(-12,-2);
             nameInput.textViewport=view;nameInput.textComponent=Text(view,"",0,0,720,52,26);nameInput.placeholder=Text(view,"Type a name (optional; keyboard)",0,0,720,52,26);
             namePreview=Text(panel,"",28,-242,744,38,24);
@@ -248,7 +254,7 @@ namespace WildType
         {
             bool founder=session.Names.IsFounderPrompt;
             nameTitle.text=founder?"MEET YOUR CREATURE · Simulation paused":"WELCOME TO THE FAMILY · Simulation paused";
-            nameInstructions.text=founder?"What would you like to call your creature?\nEddy is ready to explore. No energy is spent while you decide.":"Name your child, or keep its default. Birth order is added:\nDave becomes Dave 1 for your first child. No energy is spent here.";
+            nameInstructions.text=(founder?"Name your creature, or continue as Eddy.":"Name your child, or keep its default. No number is added.")+"\n32 characters · letters, numbers, spaces, - or '.";
             namePreview.text="Keep default: "+session.Names.PersonalName(namingId);
             SetButtonText(nameConfirm,founder?"Use this name":"Name child");SetButtonText(nameSkip,founder?"Continue as Eddy":"Keep default / Skip");
         }

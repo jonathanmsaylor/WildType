@@ -111,7 +111,7 @@ namespace WildType
                 if (updateText)
                 {
                     string bearing = DirectionCueVisible ? Bearing(vp) + " · " : InView(located) ? "" : "Obscured · ";
-                    locatePrompt.text = bearing + session.Names.PersonalName(located.Life.Id) + "\n" + session.World.Zone(located.transform.position) +
+                    locatePrompt.text = bearing + session.Names.NearbyName(located.Life.Id) + "\n" + session.World.Zone(located.transform.position) +
                         $" · Gen {session.Generations.Archive.Get(located.Life.Id).Generation} · {JournalReadout.Distance(Vector3.Distance(session.Player.transform.position, located.transform.position))}";
                 }
             }
@@ -149,10 +149,10 @@ namespace WildType
             if (matePrompt.gameObject.activeSelf)
             {
                 Place(matePrompt.rectTransform, matePoint, false);
-                if (updateText) matePrompt.text = session.GetComponent<PlayerInputBridge>().MateKey + " Mate · " + session.Names.PersonalName(partner.Life.Id) + $"\nYou spend {JournalReadout.Approx(session.Player.Stats.MaxEnergy*GenerationLoop.ParentEnergyCost)} energy at birth";
+                if (updateText) matePrompt.text = session.GetComponent<PlayerInputBridge>().MateKey + " Mate · " + session.Names.NearbyName(partner.Life.Id) + $"\nYou spend {JournalReadout.Approx(session.Player.Stats.MaxEnergy*GenerationLoop.ParentEnergyCost)} energy at birth";
             }
         }
-        public static string ChildLabel(StageSession s, CreatureAgent child, float distance) => s.Names.WorldName(child.Life.Id) + "\n" +
+        public static string ChildLabel(StageSession s, CreatureAgent child, float distance) => s.Names.NearbyName(child.Life.Id) + "\n" +
             s.World.Zone(child.transform.position) + " · " + JournalReadout.Distance(distance) + " · Gen " + s.Generations.Archive.Get(child.Life.Id).Generation;
         public static string Bearing(Vector3 viewport) => viewport.z <= 0 ? "Behind" : viewport.x < .04f ? "Left" : viewport.x > .96f ? "Right" : viewport.y < .07f ? "Below" : "Above";
         TMP_Text TargetLabel(RectTransform root, string name, Color color)

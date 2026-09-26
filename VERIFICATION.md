@@ -1,4 +1,20 @@
-# WILDTYPE verification — scrollable Family Tree — 2026-09-26
+# WILDTYPE verification — creature profiles and biome feedback — 2026-09-26
+
+Branch **milestone-creature-profiles**, based on local and pushed **c23923dde088114a6183d1b5a34858d134eabaed** (`milestone-scrollable-family-tree`). Main remains **d768797775ad0a7b802eaec0f50899e5d3e2e0df**. [Full report, running-scene images, assistance and protected-file hashes](Documentation/CreatureProfiles/REPORT.md).
+
+Tree selection now opens readable stacked profiles with truthful adult parent comparisons and direct hover/focus explanations. Back retains tree position and selection; Exact Genes remains first in Details. Automatic birth-order suffixes are removed everywhere without changing IDs or internal order; names with spaces are accepted up to the displayed 32-character limit. Nearby namesakes get a small short-ID cue. Biome entry reports only actual adult walk/sprint limit changes from the existing brush blend, with debounce, fade, pause freeze and lifecycle cleanup. No genetics, survival, ecology, care, camera/F6, controls or cap formulas changed.
+
+Final complete suites after helper removal and the final long-name layout fix: **150/150 Edit Mode** in **3.0887854 seconds**, **56/56 Play Mode** in **557.3802704 seconds**; **zero failed or skipped**, both exit 0. Intermediate test-expectation failures and the genuine long-name HUD overflow repair are documented in the report.
+
+Rendered: actual original and painterly saved scenes, selected descendant profiles at **1920×1080 and 1366×768**, native naming with spaces, card selection, keyboard help switching, Exact Genes first and repaired Back selection. Real player-motor crossings into Fernwood were inspected in both scenes using assisted boundary placement and queued A-key input. Birth setup used assisted placement/resources and the existing mating flow. These are assisted Editor checks, not independent human usability testing; no physical gamepad was used. The temporary helper was removed before complete suites.
+
+All nine protected local files match their starting backups **byte-for-byte** and are excluded from the milestone commit. The unresolved original-scene sun/serialization patch remains intact and uncommitted. Unity's regenerated font was backed up separately before restoring its starting copy after all Editor/test processes closed. Unity is left closed to preserve that exact protected state.
+
+Limits: deceased/unavailable actors lack complete archived genomes, so current comparisons are unavailable rather than reconstructed; both resolutions use a focused profile instead of side-by-side columns; compact tree names ellipsize with full-name help; exact Details remains denser at 1366×768 and world labels can still overlap. Biome values are independently rounded and describe adult limits, not current speed. Full details are in the report.
+
+---
+
+# Previous verification — scrollable Family Tree — 2026-09-26
 
 Branch **milestone-scrollable-family-tree**, based on verified and normally pushed **fe8e03961798ec40b91ff4a0d72f29d55136cd14** (`milestone-welcoming-journal`). Main remains **d768797775ad0a7b802eaec0f50899e5d3e2e0df**. [Full report, running-scene images, assistance and protected-file status](Documentation/ScrollableFamilyTree/REPORT.md).
 

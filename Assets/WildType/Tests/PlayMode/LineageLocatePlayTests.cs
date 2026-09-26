@@ -54,7 +54,7 @@ namespace WildType.Tests
             hud.CenterTree(child.Life.Id, true); yield return null;
             var highlight = session.GetComponentsInChildren<Button>().First(b => b.name == "Tree Highlight");
             Assert.True(highlight.interactable); highlight.onClick.Invoke(); Assert.AreSame(child, session.Locator.Target); Assert.AreSame(parent, session.Player); Assert.False(session.Paused);
-            StringAssert.Contains("Locating Dave 1", session.Notice); StringAssert.DoesNotContain("Following", session.Notice);
+            StringAssert.Contains("Locating Dave", session.Notice); StringAssert.DoesNotContain("Following", session.Notice);
             yield return new WaitForSeconds(.4f); float remaining = session.Locator.Remaining;
             session.SetPaused(true); yield return new WaitForSecondsRealtime(.2f); Assert.AreEqual(remaining, session.Locator.Remaining);
             highlight.onClick.Invoke(); Assert.Greater(session.Locator.Remaining, remaining);
@@ -88,12 +88,12 @@ namespace WildType.Tests
             yield return Birth(parent, session.Creatures[1], "Dave"); child = session.Creatures.Last(); var childId = child.Life.Id;
             yield return Grow(child); Assert.True(session.TakeControl(child)); Freeze();
             yield return Birth(child, session.Creatures[4], "Dave"); grandchild = session.Creatures.Last(); var grandId = grandchild.Life.Id;
-            Assert.AreEqual("Dave 1", session.Names.PersonalName(childId)); Assert.AreEqual("Dave 1", session.Names.PersonalName(grandId));
+            Assert.AreEqual("Dave", session.Names.PersonalName(childId)); Assert.AreEqual("Dave", session.Names.PersonalName(grandId));
             Assert.AreNotEqual(session.Names.Label(childId), session.Names.Label(grandId));
             session.Names.RecordBirth(grandchild, child, session.Creatures[4]); Assert.False(session.Names.HasPrompt, "Duplicate birth recording must not rename/re-prompt");
             Assert.True(session.Locator.Select(grandchild)); Assert.True(session.TakeControl(grandchild)); Assert.False(session.Locator.Target);
             child.Vitals.Damage(100); yield return new WaitForSeconds(4.3f); Assert.False(child);
-            Assert.AreEqual("Dave 1", session.Names.PersonalName(childId)); Assert.False(session.Generations.Archive.Get(childId).Alive);
+            Assert.AreEqual("Dave", session.Names.PersonalName(childId)); Assert.False(session.Generations.Archive.Get(childId).Alive);
             session.SetPaused(true); session.Restart(false); yield return null; yield return new WaitForSecondsRealtime(.3f); Freeze();
             Assert.AreEqual(13, session.Names.Count); Assert.False(session.Locator.Target);
             parent = session.Player; yield return Birth(parent, session.Creatures[1]); child = session.Creatures.Last();

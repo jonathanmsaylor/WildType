@@ -42,7 +42,7 @@ namespace WildType
                 var button=ButtonAt(treeContent,"Tree record",0,0,FamilyTreeLayout.CardWidth,FamilyTreeLayout.CardHeight,()=>{},22);
                 navigation.Remove(button);button.navigation=new Navigation{mode=Navigation.Mode.None};button.transition=Selectable.Transition.None;
                 var node=button.gameObject.AddComponent<FamilyTreeCard>();node.Navigate=NavigateTree;node.Focused=c=>{treeId=c.Id;UpdateTreeActions();};node.Explain=ExplainTreeCard;
-                button.onClick.AddListener(()=>ShowIdentity(node.Id));var text=button.GetComponentInChildren<TMP_Text>();text.alignment=TextAlignmentOptions.TopLeft;
+                button.onClick.AddListener(()=>ShowProfile(node.Id));var text=button.GetComponentInChildren<TMP_Text>();text.alignment=TextAlignmentOptions.TopLeft;
                 text.rectTransform.offsetMin=new Vector2(14,-FamilyTreeLayout.CardHeight+8);text.rectTransform.offsetMax=new Vector2(FamilyTreeLayout.CardWidth-14,-8);
                 treePool.Add(node);button.gameObject.SetActive(false);
             }
@@ -84,7 +84,7 @@ namespace WildType
             if(!treeSelection||archive==null)return;
             var actor=TreeActor();treeLocate.gameObject.SetActive(actor&&session.CanLocateFamily(actor)&&!session.GameOver);
             treeControl.gameObject.SetActive(actor&&session.Generations.IsLivingDescendant(actor,session.Player.Life.Id));
-            treeSelection.text="Selected: "+session.Names.PersonalName(treeId)+" · Select card for its full record";
+            treeSelection.text="Selected: "+session.Names.PersonalName(treeId)+" · Select card for its profile";
             treeLinks.Selected=treeId;treeLinks.SetVerticesDirty();
         }
         public void CenterTree(CreatureId id,bool focus)
@@ -121,7 +121,8 @@ namespace WildType
                 var actor=LineageChronicle.LivingActor(session,r);bool descendant=actor&&session.Generations.IsLivingDescendant(actor,session.Player.Life.Id);
                 string state=archive.TryDeath(r.CreatureId,out _)?"Deceased":actor?(actor.Life.Adult?"Living · Adult":"Living · Juvenile"):"Unavailable";
                 n.BaseColor=descendant?new Color(.20f,.37f,.27f,1):new Color(.19f,.25f,.27f,1);n.Paint();
-                SetButtonText(n.GetComponent<Button>(),"<b>"+session.Names.PersonalName(n.Id)+"</b>\nGen "+r.Generation+" · "+LineageChronicle.Relationship(archive,session.Player.Life.Id,r)+"\n"+state+(descendant?"\nLiving descendant":""));
+                string fullName=session.Names.PersonalName(n.Id);string compact=fullName.Length>22?fullName.Substring(0,21)+"…":fullName;
+                SetButtonText(n.GetComponent<Button>(),"<b>"+compact+"</b>\nGen "+r.Generation+" · "+LineageChronicle.Relationship(archive,session.Player.Life.Id,r)+"\n"+state);
             }
             treeLinks.Visible=view;treeLinks.SetVerticesDirty();bindingTree=false;
             if(string.IsNullOrEmpty(treeHint.text))treeHint.text="Drag empty space or scroll; use bars sideways. Explore tree enables arrows / D-pad. Lines link recorded parents only; crossings are not junctions.";
@@ -129,7 +130,7 @@ namespace WildType
         void ExplainTreeCard(FamilyTreeCard node)
         {
             var r=archive.Get(node.Id);if(r==null)return;treeLinks.Selected=node.Id;treeLinks.SetVerticesDirty();
-            treeHint.text=session.Names.PersonalName(node.Id)+" · "+(r.Generation==0?"No parents recorded.":"Parents: "+session.Names.PersonalName(r.FirstParentId)+" + "+session.Names.PersonalName(r.SecondParentId)+".")+"\nSelect reads the full record. Highlight finds; Take Control switches creature.";
+            treeHint.text=session.Names.PersonalName(node.Id)+"\n"+(r.Generation==0?"No parents recorded. Select to read the profile.":"Parents: "+session.Names.PersonalName(r.FirstParentId)+" + "+session.Names.PersonalName(r.SecondParentId)+".");
         }
     }
 }

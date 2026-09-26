@@ -79,7 +79,7 @@ namespace WildType
         {
             var a=archive;bool died=a.TryDeath(entry.CreatureId,out var death);
             string life=died?"Recorded death: "+LineageChronicle.Cause(death.Cause)+$"\nAge at death: {JournalReadout.Exact(entry.AgeAt(death.Time))} seconds":actor?"Living · exact age "+JournalReadout.Exact(actor.Life.Age)+" seconds":"Actor unavailable; no recorded death.";
-            return $"IDENTITY RECORD\nStable ID: {entry.CreatureId.Value}\nGeneration: {entry.Generation}\nBirth order suffix: {session.Names.BirthOrder(entry.CreatureId)}\nBirth time: {entry.BirthTime:G17} seconds\nChildren born: {entry.OffspringCount}\n\n"+life+"\n\nParent A: "+RecordName(entry.FirstParentId)+"\nParent B: "+RecordName(entry.SecondParentId)+"\nLineage founder: "+RecordName(entry.FounderId);
+            return $"IDENTITY RECORD\nStable ID: {entry.CreatureId.Value}\nGeneration: {entry.Generation}\nRecorded birth order: {session.Names.BirthOrder(entry.CreatureId)}\nBirth time: {entry.BirthTime:G17} seconds\nChildren born: {entry.OffspringCount}\n\n"+life+"\n\nParent A: "+RecordName(entry.FirstParentId)+"\nParent B: "+RecordName(entry.SecondParentId)+"\nLineage founder: "+RecordName(entry.FounderId);
         }
         string RecordName(CreatureId id)=>id.IsValid?session.Names.PersonalName(id)+" · "+id.Value:"Not recorded (founder)";
     }

@@ -190,7 +190,7 @@ namespace WildType.Tests
             Assert.AreEqual(energyBefore, parent.Vitals.Energy); Assert.AreEqual(clock, session.Generations.Clock);
             InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
             field.text = "Dave"; field.onSubmit.Invoke(field.text); yield return null;
-            Assert.AreEqual("Dave 1", session.Names.PersonalName(id)); Assert.AreEqual(id, child.Life.Id);
+            Assert.AreEqual("Dave", session.Names.PersonalName(id)); Assert.AreEqual(1, session.Names.BirthOrder(id)); Assert.AreEqual(id, child.Life.Id);
             Assert.False(session.Paused); Assert.False(session.Names.HasPrompt);
             session.SetPaused(true); yield return new WaitForSecondsRealtime(.2f); Canvas.ForceUpdateCanvases();
             var hud = session.GetComponent<StageHud>(); hud.ShowTree(id); yield return null; hud.CenterTree(id, false); yield return null;
@@ -199,11 +199,11 @@ namespace WildType.Tests
             bool found = false;
             foreach (var label in selection.GetComponentsInChildren<TMP_Text>())
             {
-                if (!label.text.Contains("Dave 1")) continue;
+                if (!label.text.Contains("Dave")) continue;
                 found = true; Assert.GreaterOrEqual(label.fontSize, 18); label.ForceMeshUpdate(); Assert.False(label.isTextOverflowing);
                 Assert.AreEqual(148, selection.GetComponent<RectTransform>().sizeDelta.y);
             }
-            Assert.True(found); Assert.True(session.TakeControl(child)); Assert.AreEqual("Dave 1", session.Names.PersonalName(id));
+            Assert.True(found); Assert.True(session.TakeControl(child)); Assert.AreEqual("Dave", session.Names.PersonalName(id));
             session.SetPaused(true); session.Restart(false); yield return null; yield return new WaitForSecondsRealtime(.3f); Freeze();
             Assert.AreEqual(13, session.Names.Count); Assert.False(session.Names.HasPrompt);
             parent = session.Player; partner = session.Creatures[1]; Place(parent, 0, 0); Place(partner, 2, 0);

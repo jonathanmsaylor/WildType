@@ -47,11 +47,11 @@ namespace WildType.Tests
         }
         [UnityTest] public IEnumerator WorldLabelUsesBaseNameAndDetailsDisambiguateDuplicateNames()
         {
-            Accept();s.Names.ShowPrompts=true;yield return Birth();Assert.True(s.Names.HasPrompt);Assert.True(s.Names.Submit("AlexandertheGreat"));var child=s.Creatures.Last();
-            Assert.AreEqual("AlexandertheGrea 1",s.Names.PersonalName(child.Life.Id));Assert.AreEqual("AlexandertheGrea",s.Names.WorldName(child.Life.Id));
-            string label=FamilyWorldCues.ChildLabel(s,child,12.4f);StringAssert.Contains("AlexandertheGrea\n",label);StringAssert.Contains("12 m",label);StringAssert.Contains("Gen 1",label);Assert.False(label.Contains("energy"));Assert.False(label.Contains(child.Life.Id.Value));
+            Accept();s.Names.ShowPrompts=true;yield return Birth();Assert.True(s.Names.HasPrompt);Assert.True(s.Names.Submit("Alexander the Great"));var child=s.Creatures.Last();
+            Assert.AreEqual("Alexander the Great",s.Names.PersonalName(child.Life.Id));Assert.AreEqual("Alexander the Great",s.Names.WorldName(child.Life.Id));
+            string label=FamilyWorldCues.ChildLabel(s,child,12.4f);StringAssert.Contains("Alexander the Great\n",label);StringAssert.Contains("12 m",label);StringAssert.Contains("Gen 1",label);Assert.False(label.Contains("energy"));Assert.False(label.Contains(child.Life.Id.Value));
             hud.Show(StageHud.JournalView.Living);yield return Refresh();Fit();hud.ShowDetails(child.Life.Id);yield return Refresh();Fit();for(int i=0;i<3;i++){B("More details").onClick.Invoke();yield return Refresh();Fit();}
-            StringAssert.Contains(child.Life.Id.Value,Text("Inherited traits"));Assert.True(s.TakeControl(child));Assert.AreEqual("AlexandertheGrea 1",s.Names.PersonalName(s.Player.Life.Id));
+            StringAssert.Contains(child.Life.Id.Value,Text("Inherited traits"));Assert.True(s.TakeControl(child));Assert.AreEqual("Alexander the Great",s.Names.PersonalName(s.Player.Life.Id));
             s.Player.Vitals.Damage(100);yield return Refresh();hud.ShowDetails(child.Life.Id);yield return Refresh();for(int i=0;i<3;i++){B("More details").onClick.Invoke();yield return Refresh();}StringAssert.Contains("Recorded death",Text("Inherited traits"));StringAssert.Contains("Age at death",Text("Inherited traits"));Fit();
         }
         [UnityTest] public IEnumerator KeyboardAndGamepadNavigateGeneExplanationsAndTree()
@@ -75,7 +75,7 @@ namespace WildType.Tests
                 InputSystem.QueueStateEvent(pad,new GamepadState());yield return Refresh();Assert.AreSame(third.gameObject,EventSystem.current.currentSelectedGameObject);Assert.AreEqual(third.GetComponent<JournalHelpTarget>().Explanation,Text("Gene explanation"));Fit();
                 hud.ShowTree(s.Player.Life.Id);yield return Refresh();EventSystem.current.SetSelectedGameObject(B("Tree record").gameObject);
                 InputSystem.QueueStateEvent(pad,new GamepadState().WithButton(GamepadButton.South));yield return null;yield return null;
-                InputSystem.QueueStateEvent(pad,new GamepadState());yield return Refresh();Assert.AreEqual(StageHud.JournalView.Details,hud.View);Fit();
+                InputSystem.QueueStateEvent(pad,new GamepadState());yield return Refresh();Assert.AreEqual(StageHud.JournalView.Profile,hud.View);Fit();
             }finally{InputSystem.RemoveDevice(keyboard);InputSystem.RemoveDevice(pad);InputSystem.settings=original;Object.Destroy(settings);}
         }
         [UnityTest] public IEnumerator TreeScrollsChildrenAndRetainsSiblingWithoutCareOrControl()

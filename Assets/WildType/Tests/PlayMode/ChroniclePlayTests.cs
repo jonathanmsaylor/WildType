@@ -70,7 +70,7 @@ namespace WildType.Tests
         {
             yield return Birth(parent,session.Creatures[1]);child=session.Creatures.Last();session.Names.Submit("Absent");var id=child.Life.Id;
             int deaths=session.Generations.Deaths;Object.Destroy(child.gameObject);yield return null;yield return null;
-            yield return Open();StringAssert.Contains("Absent 1",Text());StringAssert.Contains("Unavailable · no recorded death",Text());
+            yield return Open();StringAssert.Contains("Absent",Text());StringAssert.DoesNotContain("Absent 1",Text());StringAssert.Contains("Unavailable · no recorded death",Text());
             Assert.False(session.Generations.Archive.TryDeath(id,out _));Assert.AreEqual(deaths,session.Generations.Deaths);
             Assert.AreEqual(0,session.GetComponentsInChildren<Button>().Count(b=>b.name=="Locate"));Caps();
         }

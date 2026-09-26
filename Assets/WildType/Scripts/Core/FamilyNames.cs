@@ -39,7 +39,9 @@ namespace WildType
             if (!ShowPrompts || !donor.IsPlayer || donor.Vitals.Dead) return;
             pending = child.Life.Id; parent = donor.Life.Id; session.SetPaused(true);
         }
-        public static string Format(string name, int order) => CleanName(name) + " " + System.Math.Max(1, order).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        public const int NameLimit = 32;
+        // Birth order remains metadata, never part of a display name.
+        public static string Format(string name, int order) => CleanName(name);
         public static string DefaultName(CreatureId id)
         {
             if (!id.IsValid) return "";
@@ -55,12 +57,12 @@ namespace WildType
         }
         public static string CleanName(string value)
         {
-            var result = new StringBuilder(16);
+            var result = new StringBuilder(NameLimit);
             foreach (char c in value ?? "")
             {
-                if (result.Length >= 16) break;
+                if (result.Length >= NameLimit) break;
                 if (char.IsLetterOrDigit(c) || c == '-' || c == '\'') result.Append(c);
-                else if (c == ' ' && result.Length > 0 && result[result.Length - 1] != ' ') result.Append(c);
+                else if (char.IsWhiteSpace(c) && result.Length > 0 && result[result.Length - 1] != ' ') result.Append(' ');
             }
             return result.ToString().Trim();
         }
@@ -68,7 +70,16 @@ namespace WildType
         // Stored base name, not string trimming: a player-entered digit remains part of their name.
         public string WorldName(CreatureId id) => names.TryGetValue(id, out var entry) ? entry.name : "Name unavailable";
         public string PersonalName(CreatureId id) => names.TryGetValue(id, out var entry) && entry.name.Length > 0
-            ? (entry.order == 0 ? entry.name : Format(entry.name, entry.order)) : "";
+            ? entry.name : "";
+        public string NearbyName(CreatureId id)
+        {
+            string name=PersonalName(id);
+            foreach(var actor in session.Creatures)
+                if(actor && !actor.Vitals.Dead && actor.Life.Id!=id && PersonalName(actor.Life.Id)==name &&
+                    UnityEngine.Vector3.Distance(session.Player.transform.position,actor.transform.position)<=25)
+                    return name+" · "+GenerationLoop.ShortId(id);
+            return name;
+        }
         public string Label(CreatureId id)
         {
             string personal = PersonalName(id);

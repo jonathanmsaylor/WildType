@@ -61,10 +61,10 @@ namespace WildType.Tests
             Assert.True(session.TakeControl(children[0]));Freeze();Assert.AreEqual(2,session.ControlledHistory.Count);
             Assert.AreEqual(0,session.Generations.LivingDescendants(children[0].Life.Id).Count);
             yield return WaitReady(children[0],session.Creatures[4]);yield return Birth(children[0],session.Creatures[4]);var grandchild=session.Creatures.Last();
-            Assert.AreEqual("Dave 1",session.Names.PersonalName(grandchild.Life.Id));Assert.AreEqual(1,session.Generations.LivingDescendants(children[0].Life.Id).Count);
+            Assert.AreEqual("Dave",session.Names.PersonalName(grandchild.Life.Id));Assert.AreEqual(1,session.Generations.LivingDescendants(children[0].Life.Id).Count);
             yield return Open(true);Button("Next page").onClick.Invoke();yield return new WaitForSecondsRealtime(.2f);
             StringAssert.Contains("Sibling · Living",Text());
-            var siblingCard=session.GetComponentsInChildren<TMP_Text>().First(t=>t.name=="Relative identity"&&t.text.Contains("Dave 2")).transform.parent.GetComponentsInChildren<Button>(true).First(b=>b.name=="Take control");
+            var siblingCard=session.GetComponentsInChildren<TMP_Text>().First(t=>t.name=="Relative identity"&&t.text.Contains("Dave")&&t.text.Contains("Sibling")).transform.parent.GetComponentsInChildren<Button>(true).First(b=>b.name=="Take control");
             Assert.False(siblingCard.interactable);siblingCard.onClick.Invoke();Assert.AreSame(children[0],session.Player);
             var locates=session.GetComponentsInChildren<Button>().Where(b=>b.name=="Locate").ToArray();Assert.Greater(locates.Length,0);locates[0].onClick.Invoke();
             Assert.AreSame(children[1],session.Locator.Target);Assert.AreSame(children[0],session.Player);Assert.False(session.Paused);
