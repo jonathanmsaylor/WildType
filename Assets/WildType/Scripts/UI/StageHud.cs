@@ -9,10 +9,12 @@ namespace WildType
 {
     public sealed partial class StageHud : MonoBehaviour
     {
-        public enum JournalView { Living, Chronicle, Details, Guide, Events, Records }
+        public enum JournalView { Living, Chronicle, Details, Guide, Events, Records, Menu }
         public JournalView View { get; private set; }
         public bool TipsVisible { get; private set; } = true;
         StageSession session; PlayerInputBridge input;
+        GameObject runMenu;
+        TMP_Text menuHelp;
         GameObject ordinary, pausePanel, namePanel, cardsPanel, detailsPanel, guidePanel, eventsPanel;
         TMP_Text identity, region, status, notice, care, tips, briefEvents, title, scope, detailLeft, detailRight, guide, turnover, namePreview;
         TMP_InputField nameInput; CreatureId namingId, focusId, detailId;
@@ -31,6 +33,7 @@ namespace WildType
         public void Configure(StageSession value)
         {
             session=value; input=GetComponent<PlayerInputBridge>();
+            gameObject.AddComponent<JournalEditorKeys>();
             var root=new GameObject("WildType HUD",typeof(Canvas),typeof(CanvasScaler),typeof(GraphicRaycaster));root.transform.SetParent(transform,false);
             root.GetComponent<Canvas>().renderMode=RenderMode.ScreenSpaceOverlay;
             var scale=root.GetComponent<CanvasScaler>();scale.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;scale.referenceResolution=new Vector2(1920,1080);scale.matchWidthOrHeight=1;
@@ -62,16 +65,17 @@ namespace WildType
             var panel=Box(root,"Pause",0,0,1560,900,new Vector2(.5f,.5f),.94f);pausePanel=panel.gameObject;
             title=Text(panel,"FAMILY JOURNAL\nSimulation paused",28,-24,1460,90,28);title.name="Journal title";
             resume=ButtonAt(panel,"Resume",28,134,292,56,()=>session.SetPaused(false));
-            livingTab=ButtonAt(panel,"Living descendants",28,202,292,56,()=>Show(JournalView.Living));
-            ButtonAt(panel,"Chronicle",28,270,292,56,()=>Show(JournalView.Chronicle),24,"Family Tree");
-            ButtonAt(panel,"Details",28,338,292,56,()=>ShowDetails(session.Player.Life.Id));
-            ButtonAt(panel,"Recent births / deaths",28,406,292,56,()=>Show(JournalView.Events));
-            ButtonAt(panel,"Getting started",28,474,292,56,()=>Show(JournalView.Guide));
-            tipsButton=ButtonAt(panel,"Hide tips",28,542,292,56,()=>{TipsVisible=!(TipsVisible&&!completed);completed=false;refresh=0;});
-            ButtonAt(panel,"Restart same seed",28,634,292,56,()=>session.Restart(false));
-            ButtonAt(panel,"Reseed new run",28,702,292,56,()=>session.Restart(true));
-            ButtonAt(panel,"Quit",28,770,292,56,session.Quit);
-            Text(panel,"Restart / reseed clears this run's family history.",28,-836,292,54,20);
+            livingTab=ButtonAt(panel,"Chronicle",28,202,292,56,()=>Show(JournalView.Chronicle),24,"Family Tree");
+            ButtonAt(panel,"Details",28,270,292,56,()=>ShowDetails(session.Player.Life.Id));
+            ButtonAt(panel,"Getting started",28,338,292,56,()=>Show(JournalView.Guide));
+            ButtonAt(panel,"Run menu",28,406,292,56,()=>Show(JournalView.Menu),24,"Menu · Restart / Quit");
+            menuHelp=Text(panel,"Hover or focus a control for a short explanation.",28,-500,292,310,22);
+            Help(livingTab,"Find your family in one scrollable view. Living descendants are marked. Earlier branches and recorded deaths remain here.");
+            var menuArea=Box(panel,"Run menu view",348,-130,1184,740,new Vector2(0,1),0);runMenu=menuArea.gameObject;
+            Text(menuArea,"MENU · Simulation paused\n\nRestart repeats this seed. Reseed starts a different run.\nBoth clear this run's names and family history.",20,-8,1140,190,26);
+            ButtonAt(menuArea,"Restart same seed",20,230,540,56,()=>session.Restart(false));
+            ButtonAt(menuArea,"Reseed new run",20,310,540,56,()=>session.Restart(true));
+            ButtonAt(menuArea,"Quit",20,390,540,56,session.Quit);
             var cardArea=Box(panel,"Descendants",348,-130,1184,740,new Vector2(0,1),0);cardsPanel=cardArea.gameObject;
             scope=Text(cardArea,"",16,-4,1138,130,25);scope.name="Family scope";
             for(int i=0;i<3;i++){
@@ -91,15 +95,29 @@ namespace WildType
             detailPage=ButtonAt(detailArea,"More details",20,682,540,48,()=>{detailSection=(detailSection+1)%DetailPages();ClearHelp();refresh=0;});
             BuildGeneCards(detailArea); BuildFamilyTree(panel);
             var guideArea=Box(panel,"Getting started view",348,-130,1184,740,new Vector2(0,1),0);guidePanel=guideArea.gameObject;
-            guide=Text(guideArea,"",20,-8,1144,664,25);
+            guide=Text(guideArea,"",20,-8,1144,606,25);
+            tipsButton=ButtonAt(guideArea,"Hide tips",600,678,560,52,()=>{TipsVisible=!(TipsVisible&&!completed);completed=false;refresh=0;});
             ButtonAt(guideArea,"Skip / return to family",20,678,440,52,()=>{TipsVisible=false;Show(JournalView.Living);});
             var eventArea=Box(panel,"Recent history",348,-130,1184,740,new Vector2(0,1),0);eventsPanel=eventArea.gameObject;
             turnover=Text(eventArea,"",20,-8,1134,710,25);turnover.name="Turnover events";turnover.lineSpacing=7;
+            foreach(var button in navigation){string explanation=button.name switch {
+                "Details"=>"Read the current creature's exact genes and what they do. Later pages keep parent comparisons, resources, mutations and identity.",
+                "Getting started"=>"A short guide to moving, eating and raising a family. Reading pauses survival. First-step tips can be shown or hidden here.",
+                "Run menu"=>"Restart this seed, begin a new seed, or quit. These options also open with Escape or the gamepad Menu button.",
+                "Living jump"=>"Bring a living descendant of your current creature into view. Press again to find another. This does not switch control.",
+                "My creature"=>"Return the view to your own creature without changing the family or your control.",
+                "Tree events"=>"The last four recorded births and deaths. Older family records remain in the tree and All Family Records.",
+                "Tree index"=>"Every family-history record, including earlier controlled branches. Use Details for stable IDs when names repeat.",
+                "Tree full record"=>"Read the selected relative's stable identity, recorded parents and death evidence. Unavailable is not the same as dead.",
+                "More details"=>"Next: parent comparisons, exact resources, then identity and recorded death. Additional mutation pages follow when needed.",
+                _=>null};if(explanation!=null)Help(button,explanation);}
             pausePanel.SetActive(false);
         }
         public void Show(JournalView view)
         {
-            View=view;page=0;refresh=0;ClearHelp();
+            View=view==JournalView.Living?JournalView.Chronicle:view;page=0;refresh=0;ClearHelp();
+            if(menuHelp)menuHelp.text="Hover or focus a control for a short explanation.";
+            if(treeHint)treeHint.text="Drag empty space or scroll; use bars sideways. Explore tree enables arrows / D-pad. Lines link recorded parents only; crossings are not junctions.";
             if(session.Ready&&!session.Paused)session.SetPaused(true);
         }
         public void ShowDetails(CreatureId id){detailId=id;detailSection=0;Show(JournalView.Details);}
@@ -114,8 +132,8 @@ namespace WildType
             if(opening){refresh=0;if(born)completed=true;}
             refresh-=Time.unscaledDeltaTime;if(refresh>0)return;refresh=.1f;
             var a=session.Player;var v=a.Vitals;var loop=session.Generations;
-            if(archive!=loop.Archive){archive=loop.Archive;View=JournalView.Living;page=0;detailSection=0;detailId=default;treeId=default;ate=born=completed=false;TipsVisible=true;startingPoint=a.transform.position;records.Clear();ClearHelp();}
-            if(focusId!=a.Life.Id){focusId=a.Life.Id;page=0;View=JournalView.Living;detailId=treeId=focusId;}
+            if(archive!=loop.Archive){archive=loop.Archive;View=JournalView.Chronicle;page=0;detailSection=0;detailId=default;treeId=default;ate=born=completed=false;TipsVisible=true;startingPoint=a.transform.position;records.Clear();ClearHelp();}
+            if(focusId!=a.Life.Id){focusId=a.Life.Id;page=0;View=JournalView.Chronicle;detailId=treeId=focusId;}
             var record=archive.Get(focusId);ate|=a.Interaction.MealsEaten>0;born|=record.OffspringCount>0;
             float[] values={v.Energy,v.Health,v.Stamina},maximum={a.Stats.MaxEnergy,100,a.Stats.MaxStamina};string[] names={"Energy","Health","Stamina"};
             for(int i=0;i<3;i++){resources[i].text=$"{names[i]}  {JournalReadout.Whole(values[i])}/{JournalReadout.Whole(maximum[i])}";bars[i].rectTransform.localScale=new Vector3(Mathf.Clamp01(values[i]/maximum[i]),1,1);}
@@ -135,7 +153,8 @@ namespace WildType
             title.text="FAMILY JOURNAL · Simulation paused — no energy is spent while reading";
             if(session.GameOver){archive.TryDeath(a.Life.Id,out var death);bool known=archive.TryDeath(a.Life.Id,out _);title.text=$"LIFE ENDED · {session.Names.PersonalName(a.Life.Id)} · {(known?LineageChronicle.Cause(death.Cause):"cause unknown")}\n"+(living.Count==0?"No living descendants. Restart or reseed to begin again.":"Choose a descendant with Take control, or restart. No replacement is created.");}
             resume.interactable=!session.GameOver;SetButtonText(tipsButton,TipsVisible&&!completed?"Hide first-step tips":"Show first-step tips");
-            bool cards=View==JournalView.Living||View==JournalView.Records;
+            bool cards=View==JournalView.Records;
+            runMenu.SetActive(View==JournalView.Menu);
             cardsPanel.SetActive(cards);detailsPanel.SetActive(View==JournalView.Details);guidePanel.SetActive(View==JournalView.Guide);eventsPanel.SetActive(View==JournalView.Events);
             treePanel.SetActive(View==JournalView.Chronicle);
             guide.text=GameplayText.Guide(input.UsingGamepad);
@@ -206,7 +225,7 @@ namespace WildType
         Button ButtonAt(Transform parent,string name,float x,float y,float w,float h,UnityEngine.Events.UnityAction action,int size=24,string label=null)
         {
             var r=Box(parent,name,x,-y,w,h,new Vector2(0,1),1);r.GetComponent<Image>().color=new Color(.17f,.27f,.27f,1);var b=r.gameObject.AddComponent<Button>();b.targetGraphic=r.GetComponent<Image>();
-            var colors=b.colors;colors.highlightedColor=new Color(.75f,.83f,.68f);colors.selectedColor=new Color(.75f,.83f,.68f);colors.disabledColor=new Color(.5f,.5f,.5f);b.colors=colors;
+            var colors=b.colors;colors.highlightedColor=new Color(1,.85f,.3f);colors.selectedColor=new Color(1,.85f,.3f);colors.disabledColor=new Color(.5f,.5f,.5f);b.colors=colors;
             var t=Text(r,label??name,8,-3,w-16,h-6,size);t.alignment=TextAlignmentOptions.Center;b.onClick.AddListener(action);b.gameObject.AddComponent<JournalFocusMarker>();navigation.Add(b);return b;
         }
         void BuildNaming(Transform root)
@@ -232,6 +251,11 @@ namespace WildType
             nameInstructions.text=founder?"What would you like to call your creature?\nEddy is ready to explore. No energy is spent while you decide.":"Name your child, or keep its default. Birth order is added:\nDave becomes Dave 1 for your first child. No energy is spent here.";
             namePreview.text="Keep default: "+session.Names.PersonalName(namingId);
             SetButtonText(nameConfirm,founder?"Use this name":"Name child");SetButtonText(nameSkip,founder?"Continue as Eddy":"Keep default / Skip");
+        }
+        void Help(Button button,string explanation)
+        {
+            var target=button.gameObject.AddComponent<JournalHelpTarget>();target.Explanation=explanation;
+            target.Show=h=>{if(menuHelp)menuHelp.text=h.Explanation;};target.Hide=h=>{};
         }
         void OnDestroy(){if(highlighted)highlighted.Highlight(false);}
     }

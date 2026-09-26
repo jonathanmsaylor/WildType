@@ -25,7 +25,11 @@ namespace WildType
                 var icon=new GameObject("Category motif",typeof(RectTransform),typeof(CanvasRenderer),typeof(JournalMotif));icon.transform.SetParent(card,false);
                 var motif=icon.GetComponent<JournalMotif>();motif.Kind=category;motif.color=new Color(.94f,.84f,.54f);motif.raycastTarget=false;
                 motif.rectTransform.anchorMin=motif.rectTransform.anchorMax=new Vector2(0,1);motif.rectTransform.anchoredPosition=new Vector2(30,-31);motif.rectTransform.sizeDelta=new Vector2(36,36);
-                Text(card,GeneGuide.Title(category),58,-9,490,30,24);
+                var categoryButton=ButtonAt(card,"Category "+category,58,3,490,36,()=>{},24,GeneGuide.Title(category));
+                categoryButton.GetComponent<Image>().color=new Color(0,0,0,.06f);
+                var categoryHelp=categoryButton.gameObject.AddComponent<JournalHelpTarget>();categoryHelp.Explanation=GeneGuide.Title(category)+": "+GeneGuide.Summary(category)+" Hover or focus a gene below for its actual effects and precise value. Comparisons hold other genes constant.";
+                categoryHelp.Show=ShowHelp;categoryHelp.Hide=HideHelp;categoryButton.onClick.AddListener(categoryHelp.Reveal);
+                motif.raycastTarget=true;var iconHelp=icon.AddComponent<JournalHelpTarget>();iconHelp.Explanation=categoryHelp.Explanation;iconHelp.Show=ShowHelp;iconHelp.Hide=HideHelp;
                 Text(card,GeneGuide.Summary(category),58,-37,490,26,20);
                 int row=0;
                 for(int i=0;i<GenomeGeneCatalog.Count;i++)
@@ -40,11 +44,12 @@ namespace WildType
             }
             helpBubble=Text(Box(area,"Explanation bubble",20,-558,1142,122,new Vector2(0,1),.98f),"",16,-8,1110,106,22);
             helpBubble.name="Gene explanation";
-            recordHelp=ButtonAt(area,"Explain record",600,682,560,48,()=>ShowRecordHelp(),22,"What do these words mean?");
+            recordHelp=ButtonAt(area,"Explain record",600,682,560,48,()=>ShowRecordHelp(),22,"Parent comparisons · Help");
             var recordTarget=recordHelp.gameObject.AddComponent<JournalHelpTarget>();recordTarget.Show=_=>ShowRecordHelp();recordTarget.Hide=_=>{};
+            foreach(var text in new[]{detailLeft,detailRight}){text.raycastTarget=true;var target=text.gameObject.AddComponent<JournalHelpTarget>();target.Show=_=>ShowRecordHelp();target.Hide=_=>{};}
             detailLeft.rectTransform.sizeDelta=new Vector2(552,530);detailRight.rectTransform.sizeDelta=new Vector2(552,530);
         }
-        void ClearHelp(){activeHelp=null;if(helpBubble)helpBubble.text=detailSection==0?"Hover, focus or select a gene to learn what it does. Comparisons assume other genes stay the same; no trait wins everywhere.":"Select ‘What do these words mean?’ for help with this record.";}
+        void ClearHelp(){activeHelp=null;if(helpBubble)helpBubble.text=detailSection==0?"Hover, focus or select a gene to learn what it does. Comparisons assume other genes stay the same; no trait wins everywhere.":"Hover the record for a plain explanation, or focus its named Help control below.";}
         void ShowHelp(JournalHelpTarget target){activeHelp=target;if(helpBubble)helpBubble.text=target.Explanation;}
         void HideHelp(JournalHelpTarget target){if(activeHelp==target)ClearHelp();}
         void ShowRecordHelp()
@@ -58,6 +63,7 @@ namespace WildType
         {
             geneCards.SetActive(detailSection==0);detailLeft.gameObject.SetActive(detailSection!=0);detailRight.gameObject.SetActive(detailSection!=0);
             recordHelp.gameObject.SetActive(detailSection!=0);
+            SetButtonText(recordHelp,detailSection==1?"Parent comparisons / mutations · Help":detailSection==2?"Resources / movement · Help":"Identity / death evidence · Help");
             recordBranch.gameObject.SetActive(detailSection==3);
             detailHeading.text=session.Names.PersonalName(entry.CreatureId)+" · Exact Genes · Page 1";
             for(int i=0;i<geneButtons.Length;i++)

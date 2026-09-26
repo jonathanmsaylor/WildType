@@ -2,94 +2,134 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 namespace WildType
 {
     public sealed partial class StageHud
     {
-        // Fixed five nodes: two recorded parents, a focus and two paged children. Never shrink a large family.
-        GameObject treePanel;
-        CreatureId treeId;
-        int childPage;
-        readonly CreatureId[] treeNodes=new CreatureId[5];
-        readonly Button[] treeRecords=new Button[5],treeBranches=new Button[5];
-        readonly RectTransform[] treeCards=new RectTransform[5];
-        readonly List<CreatureLineageRecord> treeChildren=new List<CreatureLineageRecord>(LineageArchive.Capacity);
+        public const int TreePoolCapacity=24;
+        GameObject treePanel; CreatureId treeId;
+        Button treeLocate,treeControl,recordBranch,treeEnter;
+        TMP_Text treeHeading,treeHint,treeSelection;
+        ScrollRect treeScroll; RectTransform treeContent,treeViewport;
+        FamilyTreeLinks treeLinks;
+        readonly FamilyTreeLayout treeLayout=new FamilyTreeLayout();
         readonly List<CreatureLineageRecord> treeIndex=new List<CreatureLineageRecord>(LineageArchive.Capacity);
-        TMP_Text treeHeading,childrenHeading;
-        Button treeLocate,treeControl,childPrevious,childNext,recordBranch;
-        readonly GameObject[] parentLinks=new GameObject[2],childLinks=new GameObject[2];
-        public CreatureId TreeFocus => treeId;
-        public void ShowTree(CreatureId id)
-        {
-            if (session.Generations.Archive.Get(id)==null)return;
-            treeId=id;childPage=0;Show(JournalView.Chronicle);
-        }
+        readonly List<FamilyTreeCard> treePool=new List<FamilyTreeCard>();
+        LineageArchive treeArchive; int treeRevision=-1;CreatureId treeController;
+        bool bindingTree;CreatureId pendingCenter;
+        public CreatureId TreeFocus=>treeId;
+        public FamilyTreeLayout TreeLayout=>treeLayout;
+        public ScrollRect TreeScroll=>treeScroll;
+        public void ShowTree(CreatureId id){if(session.Generations.Archive.Get(id)==null)return;treeId=id;pendingCenter=id;Show(JournalView.Chronicle);}
+        public void ShowIdentity(CreatureId id){ShowDetails(id);detailSection=3;}
         void BuildFamilyTree(RectTransform panel)
         {
             var area=Box(panel,"Family Tree",348,-130,1184,740,new Vector2(0,1),0);treePanel=area.gameObject;
-            treeHeading=Text(area,"",20,-4,1144,76,25);
-            parentLinks[0]=TreeLine(area,301,210,587,258);parentLinks[1]=TreeLine(area,881,210,587,258);
-            childLinks[0]=TreeLine(area,587,372,301,450);childLinks[1]=TreeLine(area,587,372,881,450);
-            for(int i=0;i<5;i++)
-            {
-                int slot=i;float x=i==2?306:i%2==0?20:600;float y=i<2?96:i==2?258:450;
-                // Child columns are independent of slot parity.
-                if(i>=3)x=i==3?20:600;
-                treeCards[i]=Box(area,"Tree relative",x,-y,562,114,new Vector2(0,1),1);
-                treeCards[i].GetComponent<Image>().color=CardColors[i==2?3:i<2?1:0];
-                treeRecords[i]=ButtonAt(treeCards[i],"Tree record",8,6,370,102,()=>ShowDetails(treeNodes[slot]),22);
-                treeRecords[i].GetComponent<Image>().color=new Color(1,1,1,0);
-                treeBranches[i]=ButtonAt(treeCards[i],"Tree branch",390,36,160,44,()=>ShowTree(treeNodes[slot]),20,"View branch");
+            treeHeading=Text(area,"",20,0,1142,68,24);
+            treeEnter=ButtonAt(area,"Explore tree",20,76,220,44,()=>CenterTree(treeId,true),21);
+            ButtonAt(area,"Living jump",252,76,258,44,JumpLiving,21,"Find living descendant");
+            ButtonAt(area,"My creature",522,76,222,44,()=>CenterTree(session.Player.Life.Id,true),21);
+            ButtonAt(area,"Tree events",756,76,406,44,()=>Show(JournalView.Events),21,"Recent births / deaths");
+            treeViewport=Box(area,"Tree viewport",20,-132,1116,412,new Vector2(0,1),.58f);treeViewport.gameObject.AddComponent<RectMask2D>();
+            treeScroll=treeViewport.gameObject.AddComponent<ScrollRect>();treeScroll.viewport=treeViewport;
+            treeScroll.movementType=ScrollRect.MovementType.Clamped;treeScroll.inertia=false;treeScroll.scrollSensitivity=16;
+            treeContent=Box(treeViewport,"Tree canvas",0,0,1116,412,new Vector2(0,1),0);treeScroll.content=treeContent;
+            var edgeObject=new GameObject("Recorded parent links",typeof(RectTransform),typeof(CanvasRenderer),typeof(FamilyTreeLinks));edgeObject.transform.SetParent(treeContent,false);
+            treeLinks=edgeObject.GetComponent<FamilyTreeLinks>();treeLinks.raycastTarget=false;treeLinks.rectTransform.anchorMin=treeLinks.rectTransform.anchorMax=treeLinks.rectTransform.pivot=new Vector2(0,1);
+            treeLinks.rectTransform.anchoredPosition=Vector2.zero;treeLinks.Layout=treeLayout;
+            for(int i=0;i<TreePoolCapacity;i++){
+                var button=ButtonAt(treeContent,"Tree record",0,0,FamilyTreeLayout.CardWidth,FamilyTreeLayout.CardHeight,()=>{},22);
+                navigation.Remove(button);button.navigation=new Navigation{mode=Navigation.Mode.None};button.transition=Selectable.Transition.None;
+                var node=button.gameObject.AddComponent<FamilyTreeCard>();node.Navigate=NavigateTree;node.Focused=c=>{treeId=c.Id;UpdateTreeActions();};node.Explain=ExplainTreeCard;
+                button.onClick.AddListener(()=>ShowIdentity(node.Id));var text=button.GetComponentInChildren<TMP_Text>();text.alignment=TextAlignmentOptions.TopLeft;
+                text.rectTransform.offsetMin=new Vector2(14,-FamilyTreeLayout.CardHeight+8);text.rectTransform.offsetMax=new Vector2(FamilyTreeLayout.CardWidth-14,-8);
+                treePool.Add(node);button.gameObject.SetActive(false);
             }
-            treeBranches[2].gameObject.SetActive(false);
-            treeLocate=ButtonAt(area,"Tree Highlight",20,382,240,48,()=>session.Locator.Select(TreeActor()),22,"Highlight");
-            treeControl=ButtonAt(area,"Tree Take control",906,382,256,48,()=>session.TakeControl(TreeActor()),22,"Take Control");
-            childrenHeading=Text(area,"",20,-635,550,36,22);
-            childPrevious=ButtonAt(area,"Previous children",20,580,260,46,()=>{childPage--;refresh=0;},22);
-            childNext=ButtonAt(area,"Next children",300,580,260,46,()=>{childPage++;refresh=0;},22);
-            ButtonAt(area,"Tree index",600,580,562,46,()=>Show(JournalView.Records),22,"All Family Records");
-            ButtonAt(area,"Previous relative",20,680,260,48,()=>StepRelative(-1),22);
-            ButtonAt(area,"Next relative",300,680,260,48,()=>StepRelative(1),22);
-            Text(area,"Name → full record · View branch → family\nAll Family Records includes earlier branches.",600,-660,562,72,22);
-            recordBranch=ButtonAt(detailsPanel.transform,"Record branch",600,480,550,46,()=>ShowTree(detailId),22,"View this Family Tree branch");
+            var horizontal=TreeBar(area,"Tree horizontal",20,552,1116,16,false);var vertical=TreeBar(area,"Tree vertical",1144,132,18,412,true);
+            treeScroll.horizontalScrollbar=horizontal;treeScroll.verticalScrollbar=vertical;
+            treeScroll.onValueChanged.AddListener(_=>BindTree());
+            treeSelection=Text(area,"",20,-576,1140,34,22);
+            treeLocate=ButtonAt(area,"Tree Highlight",20,616,238,46,()=>session.Locator.Select(TreeActor()),22,"Highlight in world");
+            treeControl=ButtonAt(area,"Tree Take control",270,616,240,46,()=>session.TakeControl(TreeActor()),22,"Take Control");
+            ButtonAt(area,"Tree full record",522,616,222,46,()=>ShowIdentity(treeId),22,"Full record");
+            ButtonAt(area,"Tree index",756,616,406,46,()=>Show(JournalView.Records),22,"All Family Records");
+            treeHint=Text(area,"",20,-674,1142,62,21);
+            recordBranch=ButtonAt(detailsPanel.transform,"Record branch",600,480,550,46,()=>ShowTree(detailId),22,"Find in Family Tree");
+            Help(treeEnter,"Explore the family with arrows or D-pad. Left from the first card returns to the menu. Select a card to read its record; this never transfers control.");
+            Help(treeLocate,"Resume as your current creature and briefly highlight this relative in the world. No walking, teleporting or control transfer.");
+            Help(treeControl,"Continue playing as this living descendant with its own existing age and resources. Only descendants of your current creature are eligible.");
         }
-        GameObject TreeLine(RectTransform parent,float x,float y,float endX,float endY)
+        Scrollbar TreeBar(RectTransform parent,string name,float x,float y,float w,float h,bool vertical)
         {
-            var box=Box(parent,"Recorded parent-child link",0,0,1184,740,new Vector2(0,1),0);
-            float mid=(y+endY)*.5f;
-            foreach(var rect in new[]{new Vector4(x,y,3,mid-y),new Vector4(Mathf.Min(x,endX),mid,Mathf.Abs(endX-x)+3,3),new Vector4(endX,mid,3,endY-mid)})
-                Box(box,"Link",rect.x,-rect.y,rect.z,rect.w,new Vector2(0,1),1).GetComponent<Image>().color=new Color(.79f,.73f,.49f,.85f);
-            return box.gameObject;
+            var track=Box(parent,name,x,-y,w,h,new Vector2(0,1),.75f);var bar=track.gameObject.AddComponent<Scrollbar>();
+            var handle=Box(track,"Handle",0,0,w,h,new Vector2(0,1),1);handle.GetComponent<Image>().color=new Color(.7f,.65f,.4f);
+            handle.anchorMin=Vector2.zero;handle.anchorMax=Vector2.one;handle.offsetMin=handle.offsetMax=Vector2.zero;
+            bar.handleRect=handle;bar.targetGraphic=handle.GetComponent<Image>();bar.direction=vertical?Scrollbar.Direction.BottomToTop:Scrollbar.Direction.LeftToRight;bar.navigation=new Navigation{mode=Navigation.Mode.None};return bar;
         }
-        CreatureAgent TreeActor(){var record=archive.Get(treeId);return record==null?null:LineageChronicle.LivingActor(session,record);}
-        void StepRelative(int step)
-        {
-            session.CollectFamilyHistory(treeIndex);if(treeIndex.Count==0)return;
-            int at=treeIndex.FindIndex(r=>r.CreatureId==treeId);at=(at+step+treeIndex.Count)%treeIndex.Count;
-            ShowTree(treeIndex[at].CreatureId);
-        }
+        CreatureAgent TreeActor(){var record=archive?.Get(treeId);return record==null?null:LineageChronicle.LivingActor(session,record);}
         void RefreshFamilyTree()
         {
-            var current=archive.Get(treeId)??archive.Get(session.Player.Life.Id);treeId=current.CreatureId;
-            archive.CollectChildren(treeId,treeChildren);
-            int pages=Mathf.Max(1,Mathf.CeilToInt(treeChildren.Count/2f));childPage=Mathf.Clamp(childPage,0,pages-1);
-            treeNodes[0]=current.FirstParentId;treeNodes[1]=current.SecondParentId;treeNodes[2]=treeId;
-            treeNodes[3]=childPage*2<treeChildren.Count?treeChildren[childPage*2].CreatureId:default;
-            treeNodes[4]=childPage*2+1<treeChildren.Count?treeChildren[childPage*2+1].CreatureId:default;
-            treeHeading.text=$"{session.Names.PersonalName(treeId)}'s Family Tree\n"+(current.Generation==0?"Founder · No parents recorded":"Two recorded parents above; children below");
-            childrenHeading.text=$"{treeChildren.Count} recorded children · Page {childPage+1}/{pages}";
-            for(int i=0;i<treeNodes.Length;i++)
-            {
-                var record=archive.Get(treeNodes[i]);treeCards[i].gameObject.SetActive(record!=null);if(record==null)continue;
-                var actor=LineageChronicle.LivingActor(session,record);
-                string life=archive.TryDeath(record.CreatureId,out _)?"Deceased":actor?(actor.Life.Adult?"Adult":"Juvenile"):"Unavailable · no death record";
-                string relation=i<2?"Parent":i==2?LineageChronicle.Relationship(archive,session.Player.Life.Id,record):"Child";
-                SetButtonText(treeRecords[i],$"<b>{session.Names.PersonalName(record.CreatureId)}</b> · Gen {record.Generation}\n{relation} · {life}\nOpen full record");
+            if(treeArchive!=archive||treeRevision!=archive.Revision||treeController!=session.Player.Life.Id){
+                treeArchive=archive;treeRevision=archive.Revision;treeController=session.Player.Life.Id;
+                session.CollectFamilyHistory(treeIndex);treeLayout.Build(archive,treeIndex);treeContent.sizeDelta=treeLayout.Size;treeLinks.rectTransform.sizeDelta=treeLayout.Size;
+                if(!treeLayout.Positions.ContainsKey(treeId))treeId=treeController;pendingCenter=treeId;
             }
-            for(int i=0;i<2;i++){parentLinks[i].SetActive(treeNodes[i].IsValid);childLinks[i].SetActive(treeNodes[i+3].IsValid);}
-            var focus=TreeActor();treeLocate.gameObject.SetActive(focus&&session.CanLocateFamily(focus)&&!session.GameOver);
-            treeControl.gameObject.SetActive(focus&&session.Generations.IsLivingDescendant(focus,session.Player.Life.Id));
-            childPrevious.interactable=childPage>0;childNext.interactable=childPage<pages-1;
+            treeHeading.text="Family Tree · "+treeLayout.Records.Count+" recorded relatives\nLiving descendants are marked in green and named · Earlier branches stay here.";
+            if(pendingCenter.IsValid){var id=pendingCenter;pendingCenter=default;CenterTree(id,false);}else BindTree();
+            UpdateTreeActions();
+        }
+        void UpdateTreeActions()
+        {
+            if(!treeSelection||archive==null)return;
+            var actor=TreeActor();treeLocate.gameObject.SetActive(actor&&session.CanLocateFamily(actor)&&!session.GameOver);
+            treeControl.gameObject.SetActive(actor&&session.Generations.IsLivingDescendant(actor,session.Player.Life.Id));
+            treeSelection.text="Selected: "+session.Names.PersonalName(treeId)+" · Select card for its full record";
+            treeLinks.Selected=treeId;treeLinks.SetVerticesDirty();
+        }
+        public void CenterTree(CreatureId id,bool focus)
+        {
+            if(!treeLayout.Positions.TryGetValue(id,out var at))return;treeId=id;
+            var view=treeViewport.rect.size;treeContent.anchoredPosition=new Vector2(-Mathf.Clamp(at.x+FamilyTreeLayout.CardWidth/2-view.x/2,0,Mathf.Max(0,treeLayout.Size.x-view.x)),Mathf.Clamp(at.y-12,0,Mathf.Max(0,treeLayout.Size.y-view.y)));
+            BindTree();UpdateTreeActions();if(focus)foreach(var node in treePool)if(node.gameObject.activeSelf&&node.Id==id){EventSystem.current.SetSelectedGameObject(node.gameObject);break;}
+        }
+        public void NavigateTree(CreatureId id,int dx,int dy)
+        {
+            var next=treeLayout.Move(id,dx,dy);if(next!=id)CenterTree(next,true);
+            else if(dx<0)Select(livingTab);else if(dy>0)Select(treeControl.gameObject.activeSelf?treeControl:treeEnter);
+        }
+        void JumpLiving()
+        {
+            int start=treeLayout.Records.FindIndex(r=>r.CreatureId==treeId);
+            for(int i=1;i<=treeLayout.Records.Count;i++){var r=treeLayout.Records[(Mathf.Max(0,start)+i)%treeLayout.Records.Count];var a=LineageChronicle.LivingActor(session,r);
+                if(a&&session.Generations.IsLivingDescendant(a,session.Player.Life.Id)){CenterTree(r.CreatureId,true);return;}}
+            treeHint.text="No living descendants of your current creature. Earlier relatives remain in the tree.";
+        }
+        void BindTree()
+        {
+            if(bindingTree||!treePanel.activeInHierarchy||archive==null)return;bindingTree=true;
+            var view=new Rect(-treeContent.anchoredPosition.x,treeContent.anchoredPosition.y,treeViewport.rect.width,treeViewport.rect.height);
+            var visible=new List<CreatureLineageRecord>();foreach(var r in treeLayout.Records)if(treeLayout.Bounds(r.CreatureId).Overlaps(view))visible.Add(r);
+            // Keep existing visible identities in their pool slots, avoiding hover/focus flicker during scrolling.
+            var used=new HashSet<CreatureId>();foreach(var n in treePool)if(n.gameObject.activeSelf&&visible.Exists(r=>r.CreatureId==n.Id))used.Add(n.Id);else {
+                // A recycled visual must never retain input focus for a different identity.
+                if(EventSystem.current&&EventSystem.current.currentSelectedGameObject==n.gameObject)EventSystem.current.SetSelectedGameObject(treeEnter.gameObject);
+                n.gameObject.SetActive(false);n.Id=default;n.ResetState();
+            }
+            foreach(var r in visible){if(used.Contains(r.CreatureId))continue;var slot=treePool.Find(n=>!n.gameObject.activeSelf);if(slot==null)break;slot.Id=r.CreatureId;slot.gameObject.SetActive(true);used.Add(r.CreatureId);}
+            foreach(var n in treePool){if(!n.gameObject.activeSelf)continue;var r=archive.Get(n.Id);var at=treeLayout.Positions[n.Id];n.GetComponent<RectTransform>().anchoredPosition=new Vector2(at.x,-at.y);
+                var actor=LineageChronicle.LivingActor(session,r);bool descendant=actor&&session.Generations.IsLivingDescendant(actor,session.Player.Life.Id);
+                string state=archive.TryDeath(r.CreatureId,out _)?"Deceased":actor?(actor.Life.Adult?"Living · Adult":"Living · Juvenile"):"Unavailable";
+                n.BaseColor=descendant?new Color(.20f,.37f,.27f,1):new Color(.19f,.25f,.27f,1);n.Paint();
+                SetButtonText(n.GetComponent<Button>(),"<b>"+session.Names.PersonalName(n.Id)+"</b>\nGen "+r.Generation+" · "+LineageChronicle.Relationship(archive,session.Player.Life.Id,r)+"\n"+state+(descendant?"\nLiving descendant":""));
+            }
+            treeLinks.Visible=view;treeLinks.SetVerticesDirty();bindingTree=false;
+            if(string.IsNullOrEmpty(treeHint.text))treeHint.text="Drag empty space or scroll; use bars sideways. Explore tree enables arrows / D-pad. Lines link recorded parents only; crossings are not junctions.";
+        }
+        void ExplainTreeCard(FamilyTreeCard node)
+        {
+            var r=archive.Get(node.Id);if(r==null)return;treeLinks.Selected=node.Id;treeLinks.SetVerticesDirty();
+            treeHint.text=session.Names.PersonalName(node.Id)+" · "+(r.Generation==0?"No parents recorded.":"Parents: "+session.Names.PersonalName(r.FirstParentId)+" + "+session.Names.PersonalName(r.SecondParentId)+".")+"\nSelect reads the full record. Highlight finds; Take Control switches creature.";
         }
     }
 }

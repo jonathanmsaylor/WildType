@@ -50,13 +50,16 @@ namespace WildType.Tests
         [UnityTest] public IEnumerator JournalLocatesChildAndGrandchildWithoutControlOrCareChanges()
         {
             yield return Hierarchy(); session.SetPaused(true); yield return new WaitForSecondsRealtime(.2f);
-            var buttons = session.GetComponentsInChildren<Button>().Where(b => b.name == "Locate").ToArray(); Assert.AreEqual(2, buttons.Length);
-            buttons[0].onClick.Invoke(); Assert.AreSame(child, session.Locator.Target); Assert.AreSame(parent, session.Player); Assert.False(session.Paused);
+            var hud = session.GetComponent<StageHud>(); hud.ShowTree(child.Life.Id); yield return null;
+            hud.CenterTree(child.Life.Id, true); yield return null;
+            var highlight = session.GetComponentsInChildren<Button>().First(b => b.name == "Tree Highlight");
+            Assert.True(highlight.interactable); highlight.onClick.Invoke(); Assert.AreSame(child, session.Locator.Target); Assert.AreSame(parent, session.Player); Assert.False(session.Paused);
             StringAssert.Contains("Locating Dave 1", session.Notice); StringAssert.DoesNotContain("Following", session.Notice);
             yield return new WaitForSeconds(.4f); float remaining = session.Locator.Remaining;
             session.SetPaused(true); yield return new WaitForSecondsRealtime(.2f); Assert.AreEqual(remaining, session.Locator.Remaining);
-            buttons[0].onClick.Invoke(); Assert.Greater(session.Locator.Remaining, remaining);
-            session.SetPaused(true); yield return new WaitForSecondsRealtime(.2f); buttons[1].onClick.Invoke();
+            highlight.onClick.Invoke(); Assert.Greater(session.Locator.Remaining, remaining);
+            session.SetPaused(true); hud.ShowTree(grandchild.Life.Id); yield return new WaitForSecondsRealtime(.2f);
+            Assert.True(highlight.interactable); highlight.onClick.Invoke();
             Assert.AreSame(grandchild, session.Locator.Target); Assert.AreSame(parent, session.Player); Assert.AreEqual(Vector3.zero, parent.DesiredDirection);
             Place(grandchild, 0, 2); grandchild.Vitals.SpendEnergy(25); float energy = parent.Vitals.Energy;
             Assert.False(session.Care.IsChild(parent, grandchild)); Assert.False(session.Care.TryShare(parent, grandchild, out _));

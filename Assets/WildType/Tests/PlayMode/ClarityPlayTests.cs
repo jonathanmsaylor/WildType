@@ -49,23 +49,23 @@ namespace WildType.Tests
             EventSystem.current.SetSelectedGameObject(Button("Resume").gameObject);
             InputSystem.QueueStateEvent(pad,new GamepadState().WithButton(GamepadButton.DpadDown));yield return null;yield return null;
             InputSystem.QueueStateEvent(pad,new GamepadState());yield return null;
-            Assert.AreEqual("Living descendants",EventSystem.current.currentSelectedGameObject.name);
-            InputSystem.QueueStateEvent(pad,new GamepadState().WithButton(GamepadButton.South));yield return null;yield return null;InputSystem.QueueStateEvent(pad,new GamepadState());yield return Refresh();Assert.AreEqual(StageHud.JournalView.Living,hud.View);
+            Assert.AreEqual("Chronicle",EventSystem.current.currentSelectedGameObject.name);
+            InputSystem.QueueStateEvent(pad,new GamepadState().WithButton(GamepadButton.South));yield return null;yield return null;InputSystem.QueueStateEvent(pad,new GamepadState());yield return Refresh();Assert.AreEqual(StageHud.JournalView.Chronicle,hud.View);
             hud.ShowDetails(s.Player.Life.Id);yield return Refresh();Fit();Button("More details").onClick.Invoke();yield return Refresh();Fit();Button("More details").onClick.Invoke();yield return Refresh();Fit();
             foreach(var resolution in new[]{new Vector2(1920,1080),new Vector2(1280,720)}){
                 var canvas=s.GetComponentInChildren<Canvas>();var rect=canvas.GetComponent<RectTransform>();float scale=resolution.y/1080f;var panel=GameObject.Find("Pause").GetComponent<RectTransform>();Assert.LessOrEqual(panel.sizeDelta.x*scale,resolution.x);Assert.LessOrEqual(panel.sizeDelta.y*scale,resolution.y);
                 foreach(var t in panel.GetComponentsInChildren<TMP_Text>())Assert.GreaterOrEqual(t.fontSize*scale,13.3f);Fit();
             }
-            s.Restart(false);yield return null;yield return Refresh();Assert.True(hud.TipsVisible);Assert.AreEqual(StageHud.JournalView.Living,hud.View);Assert.False(s.Paused);Assert.AreEqual(0,s.Player.Interaction.MealsEaten);
+            s.Restart(false);yield return null;yield return Refresh();Assert.True(hud.TipsVisible);Assert.AreEqual(StageHud.JournalView.Chronicle,hud.View);Assert.False(s.Paused);Assert.AreEqual(0,s.Player.Interaction.MealsEaten);
             hud.Show(StageHud.JournalView.Guide);int seed=s.seed;s.Restart(true);yield return null;yield return Refresh();Assert.AreNotEqual(seed,s.seed);Assert.True(hud.TipsVisible);Assert.AreEqual(13,s.Population);Assert.AreEqual(72,s.World.Foods.Count);
         }
         [UnityTest] public IEnumerator CardsSeparateHighlightControlAndSiblingEligibility()
         {
             yield return Birth();var first=s.Creatures.Last();Place(first,new Vector3(-8,0,0));Time.timeScale=20;
             while(s.Player.Life.Cooldown>0||s.Creatures[1].Life.Cooldown>0){foreach(var a in s.Creatures)a.Vitals.Eat(1000);yield return new WaitForSeconds(2);}Time.timeScale=1;
-            yield return Birth();var second=s.Creatures.Last();hud.Show(StageHud.JournalView.Living);yield return Refresh();Fit();
-            var before=s.Player;Button("Locate").onClick.Invoke();Assert.AreSame(before,s.Player);Assert.False(s.Paused);Assert.AreSame(first,s.Locator.Target);
-            hud.Show(StageHud.JournalView.Living);yield return Refresh();Button("Take control").onClick.Invoke();Assert.AreSame(first,s.Player);Assert.False(s.Locator.Target);
+            yield return Birth();var second=s.Creatures.Last();hud.ShowTree(first.Life.Id);yield return Refresh();Fit();
+            var before=s.Player;Button("Tree Highlight").onClick.Invoke();Assert.AreSame(before,s.Player);Assert.False(s.Paused);Assert.AreSame(first,s.Locator.Target);
+            hud.ShowTree(first.Life.Id);yield return Refresh();Button("Tree Take control").onClick.Invoke();Assert.AreSame(first,s.Player);Assert.False(s.Locator.Target);
             yield return Refresh();hud.Show(StageHud.JournalView.Records);yield return Refresh();Button("Next page").onClick.Invoke();yield return Refresh();Fit();
             var row=s.GetComponentsInChildren<TMP_Text>().First(t=>t.name=="Relative identity"&&t.text.Contains("Sibling"));StringAssert.Contains(s.Names.PersonalName(second.Life.Id),row.text);
             var buttons=row.transform.parent.GetComponentsInChildren<Button>(true);var take=buttons.First(b=>b.name=="Take control");Assert.False(take.interactable);Assert.False(take.gameObject.activeSelf);take.onClick.Invoke();Assert.AreSame(first,s.Player);

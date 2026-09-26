@@ -35,7 +35,7 @@ namespace WildType
             if ((keyboard != null && keyboard.escapeKey.wasPressedThisFrame) || (pad != null && pad.startButton.wasPressedThisFrame))
                 TogglePause();
             if ((keyboard != null && keyboard.tabKey.wasPressedThisFrame) || (pad != null && pad.buttonNorth.wasPressedThisFrame))
-                TogglePause();
+                TogglePause(true);
             if (session.Paused || !session.Player || session.Player.Vitals.Dead) return;
             Vector2 move = pad != null ? pad.leftStick.ReadValue() : Vector2.zero;
             if (keyboard != null)
@@ -60,10 +60,12 @@ namespace WildType
             float zoom = mouse != null ? mouse.scroll.ReadValue().y / 120f : 0;
             session.orbit.Orbit(look, zoom);
         }
-        void TogglePause()
+        void TogglePause(bool journal=false)
         {
             if (!session || !session.Ready || pauseFrame == Time.frameCount) return;
-            pauseFrame = Time.frameCount; session.SetPaused(!session.Paused); pointerWasLocked = false;
+            pauseFrame = Time.frameCount;
+            if(session.Paused)session.SetPaused(false);else GetComponent<StageHud>().Show(journal?StageHud.JournalView.Chronicle:StageHud.JournalView.Menu);
+            pointerWasLocked = false;
         }
         void OnGUI()
         {
@@ -81,7 +83,7 @@ namespace WildType
             if (Event.current.type != EventType.KeyDown) return;
             UsingGamepad = false;
             if (key == KeyCode.F) { if (!guiMateHeld) { guiMateHeld = true; RequestMate(); } }
-            else if (key == KeyCode.Tab) { if (!guiFamilyHeld) { guiFamilyHeld = true; TogglePause(); } }
+            else if (key == KeyCode.Tab) { if (!guiFamilyHeld) { guiFamilyHeld = true; TogglePause(true); } }
             else if (key == KeyCode.R) { if (!guiCareHeld) { guiCareHeld = true; RequestCare(); } }
             else if (key == KeyCode.E) { if (!guiEatHeld) { guiEatHeld = true; RequestEat(); } }
             else if (!guiEscapeHeld) { guiEscapeHeld = true; TogglePause(); }

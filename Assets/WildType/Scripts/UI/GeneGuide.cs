@@ -36,7 +36,7 @@ namespace WildType
                 default: return "Blue part of the inherited coat color. Higher adds blue; lower removes blue. Color also contributes to visible markings. There is no camouflage survival bonus in this stage.";
             }
         }
-        public static string Help(Genome genome, GenomeGene gene) => GenomeGeneCatalog.Name(gene) + " · exact " +
-            JournalReadout.Exact(GenomeGeneCatalog.Get(genome, gene)) + "\n" + Explain(gene);
+        public static string Help(Genome genome, GenomeGene gene) => Explain(gene) + "\n" + GenomeGeneCatalog.Name(gene) + " · exact " +
+            JournalReadout.Exact(GenomeGeneCatalog.Get(genome, gene));
     }
 }

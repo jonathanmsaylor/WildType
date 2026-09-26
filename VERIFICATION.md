@@ -1,4 +1,18 @@
-# WILDTYPE verification — welcoming journal and Family Tree — 2026-09-26
+# WILDTYPE verification — scrollable Family Tree — 2026-09-26
+
+Branch **milestone-scrollable-family-tree**, based on verified and normally pushed **fe8e03961798ec40b91ff4a0d72f29d55136cd14** (`milestone-welcoming-journal`). Main remains **d768797775ad0a7b802eaec0f50899e5d3e2e0df**. [Full report, running-scene images, assistance and protected-file status](Documentation/ScrollableFamilyTree/REPORT.md).
+
+Living descendants are combined into one scrollable Family Tree, with fixed-size cards, both recorded parent links, one node per stable identity, yellow hover/focus and a living-descendant jump. Earlier branches, deceased records and unavailable actors remain distinguishable; All Family Records retains the former complete index. Details keeps Exact Genes first with direct practical hover/focus help. Tips moved inside Getting started, recent events inside Family Tree, and Restart/Reseed/Quit inside Menu. Controls, genetic precision, survival/ecology, care and eligibility rules, caps, zoom and F6 are unchanged.
+
+Final complete suites after removing the temporary helper: **144/144 Edit Mode** in **3.1691706 seconds** and **53/53 Play Mode** in **542.859468 seconds**, **zero failed or skipped**, excluding startup/import. Both exited 0. Intermediate failures and the equivalent tree-control regression updates are documented in the full report.
+
+Rendered checks: both saved scenes at **1920×1080 and 1366×768**; native mouse/card hover, scrolling, living-child/later-descendant discovery, recorded death evidence, gene hover, explicit control transfer, Escape menu and tips location. Native arrow keys now visibly navigate cards and gene explanations. A synthetic multi-generation/shared-parent family was explicitly assisted; not natural evolution or human usability testing. Virtual keyboard/gamepad coverage is automated; no physical gamepad was tested. Full 512-archive reachability and bounded pooling are automated, not a native walkthrough of 512 nodes.
+
+All nine protected local files match their starting backups byte-for-byte and are excluded; the unresolved original-scene sun and serialization changes remain local. Unity's regenerated fallback font was backed up separately before restoring the protected starting copy after Editor shutdown. Temporary helper removed before final suites. Remaining limits: broad generations need sideways navigation, links can cross, duplicate names require full-record IDs, smaller-resolution Exact Genes remains dense, and clustered world labels can still overlap.
+
+---
+
+# Previous verification — welcoming journal and Family Tree — 2026-09-26
 
 Branch **milestone-welcoming-journal**, based on pushed gameplay clarity **f34422c**; `main` is unchanged. [Full report, before/after Game captures, protected-file inventory and limitations](Documentation/WelcomingJournal/REPORT.md).
 

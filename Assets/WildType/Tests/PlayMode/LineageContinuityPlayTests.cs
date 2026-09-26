@@ -53,8 +53,10 @@ namespace WildType.Tests
             var parent=session.Player;var mate=session.Creatures[1];var children=new List<CreatureAgent>();
             for(int n=0;n<5;n++){if(n>0)yield return WaitReady(parent,mate);yield return Birth(parent,mate);children.Add(session.Creatures.Last());}
             Assert.AreEqual(5,session.Generations.LivingChildren(parent.Life.Id));Assert.AreEqual(5,session.Generations.LivingDescendants(parent.Life.Id).Count);
-            yield return Open();StringAssert.Contains(session.Names.PersonalName(parent.Life.Id)+"'s Descendants",Text());StringAssert.Contains("Page 1/2",Text());
-            Button("Next page").onClick.Invoke();yield return new WaitForSecondsRealtime(.2f);StringAssert.Contains("Dave 5",Text());
+            yield return Open();var hud=session.GetComponent<StageHud>();StringAssert.Contains("Family Tree",Text());
+            foreach(var child in children){hud.ShowTree(child.Life.Id);yield return null;hud.CenterTree(child.Life.Id,false);yield return null;
+                var treeCard=session.GetComponentsInChildren<FamilyTreeCard>().FirstOrDefault(c=>c.Id==child.Life.Id);Assert.True(treeCard);
+                StringAssert.Contains(session.Names.PersonalName(child.Life.Id),string.Join("\n",treeCard.GetComponentsInChildren<TMP_Text>().Select(t=>t.text)));}
             Audit("before transfer",children.Select(a=>a.Life.Id).ToArray());
             Assert.True(session.TakeControl(children[0]));Freeze();Assert.AreEqual(2,session.ControlledHistory.Count);
             Assert.AreEqual(0,session.Generations.LivingDescendants(children[0].Life.Id).Count);

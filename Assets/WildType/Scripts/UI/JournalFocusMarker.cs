@@ -6,6 +6,7 @@ namespace WildType
     // A shape, not just a color change, makes controller/keyboard focus visible on transparent cards too.
     public sealed class JournalFocusMarker : MonoBehaviour, ISelectHandler, IDeselectHandler
     {
+        public static int LastSelectionFrame { get; private set; } = -1;
         GameObject marker;
         public bool Marked => marker && marker.activeSelf;
         void Awake()
@@ -18,7 +19,7 @@ namespace WildType
             var image = marker.GetComponent<Image>(); image.color = new Color(.96f, .88f, .63f); image.raycastTarget = false;
             marker.SetActive(false);
         }
-        public void OnSelect(BaseEventData e) { if (marker) marker.SetActive(true); }
+        public void OnSelect(BaseEventData e) { LastSelectionFrame=Time.frameCount; if (marker) marker.SetActive(true); }
         public void OnDeselect(BaseEventData e) { if (marker) marker.SetActive(false); }
         void OnEnable() { if (marker) marker.SetActive(EventSystem.current && EventSystem.current.currentSelectedGameObject == gameObject); }
         void OnDisable() { if (marker) marker.SetActive(false); }

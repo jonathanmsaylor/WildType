@@ -36,8 +36,8 @@ namespace WildType.Tests
         [UnityTest] public IEnumerator AllGenesHaveSameMouseFocusAndSubmitHelpWithUnchangedValues()
         {
             Accept();hud.ShowDetails(s.Player.Life.Id);yield return Refresh();string genes=JsonUtility.ToJson(s.Player.Genome);float energy=s.Player.Vitals.Energy;Fit();
-            Assert.AreEqual(16,s.GetComponentsInChildren<JournalHelpTarget>().Length);
-            foreach(var target in s.GetComponentsInChildren<JournalHelpTarget>()){
+            Assert.AreEqual(16,s.GetComponentsInChildren<JournalHelpTarget>().Count(t=>t.name.StartsWith("Gene ")));
+            foreach(var target in s.GetComponentsInChildren<JournalHelpTarget>().Where(t=>t.name.StartsWith("Gene "))){
                 target.OnPointerEnter(new PointerEventData(EventSystem.current));Assert.AreEqual(target.Explanation,Text("Gene explanation"));Fit();
                 EventSystem.current.SetSelectedGameObject(target.gameObject);Assert.AreEqual(target.Explanation,Text("Gene explanation"));
                 target.GetComponent<Button>().onClick.Invoke();Assert.AreEqual(target.Explanation,Text("Gene explanation"));Assert.NotNull(target.GetComponent<Button>().navigation.selectOnDown);
@@ -64,7 +64,7 @@ namespace WildType.Tests
             InputSystem.settings=settings;var keyboard=InputSystem.AddDevice<Keyboard>();var pad=InputSystem.AddDevice<Gamepad>();
             try{
                 Accept();hud.ShowDetails(s.Player.Life.Id);yield return Refresh();
-                var first=s.GetComponentsInChildren<JournalHelpTarget>().First();EventSystem.current.SetSelectedGameObject(first.gameObject);
+                var first=s.GetComponentsInChildren<JournalHelpTarget>().First(t=>t.name.StartsWith("Gene "));EventSystem.current.SetSelectedGameObject(first.gameObject);
                 Assert.True(first.GetComponent<JournalFocusMarker>().Marked);
                 var next=first.GetComponent<Button>().navigation.selectOnDown;
                 InputSystem.QueueStateEvent(keyboard,new KeyboardState(Key.DownArrow));yield return null;yield return null;
@@ -78,13 +78,13 @@ namespace WildType.Tests
                 InputSystem.QueueStateEvent(pad,new GamepadState());yield return Refresh();Assert.AreEqual(StageHud.JournalView.Details,hud.View);Fit();
             }finally{InputSystem.RemoveDevice(keyboard);InputSystem.RemoveDevice(pad);InputSystem.settings=original;Object.Destroy(settings);}
         }
-        [UnityTest] public IEnumerator TreeIsBoundedPagesChildrenAndRetainsSiblingWithoutCareOrControl()
+        [UnityTest] public IEnumerator TreeScrollsChildrenAndRetainsSiblingWithoutCareOrControl()
         {
             Accept();var parent=s.Player;yield return Birth();var first=s.Creatures.Last();
             Time.timeScale=30;while(parent.Life.Cooldown>0||s.Creatures[1].Life.Cooldown>0){foreach(var a in s.Creatures)a.Vitals.Eat(1000);yield return new WaitForSeconds(1);}Time.timeScale=1;
             yield return Birth();var sibling=s.Creatures.Last();Time.timeScale=30;while(parent.Life.Cooldown>0||s.Creatures[1].Life.Cooldown>0){foreach(var a in s.Creatures)a.Vitals.Eat(1000);yield return new WaitForSeconds(1);}Time.timeScale=1;yield return Birth();
-            hud.ShowTree(parent.Life.Id);yield return Refresh();Fit();Assert.LessOrEqual(s.GetComponentsInChildren<Button>().Count(b=>b.name=="Tree record"),5);Assert.True(B("Next children").interactable);B("Next children").onClick.Invoke();yield return Refresh();Fit();Assert.True(B("Previous children").interactable);
-            Assert.True(s.TakeControl(first));yield return Refresh();hud.ShowTree(sibling.Life.Id);yield return Refresh();Fit();Assert.AreEqual(3,s.GetComponentsInChildren<Button>().Count(b=>b.name=="Tree record"));Assert.IsFalse(s.GetComponentsInChildren<Button>().Any(b=>b.name=="Tree Take control"));Assert.False(s.Care.IsChild(first,sibling));
+            hud.ShowTree(parent.Life.Id);yield return Refresh();Fit();Assert.LessOrEqual(s.GetComponentsInChildren<Button>().Count(b=>b.name=="Tree record"),StageHud.TreePoolCapacity);Assert.AreEqual(5,hud.TreeLayout.Records.Count);hud.CenterTree(s.Creatures.Last().Life.Id,true);yield return Refresh();Fit();
+            Assert.True(s.TakeControl(first));yield return Refresh();hud.ShowTree(sibling.Life.Id);yield return Refresh();Fit();Assert.AreEqual(5,hud.TreeLayout.Records.Count);Assert.IsFalse(s.GetComponentsInChildren<Button>().Any(b=>b.name=="Tree Take control"));Assert.False(s.Care.IsChild(first,sibling));
             B("Tree Highlight").onClick.Invoke();Assert.AreSame(first,s.Player);Assert.AreSame(sibling,s.Locator.Target);
             hud.ShowTree(first.Life.Id);yield return Refresh();B("Tree index").onClick.Invoke();yield return Refresh();Assert.AreEqual(StageHud.JournalView.Records,hud.View);Fit();
             parent.Vitals.Damage(100);yield return Refresh();hud.ShowTree(first.Life.Id);yield return Refresh();Assert.True(s.GetComponentsInChildren<TMP_Text>().Any(t=>t.text.Contains("Deceased")));Fit();

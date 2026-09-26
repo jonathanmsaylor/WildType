@@ -99,11 +99,13 @@ namespace WildType.Tests
             InputSystem.QueueStateEvent(pad, new GamepadState().WithButton(GamepadButton.North));
             yield return null; yield return null; InputSystem.QueueStateEvent(pad, new GamepadState());
             yield return new WaitForSecondsRealtime(.15f); Assert.True(session.Paused);
+            foreach (var button in session.GetComponentsInChildren<UnityEngine.UI.Button>())
+                if (button.name == "Living jump") button.onClick.Invoke();
+            yield return null; Assert.AreEqual(child.Life.Id, session.GetComponent<StageHud>().TreeFocus);
             var buttons = session.GetComponentsInChildren<UnityEngine.UI.Button>(); bool clicked = false;
             foreach (var button in buttons)
             {
-                var label = button.transform.parent.GetComponentInChildren<TMPro.TMP_Text>();
-                if (button.name=="Take control" && label && label.text.Contains(session.Names.PersonalName(child.Life.Id)))
+                if (button.name=="Tree Take control" && button.interactable)
                 { button.onClick.Invoke(); clicked = true; break; }
             }
             Assert.True(clicked, "The family journal must render and wire a real descendant button");

@@ -1,20 +1,20 @@
 # WILDTYPE — Creature Stage vertical slice
 
-A Unity implementation, independent of the earlier Godot project. **Current milestone: welcoming journal and Family Tree**, on `milestone-welcoming-journal`, based on pushed gameplay clarity `f34422c`. `main` is deliberately unchanged. Explore, eat, reproduce, recognize and locate your family, read their recorded lives, optionally support your children, and continue through living descendants in a bounded, roughly 250 m-wide Creature-stage ecosystem. Start with twelve autonomous herbivores; total living population is capped at 24.
+A Unity implementation, independent of the earlier Godot project. **Current milestone: scrollable Family Tree and simpler journal**, on `milestone-scrollable-family-tree`, based on verified and pushed welcoming journal `fe8e039`. `main` is deliberately unchanged. Explore, eat, reproduce, recognize and locate your family, read their recorded lives, optionally support your children, and continue through living descendants in a bounded, roughly 250 m-wide Creature-stage ecosystem. Start with twelve autonomous herbivores; total living population is capped at 24.
 
 ## A welcoming journal
 
 Begin, Restart and Reseed ask for your creature's name while the simulation is paused. **Continue as Eddy** needs no typing. Other founders keep their deterministic names; newborn names still receive numeric birth order. Nearby child labels show only the base name, region, rounded distance and generation; their stored full names are unchanged.
 
-**Tab → Living descendants** shows your current creature's children and later descendants as short cards. **Highlight** finds a living relative without changing your creature. **Take Control** is only available for living descendants. Neither highlighting nor reading a sibling's record permits juvenile care.
+**Tab → Family Tree** brings living descendants and earlier family branches into one view. Living descendants have green cards and an explicit label. **Find living descendant** jumps to the next eligible relative; **My creature** returns to you. **Highlight in world** finds the selected living relative without changing your creature. **Take Control** is only available for living descendants. Neither highlighting nor reading a sibling's record permits juvenile care.
 
-**Family Tree** replaces Chronicle: two recorded parents above one selected creature, with two paged children below. Select a name for Details or **View branch** to move through the tree. **All Family Records** retains the full previous Chronicle list, including earlier controlled branches and recorded deaths. At most five tree cards (or three record cards) are drawn, never hundreds of shrinking labels. Arrow keys / D-pad follow an explicit focus order; confirm activates the focused button.
+**Family Tree** is a two-axis canvas, not a paged child viewer. Scroll or drag empty space, and use the bars to move sideways. **Explore tree** enables arrows / D-pad between cards and keeps the focused card in view; left from the first card returns to the menu. Hover is yellow; keyboard/pad focus adds an underline. Neither changes control or the family scope. Select a card for its full record, including its stable ID. Every recorded parent link is retained; visible links are clipped, and crossings are not junctions. Shared ancestors are a single identity. **All Family Records** keeps the previous complete paged record list as another route to the data. A pool of 24 cards draws only the visible area (up to 12 fully or partially visible cards), with fixed readable type rather than shrinking the family to fit.
 
 **Details page 1: Exact Genes** groups all sixteen existing genes into Movement, Senses & Foraging, Survival, and Inheritance & Coat. Hover, focus or select a gene to see its everyday explanation and full-precision value in the fixed help bubble. Later pages retain parent comparisons / mutation records, precise resources / adult calculations, and identity / death evidence. Stable IDs live in this deeper identity record so duplicate names never change action targets. No death or gene value is inferred when the archive or actor cannot supply it.
 
 Ordinary numbers round to whole units; positive values below one say **less than 1**. Non-integral food and care quotes say **about**, not an exact promise. Mating readiness rounds upward so it never understates the threshold. Simulation values and transfer accounting are untouched. Region names are **The Meadow**, **Fernwood**, and **Amber Flats**.
 
-See [journal evidence, protected-file inventory and verification](Documentation/WelcomingJournal/REPORT.md).
+**Escape → Menu** contains Restart, Reseed and Quit. **Recent births / deaths** is inside Family Tree. **Show / Hide first-step tips** is inside Getting started. Hover or focus gene rows, category headings, family cards and journal actions for practical explanations; exact gene values stay available. See [scrollable-tree evidence, tests and protected-file inventory](Documentation/ScrollableFamilyTree/REPORT.md), and the [previous welcoming-journal report](Documentation/WelcomingJournal/REPORT.md).
 
 ## Start playing — no README required
 
@@ -22,7 +22,7 @@ The optional first-step tips and **Tab → Getting started** explain this loop i
 
 1. Move with **WASD** and find fruit on a plant. **E eat** appears nearby with the actual energy gain. Empty stems regrow. Food restores **energy**, not health; **stamina** is the separate sprint resource.
 2. Build energy and approach a healthy adult. **F mate** shows the cost at birth. A failed attempt explains the actual condition preventing it. Stay close while the hearts appear.
-3. After a birth, name your child or keep its default. **Tab → Living descendants** follows the creature you currently control. **Family Tree → All Family Records** also retains earlier controlled branches.
+3. After a birth, name your child or keep its default. **Tab → Family Tree → Find living descendant** finds descendants of the creature you currently control. Earlier controlled branches remain in the same tree and in **All Family Records**.
 4. **Highlight** reveals a living relative while you remain in your creature. **Take Control** is a separate, explicitly labeled button available only for your living descendants. A sibling can be highlighted, not controlled or cared for.
 5. Optional **R share** helps a nearby juvenile direct child. The prompt gives an explicitly rounded cost and gain; Details retains the exact last player-related transfer. It neither heals nor guarantees survival.
 
@@ -38,7 +38,7 @@ The study adds a continuous haunch/body/neck/muzzle silhouette, leaf-shaped ears
 
 This is an original Unity-generated style study, not a finished art pipeline or a recreation of the reference painting. No external art, textures, packs, paid tools or services were used. Geometry is generated once per actor/patch; a shared material and property blocks avoid per-frame mesh/material creation. The comparison scene disables static mesh batching so reversible mesh swaps remain readable. Do not run the old prototype builder to create this preview: it would rebuild the original scene.
 
-See [comparison images, lineage checks, lighting investigation and limitations](Documentation/PainterlyPrototype/REPORT.md). This milestone preserves nine initially dirty asset/settings paths; their exact inventory and final hashes are in the welcoming-journal report. The unresolved original-scene sun change is not folded into this UI work.
+See [comparison images, lineage checks, lighting investigation and limitations](Documentation/PainterlyPrototype/REPORT.md). This milestone preserves nine initially dirty asset/settings paths; their inventory and final hash checks are in the scrollable-tree report. The unresolved original-scene sun change is not folded into this UI work.
 
 ## Editor and opening
 

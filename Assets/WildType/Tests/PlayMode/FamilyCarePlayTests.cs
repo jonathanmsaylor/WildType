@@ -105,7 +105,8 @@ namespace WildType.Tests
             Assert.False(session.Care.TryAutonomous(partner));
             InputSystem.QueueStateEvent(pad, new GamepadState().WithButton(GamepadButton.North)); yield return null; yield return null;
             InputSystem.QueueStateEvent(pad, new GamepadState()); yield return new WaitForSecondsRealtime(.2f);
-            Button find = null; foreach (var b in session.GetComponentsInChildren<Button>()) if (b.name == "Locate") { find = b; break; }
+            session.GetComponent<StageHud>().ShowTree(child.Life.Id); yield return null;
+            Button find = null; foreach (var b in session.GetComponentsInChildren<Button>()) if (b.name == "Tree Highlight") { find = b; break; }
             Assert.True(find); UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(find.gameObject);
             InputSystem.QueueStateEvent(pad, new GamepadState().WithButton(GamepadButton.South)); yield return null; yield return null;
             InputSystem.QueueStateEvent(pad, new GamepadState()); Assert.AreSame(child, session.Locator.Target); Assert.False(session.Paused);
@@ -132,7 +133,8 @@ namespace WildType.Tests
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Tab)); yield return null; yield return null;
             InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return new WaitForSecondsRealtime(.2f);
             Assert.True(session.Paused); bool found = false;
-            foreach (var button in session.GetComponentsInChildren<Button>()) if (button.name == "Locate") { button.onClick.Invoke(); found = true; break; }
+            session.GetComponent<StageHud>().ShowTree(child.Life.Id); yield return null;
+            foreach (var button in session.GetComponentsInChildren<Button>()) if (button.name == "Tree Highlight") { button.onClick.Invoke(); found = true; break; }
             Assert.True(found); Assert.AreSame(child, session.Locator.Target); Assert.AreSame(parent, session.Player); Assert.False(session.Paused);
             Place(child, 0, 35); yield return new WaitForSeconds(.2f); Assert.True(cues.LocateCueVisible, "One temporary locator may extend beyond nearby range");
             parent.Vitals.Damage(100); yield return new WaitForSecondsRealtime(.2f);
@@ -191,13 +193,15 @@ namespace WildType.Tests
             Assert.AreEqual("Dave 1", session.Names.PersonalName(id)); Assert.AreEqual(id, child.Life.Id);
             Assert.False(session.Paused); Assert.False(session.Names.HasPrompt);
             session.SetPaused(true); yield return new WaitForSecondsRealtime(.2f); Canvas.ForceUpdateCanvases();
-            var selection = GameObject.Find("Descendants").GetComponent<RectTransform>(); Assert.AreEqual(1184, selection.sizeDelta.x);
+            var hud = session.GetComponent<StageHud>(); hud.ShowTree(id); yield return null; hud.CenterTree(id, false); yield return null;
+            FamilyTreeCard selection = null; foreach (var card in session.GetComponentsInChildren<FamilyTreeCard>()) if (card.Id == id) selection = card;
+            Assert.True(selection);
             bool found = false;
             foreach (var label in selection.GetComponentsInChildren<TMP_Text>())
             {
                 if (!label.text.Contains("Dave 1")) continue;
                 found = true; Assert.GreaterOrEqual(label.fontSize, 18); label.ForceMeshUpdate(); Assert.False(label.isTextOverflowing);
-                Assert.AreEqual(152, label.transform.parent.GetComponent<RectTransform>().sizeDelta.y);
+                Assert.AreEqual(148, selection.GetComponent<RectTransform>().sizeDelta.y);
             }
             Assert.True(found); Assert.True(session.TakeControl(child)); Assert.AreEqual("Dave 1", session.Names.PersonalName(id));
             session.SetPaused(true); session.Restart(false); yield return null; yield return new WaitForSecondsRealtime(.3f); Freeze();
