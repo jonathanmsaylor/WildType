@@ -50,7 +50,7 @@ namespace WildType
             {
                 case ReproductionRejection.None: return "";
                 case ReproductionRejection.Juvenile: return $"Still growing — adult in {Mathf.CeilToInt(actor.Stats.MaturityAge - actor.Life.Age)}s";
-                case ReproductionRejection.InsufficientEnergy: return $"Need {actor.Stats.MaxEnergy * actor.Stats.ReproductionEnergyFraction:0.0} energy to mate — eat ripe fruit first";
+                case ReproductionRejection.InsufficientEnergy: return $"Need {JournalReadout.Required(actor.Stats.MaxEnergy * actor.Stats.ReproductionEnergyFraction)} energy to mate — eat ripe fruit first";
                 case ReproductionRejection.Cooldown: return $"Recovering from mating — try again in {Mathf.CeilToInt(actor.Life.Cooldown)}s";
                 case ReproductionRejection.LowHealth: return "Need at least 60 health to mate; eating restores energy, not health";
                 case ReproductionRejection.Reserved: return "Courting — stay nearby";
@@ -82,7 +82,7 @@ namespace WildType
                 if (other.Length > 0 && (checkReserved || !Reserved(second))) return "Partner: " + other;
                 return "Partner not ready: " + result.Rejection;
             }
-            if (checkRange && Vector3.Distance(first.transform.position, second.transform.position) > MateRange) return "Move within 3.5 m of partner";
+            if (checkRange && Vector3.Distance(first.transform.position, second.transform.position) > MateRange) return "Move closer until the Mate prompt appears";
             return "";
         }
         public CreatureAgent FindPartner(CreatureAgent actor, float range, bool eligibleOnly)
@@ -104,11 +104,11 @@ namespace WildType
             if (reason.Length > 0) return reason;
             reason = CapacityReason(true); if (reason.Length > 0) return reason;
             var partner = FindPartner(player, MateRange, true);
-            if (partner) return session.GetComponent<PlayerInputBridge>().MateKey + ": mate with " + session.Names.PersonalName(partner.Life.Id) + $" — costs you {player.Stats.MaxEnergy * ParentEnergyCost:0.0} energy at birth";
+            if (partner) return session.GetComponent<PlayerInputBridge>().MateKey + ": Mate with " + session.Names.PersonalName(partner.Life.Id) + $" — costs you {JournalReadout.Approx(player.Stats.MaxEnergy * ParentEnergyCost)} energy at birth";
             partner = FindPartner(player, MateRange, false);
             if (partner) return "Nearby: " + PairReason(player, partner, true, true);
             partner = FindPartner(player, player.Stats.Vision, true);
-            return partner ? $"Partner {ShortId(partner.Life.Id)} — {Vector3.Distance(player.transform.position, partner.transform.position):0} m away" : "Find a healthy, well-fed adult partner";
+            return partner ? $"Partner {session.Names.PersonalName(partner.Life.Id)} — {JournalReadout.Distance(Vector3.Distance(player.transform.position, partner.transform.position))} away" : "Find a healthy, well-fed adult partner";
         }
         public bool TryPlayerMate()
         {
@@ -172,7 +172,7 @@ namespace WildType
             Turnover.RecordBirth(record);
             session.Names.RecordBirth(child, first, second);
             if (first.IsPlayer || second.IsPlayer)
-                session.ShowNotice($"Born: {ShortId(record.CreatureId)} · generation {record.Generation}" +
+                session.ShowNotice($"Born: {session.Names.PersonalName(record.CreatureId)} · Gen {record.Generation}" +
                     (result.MajorMutationCount > 0 ? " · notable mutation" : "") + " · " + session.GetComponent<PlayerInputBridge>().JournalKey + " opens family", 7);
             if (Vector3.Distance(point, session.Player.transform.position) < 30)
                 session.Fx.Burst(point + Vector3.up, child.Genome.camouflage, 12, .8f);

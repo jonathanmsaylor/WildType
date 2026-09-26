@@ -1,4 +1,18 @@
-# WILDTYPE verification — gameplay clarity — 2026-09-25
+# WILDTYPE verification — welcoming journal and Family Tree — 2026-09-26
+
+Branch **milestone-welcoming-journal**, based on pushed gameplay clarity **f34422c**; `main` is unchanged. [Full report, before/after Game captures, protected-file inventory and limitations](Documentation/WelcomingJournal/REPORT.md).
+
+Presentation changes: page-1 Exact Genes grouped into four category cards with everyday focus/hover/activation help; whole-number ordinary displays with honest approximate/sub-unit wording; short named descendant cards and child labels; paused founder naming with Eddy default; a five-node paged Family Tree plus every previous Chronicle record in All Family Records. Exact IDs, genes, resources, birth comparisons and mutation/death evidence remain in Details. Genetics, survival, ecology, care transfers, eligibility, controls, caps, zoom and F6 are unchanged.
+
+Final complete suites after helper removal: **141/141 Edit Mode** (0.27 seconds) and **49/49 Play Mode** (533.13 seconds), **zero failed or skipped**, excluding startup/import. Twelve new Edit cases and five new Play cases cover the presentation, naming, tree and navigation changes. The first complete run passed 141/141 Edit and 48/49 Play; its sole failure expected old care-range wording. The wording assertion was updated without changing eligibility; the final rerun also verifies a visible focus underline and virtual keyboard/gamepad navigation.
+
+Rendered inspection: painterly scene at **1920×1080**, including founder/newborn naming, native F birth and R care, long-name Living card, both-parent tree and all four Details pages. The painterly card/identity/naming/restart/reseed flow and original scene founder/HUD/first journal were inspected at **1366×768**. Partner/child placement, resources and frozen AI were assisted; mating/sharing/naming/journal clicks used native input. This is not human novice usability testing. Brief native arrow taps did not visibly navigate, so keyboard/controller navigation is claimed only from Input System tests, not physical-gamepad inspection.
+
+All nine initially dirty assets/settings are excluded from the commit; their byte-for-byte verification is recorded in the report. The original scene's unresolved sun change remains local. No temporary inspection helper is delivered. Larger families use paging, not a complete all-at-once pedigree. Custom names still need a keyboard; exact genomes are unavailable once an actor has been cleaned up, as before.
+
+---
+
+# Previous verification — gameplay clarity — 2026-09-25
 
 Branch: **milestone-gameplay-clarity**, based on pushed painterly prototype **168d0f04daae5b78f71c0709ff09c2c4bc207a51**. Main is unchanged. See [the clarity report and actual Game-view evidence](Documentation/GameplayClarity/REPORT.md).
 

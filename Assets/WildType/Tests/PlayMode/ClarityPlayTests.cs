@@ -37,7 +37,7 @@ namespace WildType.Tests
             a.Vitals.SpendEnergy(10);StringAssert.Contains("regrowing",a.Interaction.EatReason(food));Place(a,new Vector3(110,0,0));Assert.False(a.Interaction.TryEat());StringAssert.Contains("No ripe food",s.Notice);
             yield return Birth();var child=s.Creatures.Last();Place(child,s.Player.transform.position+Vector3.forward*2);child.Vitals.SpendEnergy(20);a.Vitals.Eat(1000);
             Assert.True(FamilyCareRules.Transfer(a.Vitals.Energy,a.Stats.MaxEnergy,child.Vitals.Energy,child.Stats.MaxEnergy,out float cost,out float gain));
-            string quote=GameplayText.Care(s,a,child,"R");StringAssert.Contains($"spend {cost:0.0}",quote);StringAssert.Contains($"gains {gain:0.0}",quote);
+            string quote=GameplayText.Care(s,a,child,"R");StringAssert.Contains($"spend {JournalReadout.Approx(cost)}",quote);StringAssert.Contains($"gains {JournalReadout.Approx(gain)}",quote);
             float p=a.Vitals.Energy,c=child.Vitals.Energy;Assert.True(s.Care.TryShare(a,child,out _));Assert.AreEqual(cost,p-a.Vitals.Energy,.0001f);Assert.AreEqual(gain,child.Vitals.Energy-c,.0001f);Assert.AreEqual("",GameplayText.Care(s,a,child,"R"));
             Assert.False(s.Care.TryPlayerShare());StringAssert.Contains("Share again",s.Notice);
             a.Vitals.SpendEnergy(a.Vitals.Energy);StringAssert.Contains("eat ripe fruit",s.Generations.IndividualReason(a));
@@ -66,9 +66,9 @@ namespace WildType.Tests
             yield return Birth();var second=s.Creatures.Last();hud.Show(StageHud.JournalView.Living);yield return Refresh();Fit();
             var before=s.Player;Button("Locate").onClick.Invoke();Assert.AreSame(before,s.Player);Assert.False(s.Paused);Assert.AreSame(first,s.Locator.Target);
             hud.Show(StageHud.JournalView.Living);yield return Refresh();Button("Take control").onClick.Invoke();Assert.AreSame(first,s.Player);Assert.False(s.Locator.Target);
-            yield return Refresh();hud.Show(StageHud.JournalView.Chronicle);yield return Refresh();Button("Next page").onClick.Invoke();yield return Refresh();Fit();
-            var row=s.GetComponentsInChildren<TMP_Text>().First(t=>t.name=="Relative identity"&&t.text.Contains("Sibling"));StringAssert.Contains(GenerationLoop.ShortId(second.Life.Id),row.text);
-            var buttons=row.transform.parent.GetComponentsInChildren<Button>();var take=buttons.First(b=>b.name=="Take control");Assert.False(take.interactable);take.onClick.Invoke();Assert.AreSame(first,s.Player);
+            yield return Refresh();hud.Show(StageHud.JournalView.Records);yield return Refresh();Button("Next page").onClick.Invoke();yield return Refresh();Fit();
+            var row=s.GetComponentsInChildren<TMP_Text>().First(t=>t.name=="Relative identity"&&t.text.Contains("Sibling"));StringAssert.Contains(s.Names.PersonalName(second.Life.Id),row.text);
+            var buttons=row.transform.parent.GetComponentsInChildren<Button>(true);var take=buttons.First(b=>b.name=="Take control");Assert.False(take.interactable);Assert.False(take.gameObject.activeSelf);take.onClick.Invoke();Assert.AreSame(first,s.Player);
             buttons.First(b=>b.name=="Locate").onClick.Invoke();Assert.AreSame(second,s.Locator.Target);Assert.False(s.Care.IsChild(first,second));Assert.AreEqual("",GameplayText.Care(s,first,second,"R"));
             first.Vitals.Damage(100);yield return Refresh();Fit();StringAssert.Contains("cause unknown",GameObject.Find("Journal title").GetComponent<TMP_Text>().text);Assert.True(s.GameOver);Assert.AreEqual(0,s.Generations.LivingDescendants(first.Life.Id).Count);
         }

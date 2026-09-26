@@ -13,9 +13,17 @@ namespace WildType
         public bool ShowPrompts { get; set; } = true;
         public CreatureId Pending => pending;
         public bool HasPrompt => pending.IsValid;
+        public bool IsFounderPrompt { get; private set; }
         public int Count => names.Count;
         public FamilyNames(StageSession value) { session = value; }
-        public void ResetRun() { names.Clear(); pending = parent = default; }
+        public void ResetRun() { names.Clear(); pending = parent = default; IsFounderPrompt = false; }
+        public void BeginFounderName()
+        {
+            if (!session.Ready || !session.Player || !names.TryGetValue(session.Player.Life.Id, out var entry)) return;
+            entry.name = "Eddy";
+            pending = parent = session.Player.Life.Id; IsFounderPrompt = true;
+            session.SetPaused(true);
+        }
         public void RecordFounder(CreatureId id)
         {
             var record = session.Generations.Archive.Get(id);
@@ -57,6 +65,8 @@ namespace WildType
             return result.ToString().Trim();
         }
         public int BirthOrder(CreatureId id) => names.TryGetValue(id, out var entry) ? entry.order : 0;
+        // Stored base name, not string trimming: a player-entered digit remains part of their name.
+        public string WorldName(CreatureId id) => names.TryGetValue(id, out var entry) ? entry.name : "Name unavailable";
         public string PersonalName(CreatureId id) => names.TryGetValue(id, out var entry) && entry.name.Length > 0
             ? (entry.order == 0 ? entry.name : Format(entry.name, entry.order)) : "";
         public string Label(CreatureId id)
@@ -75,9 +85,9 @@ namespace WildType
         {
             ValidatePrompt(); if (!HasPrompt || !names.TryGetValue(pending, out var entry)) return false;
             string clean = CleanName(value); if (clean.Length > 0) entry.name = clean;
-            string label = Label(pending);
+            string label = PersonalName(pending);
             Cancel(); session.ShowNotice("Named " + label, 5); return true;
         }
-        public void Cancel() { pending = parent = default; if (session.Ready) session.SetPaused(false); }
+        public void Cancel() { pending = parent = default; IsFounderPrompt = false; if (session.Ready) session.SetPaused(false); }
     }
 }

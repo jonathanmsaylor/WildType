@@ -19,7 +19,7 @@ namespace WildType
         {
             if (!child || session.Care.Reason(parent, child).Length > 0 || !FamilyCareRules.Transfer(parent.Vitals.Energy,
                 parent.Stats.MaxEnergy, child.Vitals.Energy, child.Stats.MaxEnergy, out float cost, out float gain)) return "";
-            return $"{key} share with {session.Names.PersonalName(child.Life.Id)} {GenerationLoop.ShortId(child.Life.Id)}\nYou spend {cost:0.0} energy · child gains {gain:0.0}";
+            return $"{key} Share with {session.Names.PersonalName(child.Life.Id)}\n" + JournalReadout.Care(cost, gain);
         }
         public static string Build(Genome g) => (g.bodySize > 1.12f ? "Large build" : g.bodySize < .94f ? "Small build" : "Medium build") +
             " · " + (g.legLength > 1.1f ? "long legs" : g.legLength < .9f ? "short legs" : "medium legs");

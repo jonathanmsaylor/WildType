@@ -31,7 +31,7 @@ namespace WildType
             float gain = actor.Vitals.Eat(nutrition);
             MealsEaten++;
             actor.Visual.Feed(); actor.Session.Fx.Burst(point.position, new Color(.7f, 1, .25f), 16, 1.1f);
-            if (actor.IsPlayer) actor.Session.ShowNotice($"Ate {target.DisplayName}: +{gain:0.0} energy. The plant will regrow.", 4);
+            if (actor.IsPlayer) actor.Session.ShowNotice($"Ate {target.DisplayName}: gained {JournalReadout.Approx(gain)} energy. The plant will regrow.", 4);
             return true;
         }
     }

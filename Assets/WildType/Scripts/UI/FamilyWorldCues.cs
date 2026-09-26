@@ -94,9 +94,7 @@ namespace WildType
                     labels[i].rectTransform.anchoredPosition += Vector2.up * 70;
                 if (!updateText) continue;
                 float distance = Vector3.Distance(session.Player.transform.position, child.transform.position);
-                labels[i].text = "Your child " + session.Names.Label(child.Life.Id) + $" · {distance:0} m\nGen {session.Generations.Archive.Get(child.Life.Id).Generation} · " +
-                    (child.Life.Adult ? "Adult" : $"Energy {child.Vitals.Energy:0}/{child.Stats.MaxEnergy:0}" +
-                    (child == target && session.Care.Reason(session.Player, child).Length == 0 ? " · " + session.GetComponent<PlayerInputBridge>().CareKey + " share" : " · juvenile"));
+                labels[i].text = ChildLabel(session, child, distance);
                 labels[i].color = child == target ? new Color(1, .88f, .43f) : new Color(.88f, 1, .74f);
             }
             DirectionCueVisible = false;
@@ -113,8 +111,8 @@ namespace WildType
                 if (updateText)
                 {
                     string bearing = DirectionCueVisible ? Bearing(vp) + " · " : InView(located) ? "" : "Obscured · ";
-                    locatePrompt.text = bearing + session.Names.PersonalName(located.Life.Id) + "\n" + GenerationLoop.ShortId(located.Life.Id) +
-                        $" · Gen {session.Generations.Archive.Get(located.Life.Id).Generation} · {Vector3.Distance(session.Player.transform.position, located.transform.position):0} m";
+                    locatePrompt.text = bearing + session.Names.PersonalName(located.Life.Id) + "\n" + session.World.Zone(located.transform.position) +
+                        $" · Gen {session.Generations.Archive.Get(located.Life.Id).Generation} · {JournalReadout.Distance(Vector3.Distance(session.Player.transform.position, located.transform.position))}";
                 }
             }
             for (int i = 0; i < hearts.Length; i++)
@@ -143,7 +141,7 @@ namespace WildType
             if (foodPrompt.gameObject.activeSelf)
             {
                 Place(foodPrompt.rectTransform, foodPoint, false);
-                if (updateText) foodPrompt.text = session.GetComponent<PlayerInputBridge>().EatKey + " eat " + food.DisplayName + $"\n+{Mathf.Min(session.Player.Stats.MaxEnergy-session.Player.Vitals.Energy,food.nutrition*session.Player.Stats.NutritionFactor):0.0} energy";
+                if (updateText) foodPrompt.text = session.GetComponent<PlayerInputBridge>().EatKey + " Eat " + food.DisplayName + $"\nGain {JournalReadout.Approx(Mathf.Min(session.Player.Stats.MaxEnergy-session.Player.Vitals.Energy,food.nutrition*session.Player.Stats.NutritionFactor))} energy";
             }
             var partner = active ? session.Generations.ReadyPlayerPartner() : null;
             Vector3 matePoint = partner ? partner.transform.position + Vector3.up * (partner.CurrentHeight + .7f) : Vector3.zero;
@@ -151,9 +149,11 @@ namespace WildType
             if (matePrompt.gameObject.activeSelf)
             {
                 Place(matePrompt.rectTransform, matePoint, false);
-                if (updateText) matePrompt.text = session.GetComponent<PlayerInputBridge>().MateKey + " mate · " + session.Names.PersonalName(partner.Life.Id) + $"\nYou spend {session.Player.Stats.MaxEnergy*GenerationLoop.ParentEnergyCost:0.0} energy at birth";
+                if (updateText) matePrompt.text = session.GetComponent<PlayerInputBridge>().MateKey + " Mate · " + session.Names.PersonalName(partner.Life.Id) + $"\nYou spend {JournalReadout.Approx(session.Player.Stats.MaxEnergy*GenerationLoop.ParentEnergyCost)} energy at birth";
             }
         }
+        public static string ChildLabel(StageSession s, CreatureAgent child, float distance) => s.Names.WorldName(child.Life.Id) + "\n" +
+            s.World.Zone(child.transform.position) + " · " + JournalReadout.Distance(distance) + " · Gen " + s.Generations.Archive.Get(child.Life.Id).Generation;
         public static string Bearing(Vector3 viewport) => viewport.z <= 0 ? "Behind" : viewport.x < .04f ? "Left" : viewport.x > .96f ? "Right" : viewport.y < .07f ? "Below" : "Above";
         TMP_Text TargetLabel(RectTransform root, string name, Color color)
         {

@@ -37,17 +37,17 @@ namespace WildType.Tests
             Assert.AreEqual(session.Names.PersonalName(child.Life.Id),session.Names.PersonalName(grandchild.Life.Id));
             Assert.AreNotEqual(session.Names.Label(child.Life.Id),session.Names.Label(grandchild.Life.Id));
         }
-        IEnumerator Open(){session.SetPaused(true);yield return new WaitForSecondsRealtime(.2f);Button("Chronicle").onClick.Invoke();yield return new WaitForSecondsRealtime(.2f);}
+        IEnumerator Open(){session.SetPaused(true);yield return new WaitForSecondsRealtime(.2f);session.GetComponent<StageHud>().Show(StageHud.JournalView.Records);yield return new WaitForSecondsRealtime(.2f);}
         void Caps(){Assert.LessOrEqual(session.Population,24);Assert.LessOrEqual(session.Creatures.Count,32);Assert.AreEqual(72,session.World.Foods.Count);Assert.LessOrEqual(session.Generations.Archive.Count,512);}
         [UnityTest] public IEnumerator DeceasedChildAndLivingGrandchildKeepIdentityAndDistinctActions()
         {
             yield return Family(); var id=child.Life.Id; string name=session.Names.Label(id);
             child.Vitals.SpendEnergy(child.Vitals.Energy);child.Vitals.Tick(30,0,false);
             Assert.True(child.Vitals.Dead);yield return new WaitForSeconds(4.3f);Assert.False(child);
-            yield return Open();string text=Text();StringAssert.Contains(session.Names.PersonalName(id),text);StringAssert.Contains(GenerationLoop.ShortId(id),text);StringAssert.Contains("Deceased · starvation",text);
-            StringAssert.Contains("Parents #001 + #002 · Children born 1",text);StringAssert.Contains("Gen 2",text);
+            yield return Open();string text=Text();StringAssert.Contains(session.Names.PersonalName(id),text);StringAssert.DoesNotContain(GenerationLoop.ShortId(id),text);StringAssert.Contains("Deceased · starvation",text);
+            Assert.AreEqual(parent.Life.Id,session.Generations.Archive.Get(id).FirstParentId);Assert.AreEqual(1,session.Generations.Archive.Get(id).OffspringCount);StringAssert.Contains("Gen 2",text);
             var locate=session.GetComponentsInChildren<Button>().Where(b=>b.name=="Locate").ToArray();Assert.AreEqual(1,locate.Length);
-            var deadCard=session.GetComponentsInChildren<TMP_Text>().First(t=>t.text.Contains("Deceased · starvation")&&t.name=="Relative identity").transform.parent.GetComponentsInChildren<Button>().First(b=>b.name=="Take control");
+            var deadCard=session.GetComponentsInChildren<TMP_Text>().First(t=>t.text.Contains("Deceased · starvation")&&t.name=="Relative identity").transform.parent.GetComponentsInChildren<Button>(true).First(b=>b.name=="Take control");
             Assert.False(deadCard.interactable);deadCard.onClick.Invoke();Assert.AreSame(parent,session.Player);
             foreach(var label in session.GetComponentsInChildren<TMP_Text>().Where(t=>t.text.Contains("Children born")))
             {label.ForceMeshUpdate();Assert.LessOrEqual(label.preferredHeight,label.rectTransform.rect.height+1);Assert.LessOrEqual(label.preferredWidth,label.rectTransform.rect.width+1);}
@@ -58,13 +58,13 @@ namespace WildType.Tests
         {
             yield return Family();var childId=child.Life.Id;child.Vitals.Damage(100);yield return new WaitForSeconds(4.3f);
             Assert.True(session.TakeControl(grandchild));yield return Open();
-            StringAssert.Contains("Family chronicle · page 1/2",Text());Button("Next page").onClick.Invoke();yield return new WaitForSecondsRealtime(.2f);
-            StringAssert.Contains("Parent · Deceased · cause unknown",Text());StringAssert.Contains(session.Names.PersonalName(childId),Text());StringAssert.Contains(GenerationLoop.ShortId(childId),Text());
+            StringAssert.Contains("All Family Records",Text());StringAssert.Contains("Page 1/2",Text());Button("Next page").onClick.Invoke();yield return new WaitForSecondsRealtime(.2f);
+            StringAssert.Contains("Parent · Deceased · cause unknown",Text());StringAssert.Contains(session.Names.PersonalName(childId),Text());StringAssert.DoesNotContain(GenerationLoop.ShortId(childId),Text());
             Assert.AreEqual(0,session.GetComponentsInChildren<Button>().Count(b=>b.name=="Locate"));
             session.Restart(false);yield return null;yield return new WaitForSecondsRealtime(.3f);Freeze();yield return Open();
-            StringAssert.Contains("page 1/1",Text());StringAssert.DoesNotContain("Deceased",Text());Assert.AreEqual(13,session.Names.Count);
+            StringAssert.Contains("Page 1/1",Text());StringAssert.DoesNotContain("Deceased",Text());Assert.AreEqual(13,session.Names.Count);
             int seed=session.seed;session.Restart(true);yield return null;yield return new WaitForSecondsRealtime(.3f);Freeze();yield return Open();
-            Assert.AreNotEqual(seed,session.seed);Assert.False(session.Generations.Archive.TryDeath(childId,out _));StringAssert.Contains("page 1/1",Text());Caps();
+            Assert.AreNotEqual(seed,session.seed);Assert.False(session.Generations.Archive.TryDeath(childId,out _));StringAssert.Contains("Page 1/1",Text());Caps();
         }
         [UnityTest] public IEnumerator DestroyedLivingCreatureIsUnavailableNotDeceased()
         {

@@ -71,6 +71,7 @@ namespace WildType
             orbit.Configure(Player, this);
             GetComponent<PlayerInputBridge>().Configure(this);
             Ready = true; SetPaused(false); ShowNotice("Explore, forage and grow a lineage.", 5);
+            Names.BeginFounderName();
             Debug.Log("WILDTYPE ready | seed " + seed + " | creatures " + Population + " | food cap " + Ecosystem.FoodCap);
         }
         CreatureAgent Spawn(Genome genome, Vector3 at, bool isPlayer)
@@ -96,11 +97,12 @@ namespace WildType
             Locator.Clear();
             Names.Cancel();
             GameOver = false; SetPaused(false); orbit.Configure(Player, this);
-            ShowNotice("Now controlling " + GenerationLoop.ShortId(Player.Life.Id) + " · resources and age preserved", 6);
+            ShowNotice("Now controlling " + Names.PersonalName(Player.Life.Id) + " · resources and age preserved", 6);
             return true;
         }
         public void SetPaused(bool paused)
         {
+            if (!paused && Names != null && Names.HasPrompt) return;
             if (GameOver && !paused) return;
             Paused = paused; Time.timeScale = paused ? 0 : 1;
             Cursor.lockState = paused ? CursorLockMode.None : CursorLockMode.Locked; Cursor.visible = paused;

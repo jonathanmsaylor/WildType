@@ -9,7 +9,14 @@ namespace WildType.Tests
     public sealed class PainterlyPlayTests
     {
         StageSession session;PainterlyPreview preview;
-        [UnitySetUp] public IEnumerator Setup(){yield return SceneManager.LoadSceneAsync("CreatureStage_PainterlyPreview");session=Object.FindAnyObjectByType<StageSession>();session.autoPauseOnFocusLoss=false;session.Names.ShowPrompts=false;session.GetComponent<PlayerInputBridge>().enabled=false;yield return null;Freeze();session.SetPaused(true);
+        [UnitySetUp] public IEnumerator Setup(){
+#if UNITY_EDITOR
+            // Test the saved comparison scene without rewriting the user's local build list.
+            yield return UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode("Assets/WildType/Scenes/CreatureStage_PainterlyPreview.unity",new LoadSceneParameters(LoadSceneMode.Single));
+#else
+            yield return SceneManager.LoadSceneAsync("CreatureStage_PainterlyPreview");
+#endif
+            session=Object.FindAnyObjectByType<StageSession>();session.autoPauseOnFocusLoss=false;session.Names.ShowPrompts=false;session.GetComponent<PlayerInputBridge>().enabled=false;yield return null;Freeze();session.SetPaused(true);
             preview=Object.FindAnyObjectByType<PainterlyPreview>();yield return null;yield return null;Assert.True(preview.Ready);}
         [UnityTearDown] public IEnumerator Cleanup(){if(session)session.SetPaused(false);yield return null;Time.timeScale=1;}
         void Freeze(){foreach(var a in session.Creatures){var b=a.GetComponent<HerbivoreBrain>();if(b)b.enabled=false;a.DesiredDirection=Vector3.zero;}}

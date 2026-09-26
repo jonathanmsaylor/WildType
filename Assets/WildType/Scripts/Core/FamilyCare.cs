@@ -7,7 +7,8 @@ namespace WildType
     {
         StageSession session;
         public int Shares { get; private set; }
-        public void ResetRun(StageSession value) { session = value; Shares = 0; }
+        public string LastTransfer { get; private set; } = "No share recorded this run.";
+        public void ResetRun(StageSession value) { session = value; Shares = 0; LastTransfer = "No share recorded this run."; }
         bool Living(CreatureAgent a) => a && a.Session == session && a.Life && !a.Vitals.Dead &&
             session.Generations.Owns(a) && session.Generations.Archive.Get(a.Life.Id).Alive;
         public bool IsChild(CreatureAgent parent, CreatureAgent child) => session && Living(parent) && Living(child) &&
@@ -36,7 +37,7 @@ namespace WildType
             if (!parent.Life.Adult || child.Life.Adult) return "Only adult parents can feed juvenile children";
             if (parent.Life.Age >= parent.Stats.LifespanSeconds || child.Life.Age >= child.Stats.LifespanSeconds) return "Creature at end of lifespan";
             if (!CreatureMotor.Finite(parent.transform.position) || !CreatureMotor.Finite(child.transform.position) ||
-                Vector3.Distance(parent.transform.position, child.transform.position) > FamilyCareRules.Range) return "Move within 3.5 m of your child";
+                Vector3.Distance(parent.transform.position, child.transform.position) > FamilyCareRules.Range) return "Move closer to your child until Share appears";
             if (!Visible(parent, child)) return "Move around the obstacle to your child";
             if (session.Generations.Reserved(parent) || session.Generations.Reserved(child)) return "Finish courtship before sharing";
             if (parent.Life.CareCooldown > 0) return $"Share again in {Mathf.CeilToInt(parent.Life.CareCooldown)}s";
@@ -53,7 +54,8 @@ namespace WildType
             // Instant, single-threaded transfer after validation: death/movement cannot interleave.
             parent.Life.RecordCare(); Shares++;
             parent.Visual.Feed(); child.Visual.Feed();
-            response = $"Shared with {GenerationLoop.ShortId(child.Life.Id)}: you −{cost:0.0} energy · child +{gain:0.0}";
+            response = $"Shared with {session.Names.PersonalName(child.Life.Id)}: " + JournalReadout.Care(cost, gain);
+            if (parent.IsPlayer || child.IsPlayer) LastTransfer = $"Last share: {session.Names.PersonalName(parent.Life.Id)} → {session.Names.PersonalName(child.Life.Id)}\nExact cost {JournalReadout.Exact(cost)} · exact gain {JournalReadout.Exact(gain)} energy";
             if (parent.IsPlayer || child.IsPlayer) session.ShowNotice(response, 4);
             return true;
         }

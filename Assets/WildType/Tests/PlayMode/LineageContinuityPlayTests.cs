@@ -40,7 +40,7 @@ namespace WildType.Tests
         IEnumerator Open(bool history=false)
         {
             session.SetPaused(true);yield return new WaitForSecondsRealtime(.2f);
-            if(history){Button("Chronicle").onClick.Invoke();yield return new WaitForSecondsRealtime(.2f);}
+            if(history){session.GetComponent<StageHud>().Show(StageHud.JournalView.Records);yield return new WaitForSecondsRealtime(.2f);}
         }
         void Audit(string phase,params CreatureId[] ids)
         {
@@ -53,7 +53,7 @@ namespace WildType.Tests
             var parent=session.Player;var mate=session.Creatures[1];var children=new List<CreatureAgent>();
             for(int n=0;n<5;n++){if(n>0)yield return WaitReady(parent,mate);yield return Birth(parent,mate);children.Add(session.Creatures.Last());}
             Assert.AreEqual(5,session.Generations.LivingChildren(parent.Life.Id));Assert.AreEqual(5,session.Generations.LivingDescendants(parent.Life.Id).Count);
-            yield return Open();StringAssert.Contains("Living descendants of "+session.Names.Label(parent.Life.Id),Text());StringAssert.Contains("page 1/2",Text());
+            yield return Open();StringAssert.Contains(session.Names.PersonalName(parent.Life.Id)+"'s Descendants",Text());StringAssert.Contains("Page 1/2",Text());
             Button("Next page").onClick.Invoke();yield return new WaitForSecondsRealtime(.2f);StringAssert.Contains("Dave 5",Text());
             Audit("before transfer",children.Select(a=>a.Life.Id).ToArray());
             Assert.True(session.TakeControl(children[0]));Freeze();Assert.AreEqual(2,session.ControlledHistory.Count);
@@ -61,8 +61,8 @@ namespace WildType.Tests
             yield return WaitReady(children[0],session.Creatures[4]);yield return Birth(children[0],session.Creatures[4]);var grandchild=session.Creatures.Last();
             Assert.AreEqual("Dave 1",session.Names.PersonalName(grandchild.Life.Id));Assert.AreEqual(1,session.Generations.LivingDescendants(children[0].Life.Id).Count);
             yield return Open(true);Button("Next page").onClick.Invoke();yield return new WaitForSecondsRealtime(.2f);
-            StringAssert.Contains("Sibling · Living",Text());StringAssert.Contains("highlight only",Text());
-            var siblingCard=session.GetComponentsInChildren<TMP_Text>().First(t=>t.name=="Relative identity"&&t.text.Contains("Dave 2")).transform.parent.GetComponentsInChildren<Button>().First(b=>b.name=="Take control");
+            StringAssert.Contains("Sibling · Living",Text());
+            var siblingCard=session.GetComponentsInChildren<TMP_Text>().First(t=>t.name=="Relative identity"&&t.text.Contains("Dave 2")).transform.parent.GetComponentsInChildren<Button>(true).First(b=>b.name=="Take control");
             Assert.False(siblingCard.interactable);siblingCard.onClick.Invoke();Assert.AreSame(children[0],session.Player);
             var locates=session.GetComponentsInChildren<Button>().Where(b=>b.name=="Locate").ToArray();Assert.Greater(locates.Length,0);locates[0].onClick.Invoke();
             Assert.AreSame(children[1],session.Locator.Target);Assert.AreSame(children[0],session.Player);Assert.False(session.Paused);
@@ -83,7 +83,7 @@ namespace WildType.Tests
             var names=ids.Select(id=>session.Names.PersonalName(id)).ToArray();var genomes=session.Creatures.Select(a=>JsonUtility.ToJson(a.Genome)).ToArray();
             var random=Random.state;
             for(int n=0;n<ids.Length;n++){
-                Assert.AreEqual(FamilyNames.DefaultName(ids[n]),names[n]);Assert.IsNotEmpty(names[n]);Assert.AreEqual(0,session.Names.BirthOrder(ids[n]));
+                Assert.AreEqual(n==0?"Eddy":FamilyNames.DefaultName(ids[n]),names[n]);Assert.IsNotEmpty(names[n]);Assert.AreEqual(0,session.Names.BirthOrder(ids[n]));
                 Assert.AreEqual(0,session.Generations.Archive.Get(ids[n]).Generation);session.Names.RecordFounder(ids[n]);
                 StringAssert.Contains(GenerationLoop.ShortId(ids[n]),session.Names.Label(ids[n]));
             }
@@ -98,7 +98,7 @@ namespace WildType.Tests
             Assert.False(session.Generations.Archive.TryDeath(ids[2],out _));
             session.SetPaused(true);session.Restart(true);yield return null;yield return new WaitForSecondsRealtime(.3f);Freeze();
             Assert.AreEqual(13,session.Names.Count);Assert.AreEqual(1,session.ControlledHistory.Count);Assert.AreEqual("",session.Names.PersonalName(ids[0]));
-            foreach(var a in session.Creatures)Assert.AreEqual(FamilyNames.DefaultName(a.Life.Id),session.Names.PersonalName(a.Life.Id));
+            foreach(var a in session.Creatures)Assert.AreEqual(a.IsPlayer?"Eddy":FamilyNames.DefaultName(a.Life.Id),session.Names.PersonalName(a.Life.Id));
         }
     }
 }

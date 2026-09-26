@@ -27,7 +27,7 @@ namespace WildType
             // Ancestry is immutable during a run. Validate once here, membership/liveness on every read.
             target = descendant; owner = session.Player; Remaining = Duration;
             session.SetPaused(false);
-            session.ShowNotice("Locating " + session.Names.PersonalName(target.Life.Id) + " · " + GenerationLoop.ShortId(target.Life.Id), Duration);
+            session.ShowNotice("Locating " + session.Names.PersonalName(target.Life.Id), Duration);
             return true; // Selecting the same target restarts the pulse, never toggles it off.
         }
         void Update()

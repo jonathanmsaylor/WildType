@@ -72,7 +72,7 @@ namespace WildType.Tests
         {
             yield return Birth(); float p = parent.Vitals.Energy;
             Assert.False(session.Care.TryShare(parent, partner, out _)); Assert.AreEqual(p, parent.Vitals.Energy);
-            Place(child, 0, 8); Assert.False(session.Care.TryShare(parent, child, out string reason)); StringAssert.Contains("3.5", reason);
+            Place(child, 0, 8); Assert.False(session.Care.TryShare(parent, child, out string reason)); StringAssert.Contains("Move closer", reason);
             Assert.AreEqual(p, parent.Vitals.Energy); Place(child, 0, 2);
             var obstacle = GameObject.CreatePrimitive(PrimitiveType.Cube); obstacle.layer = 9;
             obstacle.transform.position = (parent.transform.position + child.transform.position) * .5f + Vector3.up;
@@ -221,7 +221,7 @@ namespace WildType.Tests
             Place(parent, food.transform.position.x, food.transform.position.z - 1.5f); session.orbit.Configure(parent, session);
             parent.Vitals.Eat(1000); yield return new WaitForSeconds(.2f); Assert.False(cues.FoodPromptVisible, "Full creature has no eat prompt");
             parent.Vitals.SpendEnergy(25); yield return new WaitForSeconds(.2f); Assert.True(cues.FoodPromptVisible);
-            var prompt = GameObject.Find("Food interaction prompt").GetComponent<TMP_Text>(); StringAssert.Contains("E eat", prompt.text);
+            var prompt = GameObject.Find("Food interaction prompt").GetComponent<TMP_Text>(); StringAssert.Contains("E Eat", prompt.text);
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.E)); yield return null; yield return null;
             InputSystem.QueueStateEvent(keyboard, new KeyboardState()); Assert.False(food.Available);
             yield return new WaitForSeconds(.2f); Assert.False(cues.FoodPromptVisible);
@@ -240,10 +240,10 @@ namespace WildType.Tests
             Assert.AreSame(food, parent.Interaction.Nearest()); Assert.AreSame(child, session.Care.NearbyChild(parent));
             Assert.AreEqual("", session.Care.Reason(parent, child));
             var prompt = GameObject.Find("Food interaction prompt").GetComponent<TMP_Text>();
-            StringAssert.Contains("E eat", prompt.text); StringAssert.Contains(food.DisplayName, prompt.text);
+            StringAssert.Contains("E Eat", prompt.text); StringAssert.Contains(food.DisplayName, prompt.text);
             bool shareVisible = false;
             foreach (var text in session.GetComponentsInChildren<TMP_Text>())
-                if (text.name == "Child relationship cue" && text.text.Contains("R share") && text.text.Contains(GenerationLoop.ShortId(child.Life.Id))) shareVisible = true;
+                if (text.text != null && text.text.Contains("R Share") && text.text.Contains(session.Names.PersonalName(child.Life.Id))) shareVisible = true;
             Assert.True(shareVisible, "Both usable actions identify their targets before input");
             float childEnergy = child.Vitals.Energy;
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.E)); yield return null; yield return null;

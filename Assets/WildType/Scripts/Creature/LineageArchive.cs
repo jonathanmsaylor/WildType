@@ -34,6 +34,16 @@ namespace WildType
             deaths.Add(id, new LineageDeath(time, cause)); MarkDead(id); Revision++; return true;
         }
         public bool TryDeath(CreatureId id, out LineageDeath death) => deaths.TryGetValue(id, out death);
+        // Read-only tree projection. Return current records, not stale birth-time alive/count snapshots.
+        public void CollectChildren(CreatureId parent, List<CreatureLineageRecord> destination)
+        {
+            destination.Clear(); if (!parent.IsValid || Get(parent) == null) return;
+            foreach (var original in birthOrder)
+            {
+                var record = Get(original.CreatureId);
+                if (record.FirstParentId == parent || record.SecondParentId == parent) destination.Add(record);
+            }
+        }
         // Parents must already exist when Add succeeds, so this bounded forward pass finds all descendants.
         // Include actual ancestors, not unrelated creatures sharing the canonical founder ID.
         public void CollectFamily(CreatureId focus, List<CreatureLineageRecord> destination, IEnumerable<CreatureId> earlierControls = null)

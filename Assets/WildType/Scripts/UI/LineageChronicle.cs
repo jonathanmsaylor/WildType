@@ -32,11 +32,9 @@ namespace WildType
             string relation = Relationship(archive, session.Player.Life.Id, record);
             bool died = archive.TryDeath(record.CreatureId, out var death);
             string state = died ? "Deceased · " + Cause(death.Cause) : actor ? (actor.Life.Adult ? "Living adult" : "Living juvenile") : "Unavailable · no recorded death";
-            string time = died ? $"Lived {record.AgeAt(death.Time):0}s" : actor ? $"Age {actor.Life.Age:0}s" : "Birth recorded";
-            string parents = record.Generation == 0 ? "Founder" : "Parents " + GenerationLoop.ShortId(record.FirstParentId) + " + " + GenerationLoop.ShortId(record.SecondParentId);
-            return $"<b>{session.Names.PersonalName(record.CreatureId)}</b> · {GenerationLoop.ShortId(record.CreatureId)} · Gen {record.Generation}\n" +
-                relation + " · " + state + "\n" + parents + $" · Children born {record.OffspringCount}\n" +
-                time + (canControl ? " · control eligible" : actor && session.CanLocateFamily(actor) ? " · highlight only" : " · record only");
+            string place = died ? $"Lived {JournalReadout.Whole(record.AgeAt(death.Time))}s" : actor ? session.World.Zone(actor.transform.position) + " · " +
+                JournalReadout.Distance(Vector3.Distance(session.Player.transform.position, actor.transform.position)) + " away" : "No location recorded";
+            return $"<b>{session.Names.PersonalName(record.CreatureId)}</b> · Gen {record.Generation}\n" + relation + " · " + state + "\n" + place;
         }
     }
 }

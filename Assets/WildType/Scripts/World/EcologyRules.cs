@@ -11,7 +11,7 @@ namespace WildType
         public static float GrazingDelay(Habitat region, float value) => region == Habitat.Meadow
             ? Genome.Safe(value, 0, 0, MaximumGrazingDelay) : 0;
         public static Habitat Region(Vector3 point) => point.x > 35 ? Habitat.Dry : point.x < -35 ? Habitat.Woodland : Habitat.Meadow;
-        public static string Name(Habitat region) => region == Habitat.Dry ? "Amber flats" : region == Habitat.Woodland ? "Fernwood" : "The meadow";
+        public static string Name(Habitat region) => region == Habitat.Dry ? "Amber Flats" : region == Habitat.Woodland ? "Fernwood" : "The Meadow";
         public static string FoodName(Habitat region) => region == Habitat.Dry ? "Sunpod" : region == Habitat.Woodland ? "Fernberry" : "Brightfruit";
         public static float Nutrition(Habitat region) => region == Habitat.Dry ? 72 : region == Habitat.Woodland ? 22 : 42;
         public static float Regrowth(Habitat region, float variation)
@@ -30,8 +30,8 @@ namespace WildType
             return Mathf.Lerp(open, Mathf.Min(open, stats.TurnRate * .45f), brush);
         }
         public static string Observation(Habitat region) => region == Habitat.Dry
-            ? "Amber flats: rich sunpods, long waits. Keep a reserve."
+            ? "Amber Flats: rich sunpods, long waits. Keep a reserve."
             : region == Habitat.Woodland ? "Fernwood: small bites, quick regrowth. Sharp turns help."
-            : "Meadow: repeated grazing slows brightfruit recovery. Try fresh patches.";
+            : "The Meadow: repeated grazing slows brightfruit recovery. Try fresh patches.";
     }
 }

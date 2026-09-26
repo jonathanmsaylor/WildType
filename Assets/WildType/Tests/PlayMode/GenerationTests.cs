@@ -103,7 +103,7 @@ namespace WildType.Tests
             foreach (var button in buttons)
             {
                 var label = button.transform.parent.GetComponentInChildren<TMPro.TMP_Text>();
-                if (button.name=="Take control" && label && label.text.Contains(GenerationLoop.ShortId(child.Life.Id)))
+                if (button.name=="Take control" && label && label.text.Contains(session.Names.PersonalName(child.Life.Id)))
                 { button.onClick.Invoke(); clicked = true; break; }
             }
             Assert.True(clicked, "The family journal must render and wire a real descendant button");
@@ -161,10 +161,10 @@ namespace WildType.Tests
             // Counters remain in ordinary play; full records are deliberately moved to the paused journal.
             Assert.True(countersVisible);
             Assert.NotNull(eventText); Assert.True(eventText.gameObject.activeInHierarchy);
-            StringAssert.Contains(GenerationLoop.ShortId(victimId) + " · Gen 0 · starvation", eventText.text);
-            StringAssert.Contains(GenerationLoop.ShortId(birth.CreatureId) + " · Gen 1", eventText.text);
-            StringAssert.Contains("Parents " + GenerationLoop.ShortId(parentId), eventText.text);
-            StringAssert.Contains("Lineage " + GenerationLoop.ShortId(death.FounderId), eventText.text);
+            StringAssert.Contains(session.Names.PersonalName(victimId) + " · Gen 0 · starvation", eventText.text);
+            StringAssert.Contains(session.Names.PersonalName(birth.CreatureId) + " · Gen 1", eventText.text);
+            StringAssert.Contains("Parents " + session.Names.PersonalName(parentId), eventText.text);
+            StringAssert.Contains("Lineage " + session.Names.PersonalName(death.FounderId), eventText.text);
             eventText.ForceMeshUpdate(); Assert.False(eventText.isTextOverflowing);
             session.SetPaused(false); Object.Destroy(session.Creatures[3].gameObject); yield return null; yield return null;
             Assert.AreEqual(1, loop.Deaths, "Destroying a living object is not a proven gameplay death");
