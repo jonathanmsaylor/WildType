@@ -200,7 +200,7 @@ namespace WildType.Tests
             }
             Assert.True(found); Assert.True(session.TakeControl(child)); Assert.AreEqual("Dave 1", session.Names.PersonalName(id));
             session.SetPaused(true); session.Restart(false); yield return null; yield return new WaitForSecondsRealtime(.3f); Freeze();
-            Assert.AreEqual(0, session.Names.Count); Assert.False(session.Names.HasPrompt);
+            Assert.AreEqual(13, session.Names.Count); Assert.False(session.Names.HasPrompt);
             parent = session.Player; partner = session.Creatures[1]; Place(parent, 0, 0); Place(partner, 2, 0);
             Assert.True(session.Generations.TryMate(parent, partner, out _)); yield return new WaitForSecondsRealtime(2.6f);
             Assert.True(session.Names.HasPrompt);

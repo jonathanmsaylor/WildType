@@ -92,11 +92,11 @@ namespace WildType.Tests
             child.Vitals.Damage(100); yield return new WaitForSeconds(4.3f); Assert.False(child);
             Assert.AreEqual("Dave 1", session.Names.PersonalName(childId)); Assert.False(session.Generations.Archive.Get(childId).Alive);
             session.SetPaused(true); session.Restart(false); yield return null; yield return new WaitForSecondsRealtime(.3f); Freeze();
-            Assert.AreEqual(0, session.Names.Count); Assert.False(session.Locator.Target);
+            Assert.AreEqual(13, session.Names.Count); Assert.False(session.Locator.Target);
             parent = session.Player; yield return Birth(parent, session.Creatures[1]); child = session.Creatures.Last();
             Assert.AreEqual(FamilyNames.Format(FamilyNames.DefaultName(child.Life.Id), 1), session.Names.PersonalName(child.Life.Id));
             session.Locator.Select(child); session.SetPaused(true); int seed = session.seed; session.Restart(true); yield return null; yield return new WaitForSecondsRealtime(.3f); Freeze();
-            Assert.AreNotEqual(seed, session.seed); Assert.AreEqual(0, session.Names.Count); Assert.False(session.Locator.Target); Assert.False(session.Locator.Select(child)); Caps();
+            Assert.AreNotEqual(seed, session.seed); Assert.AreEqual(13, session.Names.Count); Assert.False(session.Locator.Target); Assert.False(session.Locator.Select(child)); Caps();
         }
         [UnityTest] public IEnumerator AutonomousBrainBirthReceivesNameWithoutPlayerPrompt()
         {

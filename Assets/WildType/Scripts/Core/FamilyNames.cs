@@ -16,6 +16,12 @@ namespace WildType
         public int Count => names.Count;
         public FamilyNames(StageSession value) { session = value; }
         public void ResetRun() { names.Clear(); pending = parent = default; }
+        public void RecordFounder(CreatureId id)
+        {
+            var record = session.Generations.Archive.Get(id);
+            if (record == null || record.Generation != 0 || names.Count >= LineageArchive.Capacity || names.ContainsKey(id)) return;
+            names.Add(id, new Entry { name = DefaultName(id) }); // No child-order suffix for a founder.
+        }
         public void RecordBirth(CreatureAgent child, CreatureAgent first, CreatureAgent second)
         {
             if (!child || names.Count >= LineageArchive.Capacity || names.ContainsKey(child.Life.Id)) return;
@@ -52,7 +58,7 @@ namespace WildType
         }
         public int BirthOrder(CreatureId id) => names.TryGetValue(id, out var entry) ? entry.order : 0;
         public string PersonalName(CreatureId id) => names.TryGetValue(id, out var entry) && entry.name.Length > 0
-            ? Format(entry.name, entry.order) : "";
+            ? (entry.order == 0 ? entry.name : Format(entry.name, entry.order)) : "";
         public string Label(CreatureId id)
         {
             string personal = PersonalName(id);

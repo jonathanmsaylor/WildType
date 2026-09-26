@@ -16,6 +16,10 @@ namespace WildType
         public bool autoPauseOnFocusLoss = true;
         public const int AICount = 12;
         readonly List<CreatureAgent> creatures = new List<CreatureAgent>(AICount + 1);
+        // IDs only, bounded by the archive. A previous player's children remain discoverable,
+        // without making siblings eligible for descendant control or direct-child care.
+        readonly List<CreatureId> controlledHistory = new List<CreatureId>();
+        public IReadOnlyList<CreatureId> ControlledHistory => controlledHistory;
         public IReadOnlyList<CreatureAgent> Creatures => creatures;
         public CreatureAgent Player { get; private set; }
         public Ecosystem World { get; private set; }
@@ -50,10 +54,12 @@ namespace WildType
             Generations.ResetRun(this);
             Care.ResetRun(this);
             Names.ResetRun();
+            controlledHistory.Clear();
             Locator.ResetRun(this);
             World.Populate(this, seed);
             var random = new System.Random(seed);
             Player = Spawn(presets[0].RuntimeCopy(), new Vector3(0, Ecosystem.Height(0, 0) + .2f, 0), true);
+            controlledHistory.Add(Player.Life.Id);
             for (int i = 0; i < AICount; i++)
             {
                 Vector3 point = Ecosystem.RandomGround(random, 12, 64);
@@ -86,6 +92,7 @@ namespace WildType
             if (!Ready || !Player || !descendant || descendant.Session != this || descendant.Vitals.Dead || !descendant.Life ||
                 !Generations.IsLivingDescendant(descendant, Player.Life.Id)) return false;
             Player.SetPlayer(false); descendant.SetPlayer(true); Player = descendant;
+            if (!controlledHistory.Contains(Player.Life.Id)) controlledHistory.Add(Player.Life.Id);
             Locator.Clear();
             Names.Cancel();
             GameOver = false; SetPaused(false); orbit.Configure(Player, this);
@@ -98,6 +105,14 @@ namespace WildType
             Paused = paused; Time.timeScale = paused ? 0 : 1;
             Cursor.lockState = paused ? CursorLockMode.None : CursorLockMode.Locked; Cursor.visible = paused;
             if (Player) { Player.DesiredDirection = Vector3.zero; Player.WantsSprint = false; }
+        }
+        public void CollectFamilyHistory(List<CreatureLineageRecord> destination)
+        { Generations.Archive.CollectFamily(Player.Life.Id, destination, controlledHistory); }
+        public bool CanLocateFamily(CreatureAgent actor)
+        {
+            if (!Ready || !Player || actor == Player || !Generations.Owns(actor) || actor.Vitals.Dead ||
+                !Generations.Archive.Get(actor.Life.Id).Alive || Generations.Archive.TryDeath(actor.Life.Id, out _)) return false;
+            return Generations.Archive.InFamilyHistory(actor.Life.Id, Player.Life.Id, controlledHistory);
         }
         public void NotifyDeath(CreatureAgent actor)
         {

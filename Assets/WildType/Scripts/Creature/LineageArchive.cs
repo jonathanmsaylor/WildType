@@ -36,7 +36,7 @@ namespace WildType
         public bool TryDeath(CreatureId id, out LineageDeath death) => deaths.TryGetValue(id, out death);
         // Parents must already exist when Add succeeds, so this bounded forward pass finds all descendants.
         // Include actual ancestors, not unrelated creatures sharing the canonical founder ID.
-        public void CollectFamily(CreatureId focus, List<CreatureLineageRecord> destination)
+        public void CollectFamily(CreatureId focus, List<CreatureLineageRecord> destination, IEnumerable<CreatureId> earlierControls = null)
         {
             destination.Clear(); if (Get(focus) == null) return;
             var ancestors = new HashSet<CreatureId>(); var pending = new Stack<CreatureId>(); pending.Push(focus);
@@ -48,12 +48,21 @@ namespace WildType
                 if (record.SecondParentId.IsValid) pending.Push(record.SecondParentId);
             }
             var descendants = new HashSet<CreatureId> { focus };
+            if (earlierControls != null) foreach (var id in earlierControls) if (Get(id) != null) descendants.Add(id);
             foreach (var original in birthOrder)
             {
                 var record = Get(original.CreatureId);
                 if (descendants.Contains(record.FirstParentId) || descendants.Contains(record.SecondParentId)) descendants.Add(record.CreatureId);
                 if (ancestors.Contains(record.CreatureId) || descendants.Contains(record.CreatureId)) destination.Add(record);
             }
+        }
+        public bool InFamilyHistory(CreatureId id, CreatureId focus, IEnumerable<CreatureId> earlierControls)
+        {
+            if (Get(id) == null || Get(focus) == null) return false;
+            if (id == focus || IsDescendant(focus, id) || IsDescendant(id, focus)) return true;
+            if (earlierControls != null) foreach (var previous in earlierControls)
+                if (Get(previous) != null && (id == previous || IsDescendant(id, previous))) return true;
+            return false;
         }
         public bool IsDescendant(CreatureId child, CreatureId ancestor)
         {

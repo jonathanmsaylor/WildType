@@ -23,7 +23,7 @@ namespace WildType
         public bool Select(CreatureAgent descendant)
         {
             if (!session || !session.Ready || session.GameOver || !session.Player || session.Player.Vitals.Dead ||
-                session.Names.HasPrompt || !session.Generations.IsLivingDescendant(descendant, session.Player.Life.Id)) return false;
+                session.Names.HasPrompt || !session.CanLocateFamily(descendant)) return false;
             // Ancestry is immutable during a run. Validate once here, membership/liveness on every read.
             target = descendant; owner = session.Player; Remaining = Duration;
             session.SetPaused(false);

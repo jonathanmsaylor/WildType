@@ -10,8 +10,13 @@ namespace WildType
             var current = archive.Get(focus);
             if (current != null && (current.FirstParentId == record.CreatureId || current.SecondParentId == record.CreatureId)) return "Parent";
             if (record.FirstParentId == focus || record.SecondParentId == focus) return "Child";
-            return archive.IsDescendant(record.CreatureId, focus) ? "Descendant" : "Ancestor";
+            if (archive.IsDescendant(record.CreatureId, focus)) return "Descendant";
+            if (archive.IsDescendant(focus, record.CreatureId)) return "Ancestor";
+            if (current != null && (SharedParent(current.FirstParentId, record) || SharedParent(current.SecondParentId, record))) return "Sibling";
+            return "Other family branch"; // Not a descendant/ancestor; parent IDs retain the exact links.
         }
+        static bool SharedParent(CreatureId id, CreatureLineageRecord record) => id.IsValid &&
+            (id == record.FirstParentId || id == record.SecondParentId);
         public static CreatureAgent LivingActor(StageSession session, CreatureLineageRecord record)
         {
             if (!record.Alive || session.Generations.Archive.TryDeath(record.CreatureId, out _)) return null;
@@ -31,7 +36,7 @@ namespace WildType
             string parents = record.Generation == 0 ? "Founder" : "Parents " + GenerationLoop.ShortId(record.FirstParentId) + " + " + GenerationLoop.ShortId(record.SecondParentId);
             return $"<size=20>{session.Names.Label(record.CreatureId)} · Gen {record.Generation}</size>\n" +
                 relation + " · " + state + "\n" + parents + $" · Children born {record.OffspringCount}\n" +
-                time + (canControl ? " · select to control" : " · record only");
+                time + (canControl ? " · select to control" : actor && session.CanLocateFamily(actor) ? " · locate only" : " · record only");
         }
     }
 }

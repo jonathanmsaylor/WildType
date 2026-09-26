@@ -62,7 +62,7 @@ namespace WildType.Tests
             StringAssert.Contains("Parent · Deceased · cause unknown",Text());StringAssert.Contains(session.Names.Label(childId),Text());
             Assert.AreEqual(0,session.GetComponentsInChildren<Button>().Count(b=>b.name=="Locate"));
             session.Restart(false);yield return null;yield return new WaitForSecondsRealtime(.3f);Freeze();yield return Open();
-            StringAssert.Contains("page 1/1",Text());StringAssert.DoesNotContain("Deceased",Text());Assert.AreEqual(0,session.Names.Count);
+            StringAssert.Contains("page 1/1",Text());StringAssert.DoesNotContain("Deceased",Text());Assert.AreEqual(13,session.Names.Count);
             int seed=session.seed;session.Restart(true);yield return null;yield return new WaitForSecondsRealtime(.3f);Freeze();yield return Open();
             Assert.AreNotEqual(seed,session.seed);Assert.False(session.Generations.Archive.TryDeath(childId,out _));StringAssert.Contains("page 1/1",Text());Caps();
         }

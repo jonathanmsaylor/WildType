@@ -28,6 +28,7 @@ namespace WildType
         readonly Button[] descendantButtons = new Button[4];
         readonly Button[] findButtons = new Button[4];
         readonly CreatureAgent[] choices = new CreatureAgent[4];
+        readonly CreatureAgent[] locateChoices = new CreatureAgent[4];
         TMP_Text[] choiceLabels = new TMP_Text[4];
         int page;
         FoodPlant highlighted;
@@ -90,7 +91,7 @@ namespace WildType
                 choiceLabels[i].alignment = TextAlignmentOptions.Left;
                 choiceLabels[i].rectTransform.sizeDelta = new Vector2(475, 72);
                 choiceLabels[i].rectTransform.anchoredPosition = new Vector2(10, -4);
-                var find = ButtonAt(selection, "Locate", 92 + i * 84, () => session.Locator.Select(choices[slot]));
+                var find = ButtonAt(selection, "Locate", 92 + i * 84, () => session.Locator.Select(locateChoices[slot]));
                 find.GetComponent<RectTransform>().anchoredPosition = new Vector2(522, -92 - i * 84);
                 find.GetComponent<RectTransform>().sizeDelta = new Vector2(78, 78);
                 find.GetComponentInChildren<TMP_Text>().rectTransform.sizeDelta = new Vector2(78, 40);
@@ -161,14 +162,17 @@ namespace WildType
                 var living = generations.LivingDescendants(a.Life.Id);
                 if (session.GameOver) panelTitle.text = living.Count == 0 ? "LIFE ENDED\nNo living descendants\nRestart or reseed" : "LIFE ENDED\nChoose a descendant or restart";
                 if (chronicle && journalRevision != journalArchive.Revision)
-                { journalArchive.CollectFamily(journalFocus, chronicleRecords); journalRevision = journalArchive.Revision; }
+                { session.CollectFamilyHistory(chronicleRecords); journalRevision = journalArchive.Revision; }
                 int count = chronicle ? chronicleRecords.Count : living.Count;
                 int pageSize = chronicle ? 3 : choices.Length;
                 int pages = Mathf.Max(1, Mathf.CeilToInt(count / (float)pageSize)); page %= pages;
                 nextPage.gameObject.SetActive(pages > 1);
                 chronicleToggle.GetComponentInChildren<TMP_Text>().text = chronicle ? "Living descendants" : "Chronicle";
-                descendantTitle.text = living.Count == 0 ? (session.GameOver ? "No living descendants.\nRestart or reseed to begin a new lineage." : "No living descendants yet.\nSurvive, build energy, and mate to grow your family.") : $"Living descendants: {living.Count} · page {page + 1}/{pages}\nSelect a creature to take control.";
-                if (chronicle) descendantTitle.text = $"Family chronicle · page {page + 1}/{pages}\nRecorded lives: ancestors, you & descendants";
+                descendantTitle.fontSize = 20;
+                descendantTitle.text = $"Living descendants of {session.Names.Label(a.Life.Id)}\n" +
+                    (living.Count == 0 ? "None living · Other family lives are in Chronicle." : $"{living.Count} living · page {page + 1}/{pages} · Select to control.") +
+                    "\nEarlier controlled creatures' children: Chronicle.";
+                if (chronicle) descendantTitle.text = $"Family chronicle · page {page + 1}/{pages}\nRelationships to {session.Names.Label(a.Life.Id)} (you)\nIncludes children of earlier controlled creatures.";
                 for (int i = 0; i < choices.Length; i++)
                 {
                     int index = page * pageSize + i;
@@ -183,9 +187,10 @@ namespace WildType
                         var entry = i < pageSize && index < count ? chronicleRecords[index] : null;
                         var actor = entry == null ? null : LineageChronicle.LivingActor(session, entry);
                         choices[i] = actor && generations.IsLivingDescendant(actor, a.Life.Id) ? actor : null;
+                        locateChoices[i] = actor && session.CanLocateFamily(actor) ? actor : null;
                         descendantButtons[i].gameObject.SetActive(entry != null);
                         descendantButtons[i].interactable = choices[i];
-                        findButtons[i].gameObject.SetActive(choices[i]); findButtons[i].interactable = !session.GameOver;
+                        findButtons[i].gameObject.SetActive(locateChoices[i]); findButtons[i].interactable = !session.GameOver;
                         choiceLabels[i].fontSize = 18;
                         // Keep archived records readable even though they cannot be clicked.
                         var colors = descendantButtons[i].colors; colors.disabledColor = Color.white; descendantButtons[i].colors = colors;
@@ -193,6 +198,7 @@ namespace WildType
                         continue;
                     }
                     choices[i] = index < living.Count ? living[index] : null;
+                    locateChoices[i] = choices[i];
                     descendantButtons[i].interactable = true; choiceLabels[i].fontSize = 18;
                     descendantButtons[i].gameObject.SetActive(choices[i]);
                     findButtons[i].gameObject.SetActive(choices[i]);

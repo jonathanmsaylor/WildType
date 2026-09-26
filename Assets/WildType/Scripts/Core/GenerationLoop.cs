@@ -32,6 +32,7 @@ namespace WildType
         {
             var record = CreatureLineageRecord.Founder(NextId(), Clock - actor.Stats.MaturityAge - 15);
             Archive.Add(record, InheritanceSummary.Founder(actor.Genome)); actor.AttachLife(record);
+            session.Names.RecordFounder(record.CreatureId);
         }
         public bool Reserved(CreatureAgent actor)
         { foreach (var pair in pairs) if (pair.first == actor || pair.second == actor) return true; return false; }
