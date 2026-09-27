@@ -35,24 +35,24 @@ namespace WildType.Tests
         }
         [UnityTest] public IEnumerator AllGenesHaveSameMouseFocusAndSubmitHelpWithUnchangedValues()
         {
-            Accept();hud.ShowDetails(s.Player.Life.Id);yield return Refresh();string genes=JsonUtility.ToJson(s.Player.Genome);float energy=s.Player.Vitals.Energy;Fit();
+            Accept();hud.ShowDetails(s.Player.Life.Id);yield return Refresh();hud.ToggleSection(0);yield return Refresh();string genes=JsonUtility.ToJson(s.Player.Genome);float energy=s.Player.Vitals.Energy;Fit();
             Assert.AreEqual(16,s.GetComponentsInChildren<JournalHelpTarget>().Count(t=>t.name.StartsWith("Gene ")));
             foreach(var target in s.GetComponentsInChildren<JournalHelpTarget>().Where(t=>t.name.StartsWith("Gene "))){
-                target.OnPointerEnter(new PointerEventData(EventSystem.current));Assert.AreEqual(target.Explanation,Text("Gene explanation"));Fit();
-                EventSystem.current.SetSelectedGameObject(target.gameObject);Assert.AreEqual(target.Explanation,Text("Gene explanation"));
-                target.GetComponent<Button>().onClick.Invoke();Assert.AreEqual(target.Explanation,Text("Gene explanation"));Assert.NotNull(target.GetComponent<Button>().navigation.selectOnDown);
+                target.OnPointerEnter(new PointerEventData(EventSystem.current){delta=Vector2.one});Assert.AreEqual(target.Explanation,Text("Profile explanation text"));Fit();
+                EventSystem.current.SetSelectedGameObject(target.gameObject);Assert.AreEqual(target.Explanation,Text("Profile explanation text"));
+                target.GetComponent<Button>().onClick.Invoke();Assert.AreEqual(target.Explanation,Text("Profile explanation text"));Assert.NotNull(target.GetComponent<Button>().navigation.selectOnDown);
             }
-            for(int i=0;i<3;i++){B("More details").onClick.Invoke();yield return Refresh();B("Explain record").onClick.Invoke();Fit();}
-            StringAssert.Contains(s.Player.Life.Id.Value,Text("Inherited traits"));Assert.AreEqual(genes,JsonUtility.ToJson(s.Player.Genome));Assert.AreEqual(energy,s.Player.Vitals.Energy);
+            hud.ToggleSection(1);hud.ToggleSection(2);yield return Refresh();Fit();
+            StringAssert.Contains(s.Player.Life.Id.Value,Text("Family Record record"));Assert.AreEqual(genes,JsonUtility.ToJson(s.Player.Genome));Assert.AreEqual(energy,s.Player.Vitals.Energy);
         }
         [UnityTest] public IEnumerator WorldLabelUsesBaseNameAndDetailsDisambiguateDuplicateNames()
         {
             Accept();s.Names.ShowPrompts=true;yield return Birth();Assert.True(s.Names.HasPrompt);Assert.True(s.Names.Submit("Alexander the Great"));var child=s.Creatures.Last();
             Assert.AreEqual("Alexander the Great",s.Names.PersonalName(child.Life.Id));Assert.AreEqual("Alexander the Great",s.Names.WorldName(child.Life.Id));
             string label=FamilyWorldCues.ChildLabel(s,child,12.4f);StringAssert.Contains("Alexander the Great\n",label);StringAssert.Contains("12 m",label);StringAssert.Contains("Gen 1",label);Assert.False(label.Contains("energy"));Assert.False(label.Contains(child.Life.Id.Value));
-            hud.Show(StageHud.JournalView.Living);yield return Refresh();Fit();hud.ShowDetails(child.Life.Id);yield return Refresh();Fit();for(int i=0;i<3;i++){B("More details").onClick.Invoke();yield return Refresh();Fit();}
-            StringAssert.Contains(child.Life.Id.Value,Text("Inherited traits"));Assert.True(s.TakeControl(child));Assert.AreEqual("Alexander the Great",s.Names.PersonalName(s.Player.Life.Id));
-            s.Player.Vitals.Damage(100);yield return Refresh();hud.ShowDetails(child.Life.Id);yield return Refresh();for(int i=0;i<3;i++){B("More details").onClick.Invoke();yield return Refresh();}StringAssert.Contains("Recorded death",Text("Inherited traits"));StringAssert.Contains("Age at death",Text("Inherited traits"));Fit();
+            hud.Show(StageHud.JournalView.Living);yield return Refresh();Fit();hud.ShowDetails(child.Life.Id);yield return Refresh();Fit();hud.ToggleSection(2);yield return Refresh();Fit();
+            StringAssert.Contains(child.Life.Id.Value,Text("Family Record record"));Assert.True(s.TakeControl(child));Assert.AreEqual("Alexander the Great",s.Names.PersonalName(s.Player.Life.Id));
+            s.Player.Vitals.Damage(100);yield return Refresh();hud.ShowDetails(child.Life.Id);yield return Refresh();hud.ToggleSection(2);yield return Refresh();StringAssert.Contains("Recorded death",Text("Family Record record"));StringAssert.Contains("Age at death",Text("Family Record record"));Fit();
         }
         [UnityTest] public IEnumerator KeyboardAndGamepadNavigateGeneExplanationsAndTree()
         {
@@ -63,16 +63,16 @@ namespace WildType.Tests
 #endif
             InputSystem.settings=settings;var keyboard=InputSystem.AddDevice<Keyboard>();var pad=InputSystem.AddDevice<Gamepad>();
             try{
-                Accept();hud.ShowDetails(s.Player.Life.Id);yield return Refresh();
+                Accept();hud.ShowDetails(s.Player.Life.Id);yield return Refresh();hud.ToggleSection(0);yield return Refresh();
                 var first=s.GetComponentsInChildren<JournalHelpTarget>().First(t=>t.name.StartsWith("Gene "));EventSystem.current.SetSelectedGameObject(first.gameObject);
                 Assert.True(first.GetComponent<JournalFocusMarker>().Marked);
                 var next=first.GetComponent<Button>().navigation.selectOnDown;
                 InputSystem.QueueStateEvent(keyboard,new KeyboardState(Key.DownArrow));yield return null;yield return null;
                 InputSystem.QueueStateEvent(keyboard,new KeyboardState());yield return Refresh();
-                Assert.AreSame(next.gameObject,EventSystem.current.currentSelectedGameObject);Assert.True(next.GetComponent<JournalFocusMarker>().Marked);Assert.False(first.GetComponent<JournalFocusMarker>().Marked);Assert.AreEqual(next.GetComponent<JournalHelpTarget>().Explanation,Text("Gene explanation"));
+                Assert.AreSame(next.gameObject,EventSystem.current.currentSelectedGameObject);Assert.True(next.GetComponent<JournalFocusMarker>().Marked);Assert.False(first.GetComponent<JournalFocusMarker>().Marked);Assert.AreEqual(next.GetComponent<JournalHelpTarget>().Explanation,Text("Profile explanation text"));
                 var third=next.navigation.selectOnDown;
                 InputSystem.QueueStateEvent(pad,new GamepadState().WithButton(GamepadButton.DpadDown));yield return null;yield return null;
-                InputSystem.QueueStateEvent(pad,new GamepadState());yield return Refresh();Assert.AreSame(third.gameObject,EventSystem.current.currentSelectedGameObject);Assert.AreEqual(third.GetComponent<JournalHelpTarget>().Explanation,Text("Gene explanation"));Fit();
+                InputSystem.QueueStateEvent(pad,new GamepadState());yield return Refresh();Assert.AreSame(third.gameObject,EventSystem.current.currentSelectedGameObject);Assert.AreEqual(third.GetComponent<JournalHelpTarget>().Explanation,Text("Profile explanation text"));Fit();
                 hud.ShowTree(s.Player.Life.Id);yield return Refresh();EventSystem.current.SetSelectedGameObject(B("Tree record").gameObject);
                 InputSystem.QueueStateEvent(pad,new GamepadState().WithButton(GamepadButton.South));yield return null;yield return null;
                 InputSystem.QueueStateEvent(pad,new GamepadState());yield return Refresh();Assert.AreEqual(StageHud.JournalView.Profile,hud.View);Fit();

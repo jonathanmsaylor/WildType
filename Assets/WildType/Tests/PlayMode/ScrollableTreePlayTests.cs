@@ -63,7 +63,7 @@ namespace WildType.Tests
         {
             Assert.False(s.GetComponentsInChildren<Button>().Any(b=>b.name=="Living descendants"||b.name=="Hide tips"||b.name=="Quit"));B("Tree events").onClick.Invoke();yield return Refresh();Assert.AreEqual(StageHud.JournalView.Events,hud.View);Fit();
             B("Getting started").onClick.Invoke();yield return Refresh();B("Hide tips").onClick.Invoke();Assert.False(hud.TipsVisible);Fit();B("Run menu").onClick.Invoke();yield return Refresh();Assert.NotNull(B("Restart same seed"));Assert.NotNull(B("Reseed new run"));Assert.NotNull(B("Quit"));Fit();
-            hud.ShowDetails(s.Player.Life.Id);yield return Refresh();foreach(var target in s.GetComponentsInChildren<JournalHelpTarget>().Where(t=>t.name.StartsWith("Gene ")||t.name.StartsWith("Category "))){target.OnPointerEnter(new PointerEventData(EventSystem.current));Assert.AreEqual(target.Explanation,s.GetComponentsInChildren<TMP_Text>().First(t=>t.name=="Gene explanation").text);Fit();EventSystem.current.SetSelectedGameObject(target.gameObject);Fit();}
+            hud.ShowDetails(s.Player.Life.Id);yield return Refresh();hud.ToggleSection(0);yield return Refresh();foreach(var target in s.GetComponentsInChildren<JournalHelpTarget>().Where(t=>t.name.StartsWith("Gene ")||t.name.StartsWith("Category "))){target.OnPointerEnter(new PointerEventData(EventSystem.current){delta=Vector2.one});Assert.AreEqual(target.Explanation,s.GetComponentsInChildren<TMP_Text>().First(t=>t.name=="Profile explanation text").text);Fit();EventSystem.current.SetSelectedGameObject(target.gameObject);Fit();}
         }
         [UnityTest] public IEnumerator EditorArrowFallbackDoesNotDoubleNavigateOrRunDuringPlay()
         {

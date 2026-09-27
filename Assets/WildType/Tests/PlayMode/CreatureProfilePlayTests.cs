@@ -27,8 +27,8 @@ namespace WildType.Tests
             s.GetComponentsInChildren<FamilyTreeCard>().First(c=>c.Id==child.Life.Id).GetComponent<Button>().onClick.Invoke();yield return Refresh();
             Assert.AreEqual(StageHud.JournalView.Profile,hud.View);Assert.AreEqual(child.Life.Id,hud.ProfileId);Assert.AreSame(p,s.Player);Assert.False(child.Life.Adult);Fit();
             string movement=CreatureProfileText.Movement(s,s.Generations.Archive.Get(child.Life.Id),child,true);StringAssert.Contains(JournalReadout.Exact(child.Stats.WalkSpeed),movement);StringAssert.Contains("Eddy",movement);StringAssert.Contains(s.Names.PersonalName(s.Creatures[1].Life.Id),movement);
-            foreach(var b in s.GetComponentsInChildren<Button>().Where(b=>b.name.StartsWith("Profile card"))){var help=b.GetComponent<JournalHelpTarget>();help.OnPointerEnter(new PointerEventData(EventSystem.current));Assert.AreEqual(help.Explanation,Text("Profile explanation text"));Fit();EventSystem.current.SetSelectedGameObject(b.gameObject);Assert.AreEqual(help.Explanation,Text("Profile explanation text"));}
-            B("Profile Details").onClick.Invoke();yield return Refresh();Assert.True(s.GetComponentsInChildren<TMP_Text>().Any(t=>t.text.Contains("Exact Genes · Page 1")));Fit();
+            foreach(var b in s.GetComponentsInChildren<Button>().Where(b=>b.name.StartsWith("Profile card"))){var help=b.GetComponent<JournalHelpTarget>();help.OnPointerEnter(new PointerEventData(EventSystem.current){delta=Vector2.one});Assert.AreEqual(help.Explanation,Text("Profile explanation text"));Fit();EventSystem.current.SetSelectedGameObject(b.gameObject);Assert.AreEqual(help.Explanation,Text("Profile explanation text"));}
+            hud.ToggleSection(0);yield return Refresh();Assert.AreEqual(16,s.GetComponentsInChildren<JournalHelpTarget>().Count(t=>t.name.StartsWith("Gene ")));Assert.False(s.GetComponentsInChildren<Button>(true).Any(b=>b.name=="More details"));Fit();
             hud.ShowProfile(child.Life.Id);yield return Refresh();StringAssert.DoesNotContain("idle drain",Text("Profile explanation text"));B("Back to Family Tree").onClick.Invoke();yield return Refresh();Assert.AreEqual(position,hud.TreeScroll.content.anchoredPosition);Assert.AreEqual(focus,hud.TreeFocus);
             hud.ShowProfile(child.Life.Id);yield return Refresh();B("Profile Highlight").onClick.Invoke();Assert.AreSame(child,s.Locator.Target);Assert.AreSame(p,s.Player);
             hud.ShowProfile(child.Life.Id);yield return Refresh();B("Profile Take Control").onClick.Invoke();Assert.AreSame(child,s.Player);Assert.AreEqual("Alexander the Great",s.Names.PersonalName(child.Life.Id));Assert.AreEqual(1,s.Names.BirthOrder(child.Life.Id));
@@ -51,7 +51,7 @@ namespace WildType.Tests
             yield return Birth(name);Assert.AreNotEqual(first.Life.Id,child.Life.Id);Assert.AreEqual(name,s.Names.PersonalName(first.Life.Id));Assert.AreEqual(name,s.Names.PersonalName(child.Life.Id));
             Assert.AreEqual(1,s.Names.BirthOrder(first.Life.Id));Assert.AreEqual(2,s.Names.BirthOrder(child.Life.Id));StringAssert.Contains(GenerationLoop.ShortId(child.Life.Id),s.Names.NearbyName(child.Life.Id));
             hud.ShowTree(first.Life.Id);yield return Refresh();var card=s.GetComponentsInChildren<FamilyTreeCard>().First(c=>c.Id==first.Life.Id);StringAssert.Contains("…",card.GetComponentInChildren<TMP_Text>().text);card.OnPointerEnter(new PointerEventData(EventSystem.current));Fit();
-            hud.ShowProfile(first.Life.Id);yield return Refresh();Fit();StringAssert.Contains(name,B("Profile card 0").GetComponentInChildren<TMP_Text>().text);
+            hud.ShowProfile(first.Life.Id);yield return Refresh();Fit();StringAssert.Contains(name,Text("Profile identity"));
             B("Profile Take Control").onClick.Invoke();yield return Refresh();Assert.AreSame(first,s.Player);Fit();Assert.AreEqual("",hud.BiomeReadout.Text);
         }
     }

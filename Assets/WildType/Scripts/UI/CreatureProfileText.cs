@@ -21,7 +21,7 @@ namespace WildType
             float speed=actor.Stats.WalkSpeed;
             string result=exact?"Adult open-ground walk: "+JournalReadout.Exact(speed)+" m/s. Growth, hunger and biome effects excluded.":SpeedRating(speed)+" · adult open-ground walking";
             foreach(var id in new[]{r.FirstParentId,r.SecondParentId}){
-                if(!id.IsValid)continue;var parent=LineageChronicle.LivingActor(s,s.Generations.Archive.Get(id));
+                if(!id.IsValid)continue;var parent=InheritedChoices.Parent(s,id);
                 result+="\n"+(parent?(exact?s.Names.PersonalName(id)+": "+JournalReadout.Exact(parent.Stats.WalkSpeed)+" m/s":Compare(speed,parent.Stats.WalkSpeed,s.Names.PersonalName(id))):s.Names.PersonalName(id)+": comparison unavailable; see birth record");}
             if(exact)result+="\nSlow <3; Moderate 3–4.5; Fast ≥4.5 m/s. Speed trades off with turning and energy.";
             return result;

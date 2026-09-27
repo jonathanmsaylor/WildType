@@ -9,7 +9,7 @@ namespace WildType
     {
         public const int TreePoolCapacity=24;
         GameObject treePanel; CreatureId treeId;
-        Button treeLocate,treeControl,recordBranch,treeEnter;
+        Button treeLocate,treeControl,treeEnter;
         TMP_Text treeHeading,treeHint,treeSelection;
         ScrollRect treeScroll; RectTransform treeContent,treeViewport;
         FamilyTreeLinks treeLinks;
@@ -22,7 +22,7 @@ namespace WildType
         public FamilyTreeLayout TreeLayout=>treeLayout;
         public ScrollRect TreeScroll=>treeScroll;
         public void ShowTree(CreatureId id){if(session.Generations.Archive.Get(id)==null)return;treeId=id;pendingCenter=id;Show(JournalView.Chronicle);}
-        public void ShowIdentity(CreatureId id){ShowDetails(id);detailSection=3;}
+        public void ShowIdentity(CreatureId id){ShowProfile(id);sections[2]=true;RefreshProfile();Select(sectionButtons[2]);EnsureProfileVisible(sectionButtons[2].transform as RectTransform);}
         void BuildFamilyTree(RectTransform panel)
         {
             var area=Box(panel,"Family Tree",348,-130,1184,740,new Vector2(0,1),0);treePanel=area.gameObject;
@@ -39,7 +39,7 @@ namespace WildType
             treeLinks=edgeObject.GetComponent<FamilyTreeLinks>();treeLinks.raycastTarget=false;treeLinks.rectTransform.anchorMin=treeLinks.rectTransform.anchorMax=treeLinks.rectTransform.pivot=new Vector2(0,1);
             treeLinks.rectTransform.anchoredPosition=Vector2.zero;treeLinks.Layout=treeLayout;
             for(int i=0;i<TreePoolCapacity;i++){
-                var button=ButtonAt(treeContent,"Tree record",0,0,FamilyTreeLayout.CardWidth,FamilyTreeLayout.CardHeight,()=>{},22);
+                var button=ButtonAt(treeContent,"Tree record",0,0,FamilyTreeLayout.CardWidth,FamilyTreeLayout.CardHeight,()=>{},20);
                 navigation.Remove(button);button.navigation=new Navigation{mode=Navigation.Mode.None};button.transition=Selectable.Transition.None;
                 var node=button.gameObject.AddComponent<FamilyTreeCard>();node.Navigate=NavigateTree;node.Focused=c=>{treeId=c.Id;UpdateTreeActions();};node.Explain=ExplainTreeCard;
                 button.onClick.AddListener(()=>ShowProfile(node.Id));var text=button.GetComponentInChildren<TMP_Text>();text.alignment=TextAlignmentOptions.TopLeft;
@@ -55,7 +55,6 @@ namespace WildType
             ButtonAt(area,"Tree full record",522,616,222,46,()=>ShowIdentity(treeId),22,"Full record");
             ButtonAt(area,"Tree index",756,616,406,46,()=>Show(JournalView.Records),22,"All Family Records");
             treeHint=Text(area,"",20,-674,1142,62,21);
-            recordBranch=ButtonAt(detailsPanel.transform,"Record branch",600,480,550,46,()=>ShowTree(detailId),22,"Find in Family Tree");
             Help(treeEnter,"Explore the family with arrows or D-pad. Left from the first card returns to the menu. Select a card to read its record; this never transfers control.");
             Help(treeLocate,"Resume as your current creature and briefly highlight this relative in the world. No walking, teleporting or control transfer.");
             Help(treeControl,"Continue playing as this living descendant with its own existing age and resources. Only descendants of your current creature are eligible.");
@@ -122,7 +121,7 @@ namespace WildType
                 string state=archive.TryDeath(r.CreatureId,out _)?"Deceased":actor?(actor.Life.Adult?"Living · Adult":"Living · Juvenile"):"Unavailable";
                 n.BaseColor=descendant?new Color(.20f,.37f,.27f,1):new Color(.19f,.25f,.27f,1);n.Paint();
                 string fullName=session.Names.PersonalName(n.Id);string compact=fullName.Length>22?fullName.Substring(0,21)+"…":fullName;
-                SetButtonText(n.GetComponent<Button>(),"<b>"+compact+"</b>\nGen "+r.Generation+" · "+LineageChronicle.Relationship(archive,session.Player.Life.Id,r)+"\n"+state);
+                SetButtonText(n.GetComponent<Button>(),"<b>"+compact+"</b>\nGen "+r.Generation+" · "+LineageChronicle.Relationship(archive,session.Player.Life.Id,r)+"\n"+state+(descendant?"\n<size=18>"+InheritedChoices.Callout(session,r,actor)+"</size>":""));
             }
             treeLinks.Visible=view;treeLinks.SetVerticesDirty();bindingTree=false;
             if(string.IsNullOrEmpty(treeHint.text))treeHint.text="Drag empty space or scroll; use bars sideways. Explore tree enables arrows / D-pad. Lines link recorded parents only; crossings are not junctions.";

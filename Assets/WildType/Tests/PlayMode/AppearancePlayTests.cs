@@ -75,11 +75,11 @@ namespace WildType.Tests
             // Detailed comparisons now live in the journal; normal play keeps a compact family summary.
             session.SetPaused(true); yield return new WaitForSecondsRealtime(.2f);
             session.GetComponent<StageHud>().ShowDetails(grandchild.Life.Id); yield return new WaitForSecondsRealtime(.2f);
-            foreach(var button in session.GetComponentsInChildren<UnityEngine.UI.Button>()) if(button.name=="More details") { button.onClick.Invoke(); break; }
+            session.GetComponent<StageHud>().ToggleSection(1);
             yield return new WaitForSecondsRealtime(.2f);
             TMP_Text family = null;
-            foreach (var label in session.GetComponentsInChildren<TMP_Text>()) if (label.name == "Inherited traits") family = label;
-            Assert.NotNull(family); StringAssert.Contains("Gen 2", family.text);
+            foreach (var label in session.GetComponentsInChildren<TMP_Text>()) if (label.name == "Parent Comparisons & Mutations record") family = label;
+            Assert.NotNull(family); StringAssert.Contains("Gen 2", System.Array.Find(session.GetComponentsInChildren<TMP_Text>(),t=>t.name=="Profile identity").text);
             StringAssert.Contains("ADULT: parent A / B -> child", family.text);
             family.ForceMeshUpdate(); Assert.False(family.isTextOverflowing, "Inheritance panel must remain readable");
             Assert.LessOrEqual(session.Population + session.Generations.PendingBirths, GenerationLoop.PopulationCap);

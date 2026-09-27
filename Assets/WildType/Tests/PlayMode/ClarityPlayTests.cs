@@ -51,7 +51,7 @@ namespace WildType.Tests
             InputSystem.QueueStateEvent(pad,new GamepadState());yield return null;
             Assert.AreEqual("Chronicle",EventSystem.current.currentSelectedGameObject.name);
             InputSystem.QueueStateEvent(pad,new GamepadState().WithButton(GamepadButton.South));yield return null;yield return null;InputSystem.QueueStateEvent(pad,new GamepadState());yield return Refresh();Assert.AreEqual(StageHud.JournalView.Chronicle,hud.View);
-            hud.ShowDetails(s.Player.Life.Id);yield return Refresh();Fit();Button("More details").onClick.Invoke();yield return Refresh();Fit();Button("More details").onClick.Invoke();yield return Refresh();Fit();
+            hud.ShowDetails(s.Player.Life.Id);yield return Refresh();Fit();hud.ToggleSection(0);yield return Refresh();Fit();hud.ToggleSection(1);yield return Refresh();Fit();
             foreach(var resolution in new[]{new Vector2(1920,1080),new Vector2(1280,720)}){
                 var canvas=s.GetComponentInChildren<Canvas>();var rect=canvas.GetComponent<RectTransform>();float scale=resolution.y/1080f;var panel=GameObject.Find("Pause").GetComponent<RectTransform>();Assert.LessOrEqual(panel.sizeDelta.x*scale,resolution.x);Assert.LessOrEqual(panel.sizeDelta.y*scale,resolution.y);
                 foreach(var t in panel.GetComponentsInChildren<TMP_Text>())Assert.GreaterOrEqual(t.fontSize*scale,13.3f);Fit();

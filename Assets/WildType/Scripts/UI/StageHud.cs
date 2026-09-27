@@ -15,9 +15,9 @@ namespace WildType
         StageSession session; PlayerInputBridge input;
         GameObject runMenu;
         TMP_Text menuHelp;
-        GameObject ordinary, pausePanel, namePanel, cardsPanel, detailsPanel, guidePanel, eventsPanel;
-        TMP_Text identity, region, status, notice, care, tips, briefEvents, title, scope, detailLeft, detailRight, guide, turnover, namePreview;
-        TMP_InputField nameInput; CreatureId namingId, focusId, detailId;
+        GameObject ordinary, pausePanel, namePanel, cardsPanel, guidePanel, eventsPanel;
+        TMP_Text identity, region, status, notice, care, tips, briefEvents, title, scope, guide, turnover, namePreview;
+        TMP_InputField nameInput; CreatureId namingId, focusId;
         TMP_Text nameTitle,nameInstructions; Button nameConfirm,nameSkip;
         readonly TMP_Text[] resources = new TMP_Text[3]; readonly Image[] bars = new Image[3];
         readonly RectTransform[] rows = new RectTransform[3]; readonly TMP_Text[] labels = new TMP_Text[3];
@@ -26,8 +26,8 @@ namespace WildType
         readonly CreatureId[] rowIds = new CreatureId[3];
         readonly List<CreatureLineageRecord> records = new List<CreatureLineageRecord>(LineageArchive.Capacity);
         readonly List<Button> navigation = new List<Button>();
-        LineageArchive archive; Button resume, nextPage, previousPage, detailPage, tipsButton, livingTab;
-        int page, detailSection; float refresh; FoodPlant highlighted;
+        LineageArchive archive; Button resume, nextPage, previousPage, tipsButton, livingTab;
+        int page; float refresh; FoodPlant highlighted;
         bool ate, born, completed; Vector3 startingPoint;
         readonly StringBuilder builder = new StringBuilder(1600);
         public void Configure(StageSession value)
@@ -38,6 +38,7 @@ namespace WildType
             root.GetComponent<Canvas>().renderMode=RenderMode.ScreenSpaceOverlay;
             var scale=root.GetComponent<CanvasScaler>();scale.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;scale.referenceResolution=new Vector2(1920,1080);scale.matchWidthOrHeight=1;
             root.AddComponent<FamilyWorldCues>().Configure(session,root.GetComponent<RectTransform>());
+            root.AddComponent<ForageCues>().Configure(session,root.GetComponent<RectTransform>());
             ordinary=new GameObject("Ordinary play",typeof(RectTransform));ordinary.transform.SetParent(root.transform,false);
             var stretch=ordinary.GetComponent<RectTransform>();stretch.anchorMin=Vector2.zero;stretch.anchorMax=Vector2.one;stretch.offsetMin=stretch.offsetMax=Vector2.zero;
             var survival=Box(ordinary.transform,"Survival",24,-24,340,235,new Vector2(0,1),.66f);
@@ -89,11 +90,7 @@ namespace WildType
             previousPage=ButtonAt(cardArea,"Previous page",16,654,240,52,()=>{page=Mathf.Max(0,page-1);refresh=0;});
             nextPage=ButtonAt(cardArea,"Next page",270,654,240,52,()=>{page++;refresh=0;});
             Text(cardArea,"Highlight helps you find them.\nTake Control lets you live as them.",530,-646,630,86,23);
-            var detailArea=Box(panel,"Details view",348,-130,1184,740,new Vector2(0,1),0);detailsPanel=detailArea.gameObject;
-            detailLeft=Text(detailArea,"",20,-8,552,645,23);detailLeft.name="Inherited traits";detailLeft.lineSpacing=3;
-            detailRight=Text(detailArea,"",600,-8,552,645,23);detailRight.name="Exact traits";detailRight.lineSpacing=3;
-            detailPage=ButtonAt(detailArea,"More details",20,682,540,48,()=>{detailSection=(detailSection+1)%DetailPages();ClearHelp();refresh=0;});
-            BuildGeneCards(detailArea); BuildFamilyTree(panel);BuildProfile(panel);
+            BuildFamilyTree(panel);BuildProfile(panel);
             var guideArea=Box(panel,"Getting started view",348,-130,1184,740,new Vector2(0,1),0);guidePanel=guideArea.gameObject;
             guide=Text(guideArea,"",20,-8,1144,606,25);
             tipsButton=ButtonAt(guideArea,"Hide tips",600,678,560,52,()=>{TipsVisible=!(TipsVisible&&!completed);completed=false;refresh=0;});
@@ -101,7 +98,7 @@ namespace WildType
             var eventArea=Box(panel,"Recent history",348,-130,1184,740,new Vector2(0,1),0);eventsPanel=eventArea.gameObject;
             turnover=Text(eventArea,"",20,-8,1134,710,25);turnover.name="Turnover events";turnover.lineSpacing=7;
             foreach(var button in navigation){string explanation=button.name switch {
-                "Details"=>"Read the current creature's exact genes and what they do. Later pages keep parent comparisons, resources, mutations and identity.",
+                "Details"=>"Read your creature’s traits, with optional exact genes, parent comparisons and family records on one page.",
                 "Getting started"=>"A short guide to moving, eating and raising a family. Reading pauses survival. First-step tips can be shown or hidden here.",
                 "Run menu"=>"Restart this seed, begin a new seed, or quit. These options also open with Escape or the gamepad Menu button.",
                 "Living jump"=>"Bring a living descendant of your current creature into view. Press again to find another. This does not switch control.",
@@ -109,18 +106,17 @@ namespace WildType
                 "Tree events"=>"The last four recorded births and deaths. Older family records remain in the tree and All Family Records.",
                 "Tree index"=>"Every family-history record, including earlier controlled branches. Use Details for stable IDs when names repeat.",
                 "Tree full record"=>"Read the selected relative's stable identity, recorded parents and death evidence. Unavailable is not the same as dead.",
-                "More details"=>"Next: parent comparisons, exact resources, then identity and recorded death. Additional mutation pages follow when needed.",
                 _=>null};if(explanation!=null)Help(button,explanation);}
             pausePanel.SetActive(false);
         }
         public void Show(JournalView view)
         {
-            View=view==JournalView.Living?JournalView.Chronicle:view;page=0;refresh=0;ClearHelp();
+            View=view==JournalView.Living?JournalView.Chronicle:view==JournalView.Details?JournalView.Profile:view;page=0;refresh=0;ClearHelp();
             if(menuHelp)menuHelp.text="Hover or focus a control for a short explanation.";
             if(treeHint)treeHint.text="Drag empty space or scroll; use bars sideways. Explore tree enables arrows / D-pad. Lines link recorded parents only; crossings are not junctions.";
             if(session.Ready&&!session.Paused)session.SetPaused(true);
         }
-        public void ShowDetails(CreatureId id){detailId=id;detailSection=0;Show(JournalView.Details);}
+        public void ShowDetails(CreatureId id)=>ShowProfile(id);
         void Update()
         {
             if(!session||!session.Ready||!session.Player)return;
@@ -133,8 +129,8 @@ namespace WildType
             if(opening){refresh=0;if(born)completed=true;}
             refresh-=Time.unscaledDeltaTime;if(refresh>0)return;refresh=.1f;
             var a=session.Player;var v=a.Vitals;var loop=session.Generations;
-            if(archive!=loop.Archive){archive=loop.Archive;View=JournalView.Chronicle;page=0;detailSection=0;detailId=default;treeId=default;ate=born=completed=false;TipsVisible=true;startingPoint=a.transform.position;records.Clear();ClearHelp();}
-            if(focusId!=a.Life.Id){focusId=a.Life.Id;page=0;View=JournalView.Chronicle;detailId=treeId=focusId;}
+            if(archive!=loop.Archive){archive=loop.Archive;View=JournalView.Chronicle;page=0;profileId=default;treeId=default;ate=born=completed=false;TipsVisible=true;startingPoint=a.transform.position;records.Clear();ClearHelp();}
+            if(focusId!=a.Life.Id){focusId=a.Life.Id;page=0;View=JournalView.Chronicle;profileId=treeId=focusId;}
             var record=archive.Get(focusId);ate|=a.Interaction.MealsEaten>0;born|=record.OffspringCount>0;
             float[] values={v.Energy,v.Health,v.Stamina},maximum={a.Stats.MaxEnergy,100,a.Stats.MaxStamina};string[] names={"Energy","Health","Stamina"};
             for(int i=0;i<3;i++){resources[i].text=$"{names[i]}  {JournalReadout.Whole(values[i])}/{JournalReadout.Whole(maximum[i])}";bars[i].rectTransform.localScale=new Vector3(Mathf.Clamp01(values[i]/maximum[i]),1,1);}
@@ -160,11 +156,11 @@ namespace WildType
             resume.interactable=!session.GameOver;SetButtonText(tipsButton,TipsVisible&&!completed?"Hide first-step tips":"Show first-step tips");
             bool cards=View==JournalView.Records;
             runMenu.SetActive(View==JournalView.Menu);
-            cardsPanel.SetActive(cards);detailsPanel.SetActive(View==JournalView.Details);guidePanel.SetActive(View==JournalView.Guide);eventsPanel.SetActive(View==JournalView.Events);
+            cardsPanel.SetActive(cards);guidePanel.SetActive(View==JournalView.Guide);eventsPanel.SetActive(View==JournalView.Events);
             treePanel.SetActive(View==JournalView.Chronicle);
             profilePanel.SetActive(View==JournalView.Profile);
             guide.text=GameplayText.Guide(input.UsingGamepad);
-            if(View==JournalView.Profile){RefreshProfile();return;}if(View==JournalView.Details){RefreshDetails();return;}if(View==JournalView.Chronicle){RefreshFamilyTree();return;}if(!cards)return;
+            if(View==JournalView.Profile){RefreshProfile();return;}if(View==JournalView.Chronicle){RefreshFamilyTree();return;}if(!cards)return;
             records.Clear();if(View==JournalView.Records)session.CollectFamilyHistory(records);else foreach(var actor in living)records.Add(archive.Get(actor.Life.Id));
             int pages=Mathf.Max(1,Mathf.CeilToInt(records.Count/3f));page=Mathf.Clamp(page,0,pages-1);
             scope.text=View==JournalView.Records?$"All Family Records · {records.Count} relatives · Page {page+1}/{pages}\nEarlier branches stay here. Select Details for the full record.":$"{session.Names.PersonalName(a.Life.Id)}'s Descendants · {living.Count} living · Page {page+1}/{pages}\nYour children and their children. Earlier branches stay in Family Tree.";
@@ -177,22 +173,6 @@ namespace WildType
                 control[i].interactable=canControl;control[i].gameObject.SetActive(canControl);locate[i].gameObject.SetActive(canLocate);locate[i].interactable=canLocate;
                 labels[i].text=LineageChronicle.Card(session,entry,actor,canControl);
             }
-        }
-        int DetailPages(){var record=archive.Get(detailId);int mutations=record?.ImportantMutations?.Length??0;return 4+Mathf.CeilToInt(Mathf.Max(0,mutations-6)/6f);}
-        void RefreshDetails()
-        {
-            var entry=archive.Get(detailId)??archive.Get(session.Player.Life.Id);var actor=LineageChronicle.LivingActor(session,entry);
-            RefreshGeneCards(entry,actor);
-            string age=actor?$"Age {JournalReadout.Whole(actor.Life.Age)}s":archive.TryDeath(entry.CreatureId,out var d)?$"Lived {JournalReadout.Whole(entry.AgeAt(d.Time))}s · {LineageChronicle.Cause(d.Cause)}":"Age unavailable · no recorded death";
-            string heading=$"<b>{session.Names.PersonalName(entry.CreatureId)}</b> · Gen {entry.Generation}\n"+LineageChronicle.Relationship(archive,session.Player.Life.Id,entry)+" · "+age+"\n\n";
-            if(detailSection==1){detailLeft.text=heading+archive.Changes(entry.CreatureId);detailRight.text=GameplayText.Mutations(entry.ImportantMutations,0,6)+"\n\nParent A: "+session.Names.PersonalName(entry.FirstParentId)+"\nParent B: "+session.Names.PersonalName(entry.SecondParentId)+"\n\nParent values are birth-time records.\nMutation is probabilistic, not a promised benefit.";}
-            if(detailSection==2){
-                detailLeft.text=heading+(actor?GameplayText.Build(actor.Genome)+$"\n{session.World.Zone(actor.transform.position)} · {JournalReadout.Distance(Vector3.Distance(session.Player.transform.position,actor.transform.position))} away\n\nPRECISE RESOURCES\nEnergy {JournalReadout.Exact(actor.Vitals.Energy)} / {JournalReadout.Exact(actor.Stats.MaxEnergy)}\nHealth {JournalReadout.Exact(actor.Vitals.Health)} / 100\nStamina {JournalReadout.Exact(actor.Vitals.Stamina)} / {JournalReadout.Exact(actor.Stats.MaxStamina)}\n\nFood restores energy, not health.\nStamina is the sprint reserve.\n\n"+session.Care.LastTransfer:"Actor unavailable; no current resources inferred.");
-                detailRight.text=actor?GameplayText.Numbers(actor):"No current movement or resource values available.";
-            }
-            if(detailSection==3){detailLeft.text=heading+FullRecord(entry,actor);detailRight.text="FAMILY RECORD\n\nNames may repeat. Stable IDs distinguish individuals.\n\nThe tree links only recorded parents and children. Earlier controlled branches remain in All Family Records.\n\nHighlight keeps you in your creature. Take Control is only for a living descendant. Siblings cannot receive direct-child care.\n\nUnavailable does not mean dead. A death cause is only shown if recorded.";}
-            if(detailSection>=4){detailLeft.text=heading+"Additional recorded mutations";detailRight.text=GameplayText.Mutations(entry.ImportantMutations,(detailSection-3)*6,6);}
-            SetButtonText(detailPage,$"Next Details page · {detailSection+1}/{DetailPages()}");
         }
         void RefreshTurnover()
         {

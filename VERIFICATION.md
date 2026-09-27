@@ -1,4 +1,24 @@
-# WILDTYPE verification — creature profiles and biome feedback — 2026-09-26
+# WILDTYPE verification — foraging choices and descendant decisions — 2026-09-26
+
+Branch **milestone-foraging-decisions**, based on verified local and remote **147659817207f09e1bf7720ec7b24c7cb926fd3c** (`milestone-creature-profiles`). Main remains **d768797775ad0a7b802eaec0f50899e5d3e2e0df**. [Full diagnosis, running-scene evidence, measured outcomes and limitations](Documentation/ForagingDecisions/REPORT.md).
+
+**Presentation-only gameplay improvement:** up to two visible food observations, restricted by actual inherited Vision and unobstructed creature/camera sight, show ripe/depleted state, capped potential gain and an approximate direct-walk energy cost. Visible approach motion can be reported without reading AI intentions. No food, regrowth, travel, survival, mating, care, genetics or population rule was changed. No new input.
+
+Living-descendant tree cards now offer one compact named-parent adult tradeoff, preferring opposing costs/benefits when supported. Selecting a creature opens one scrollable page with four colored summary categories. Exact Genes, Parent Comparisons & Mutations, and Family Record start collapsed on that same page. The four-page Details navigation is removed; all precise genes, resources, retained comparisons, mutation and death evidence remain available. Native inspection caught and fixed stationary-pointer interference with keyboard focus help. Tree return state, Highlight/Take Control eligibility, unsuffixed names, biome notices and F6 remain.
+
+**Tests:** final Edit Mode **156/156 passed** in **3.331715 s**; final Play Mode **60/60 passed** in **564.5284482 s**; zero failed/skipped, both exit 0. The temporary inspection helper and its metadata were removed before these complete suites. Existing long-run regressions and virtual keyboard/gamepad tests remain; no physical gamepad was tested.
+
+**Actual Editor:** both saved scenes, profiles at 1920×1080 and 1366×768, final tree at both resolutions, native profile selection, expansion, keyboard gene help and Back selection. Original ordinary play included autonomous food depletion, a normal F birth, and a chosen 23.71557 m route costing 5.00861 energy with no meal at arrival. Held movement was queued input using the normal motor, not a teleport. The separate two-child painterly comparison used assisted partner placement/resources and accelerated cooldown, followed by native F, naming, Highlight and Take Control. Sora's larger reserve/more upkeep and Mena's farther sight/more upkeep were derived from their inherited adult phenotypes. These are agent-operated and assisted checks, not novice human usability testing or proof of evolution.
+
+The three final 1,200-second autonomous regression seeds produced **44–50 births, 33–39 deaths** (0–2 starvation; otherwise old age), finished with 24 living and had 21–24 living after the initial 120 seconds. Peak actor objects were 26, food slots remained 72, and archive counts were 57–63, within the unchanged 24/32/72/512 caps. Two seeds differed from the earlier suite; the report records both sets and does not attribute the difference to an economic change or adaptation. The full seed and food-availability tables are in the report. The matched 12 m accounting test measured walking at 2.510483 energy versus sprinting at 3.483887 energy; it is not an obstacle-aware route guarantee.
+
+**Protected local work:** all nine initial dirty files match their starting backups **byte-for-byte by SHA-256** and are excluded from this milestone. The original scene's unresolved sun/serialization change remains local; the painterly scene is unchanged. After Unity exited, its regenerated font was saved separately and the exact protected starting font restored. Unity is left closed so its dynamic font generation cannot immediately rewrite that file.
+
+**Limits:** two cues are not a complete food map; crowded family/mating/world labels can still overlap. Walking quotes exclude detours, acceleration and changes while deciding. Missing/deceased actors lack archived full genomes, so new comparisons explicitly become unavailable while retained birth records remain. Compact callouts are one selection, not an overall score. Small-resolution exact records remain dense. The 20–60-second decision cadence is a design target, not a forced timer or established result.
+
+---
+
+# Previous verification — creature profiles and biome feedback — 2026-09-26
 
 Branch **milestone-creature-profiles**, based on local and pushed **c23923dde088114a6183d1b5a34858d134eabaed** (`milestone-scrollable-family-tree`). Main remains **d768797775ad0a7b802eaec0f50899e5d3e2e0df**. [Full report, running-scene images, assistance and protected-file hashes](Documentation/CreatureProfiles/REPORT.md).
 
