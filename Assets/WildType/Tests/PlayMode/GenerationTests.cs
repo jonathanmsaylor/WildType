@@ -99,6 +99,10 @@ namespace WildType.Tests
             InputSystem.QueueStateEvent(pad, new GamepadState().WithButton(GamepadButton.North));
             yield return null; yield return null; InputSystem.QueueStateEvent(pad, new GamepadState());
             yield return new WaitForSecondsRealtime(.15f); Assert.True(session.Paused);
+            Assert.AreEqual(StageHud.JournalView.Overview,session.GetComponent<StageHud>().View);
+            foreach(var button in session.GetComponentsInChildren<UnityEngine.UI.Button>())
+                if(button.name=="Chronicle")button.onClick.Invoke();
+            yield return new WaitForSecondsRealtime(.15f);
             foreach (var button in session.GetComponentsInChildren<UnityEngine.UI.Button>())
                 if (button.name == "Living jump") button.onClick.Invoke();
             yield return null; Assert.AreEqual(child.Life.Id, session.GetComponent<StageHud>().TreeFocus);

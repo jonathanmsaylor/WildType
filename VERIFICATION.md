@@ -1,4 +1,24 @@
-# WILDTYPE verification — foraging choices and descendant decisions — 2026-09-26
+# WILDTYPE verification — journal overview, family needs and safe mates — 2026-09-27
+
+Branch **milestone-family-overview**, based on verified local and remote **0ce86c47dee42269906d470855247af68a5c6366**. Main remains **d768797775ad0a7b802eaec0f50899e5d3e2e0df**. [Full rule description, both-scene evidence, survey comparison and protected-file hashes](Documentation/FamilyOverview/REPORT.md).
+
+**Player-facing changes:** Tab now opens a paused Overview with current Energy, Health and Stamina and up to three living descendants needing attention. Select a need to find that creature in the tree. Every registered living tree card has labeled resource bars, including Energy LOW. Profiles, exact records and events remain accessible. Explore Tree and Scroll Up/Down buttons are gone; arrows/D-pad enter and leave cards directly, while wheel/drag/scrollbars and profile Page Up/Down/right-stick scrolling remain. Close food prompts fade with a 90%-of-reach entry threshold, never retain E outside actual eating eligibility, and separate from nearby mate/child labels.
+
+**One shared biological rule:** both archived parents determine close kinship. Ancestors/descendants at any depth, full/half siblings, aunt/uncle with niece/nephew and first cousins cannot mate. More distant relatives are not banned simply for sharing a founder or appearing in the Family Tree. Player offers, AI search, courtship start and completion use the same rule before costs or birth. Care, genetic compatibility, inheritance, economy, survival, caps, camera and F6 remain unchanged.
+
+**Final tests:** complete Edit Mode **172/172 passed** in **3.0965806 seconds**; complete Play Mode **65/65 passed** in **577.0805954 seconds**; zero failed/skipped, both exit 0. Focused final Play Mode **5/5 passed**, including virtual keyboard/gamepad scrolling, no-cost relative rejection, changing resource bars, lifecycle cleanup, food hysteresis and crowded-label separation. The temporary rendered-inspection helper and its metadata were removed before final suites. The report also records earlier failures and their repairs rather than presenting only the passing attempt.
+
+**Rendered inspection:** original saved scene at **1366×768**, painterly saved scene at **1920×1080**. Native Tab, needs-entry selection, tree/menu keyboard navigation, profile wheel scrolling, F rejection and E eating were exercised. Hungry children, adult relatives and the final crowded placement used an explicitly assisted setup, not an unaided multigeneration playthrough. No physical controller or novice human usability test was performed. The report identifies what automation versus rendered inspection verified.
+
+**Three-seed final 1,200-second surveys:** 46–49 births, 36–39 deaths, 23–24 living at the end, 20–24 after the opening 120 seconds. One starvation in seed 925349; otherwise old age. Replacement births continued without injecting mates or weakening the requested cutoff. Final longest vacancy-to-birth waits were 16 / 38 / 23 seconds; an earlier repeat reached 54 seconds. Archive/object/food bounds held. These snapshots do not establish long-term diversity, absence of mating bottlenecks, or ecological adaptation.
+
+**Protected local work:** all nine task-start dirty paths match their backups byte-for-byte by SHA-256 and are excluded from the milestone. Their inventory is in the report; the saved scene's unresolved lighting/serialization patch is not folded into this work. The painterly saved scene is unchanged. After Unity exited, its regenerated font was preserved separately and the exact protected font restored. Unity is left closed to maintain those bytes.
+
+**Limits:** taller tree cards mean more scrolling; Overview intentionally lists only three current needs with a total. Extreme projected label crowding/bright surfaces can still reduce readability. Physical gamepad and novice-player feedback remain unverified. Only recorded ancestry is used; missing evidence is not invented. The tested/rendered project includes the preserved local asset versions, not just committed assets.
+
+---
+
+# Previous verification — foraging choices and descendant decisions — 2026-09-26
 
 Branch **milestone-foraging-decisions**, based on verified local and remote **147659817207f09e1bf7720ec7b24c7cb926fd3c** (`milestone-creature-profiles`). Main remains **d768797775ad0a7b802eaec0f50899e5d3e2e0df**. [Full diagnosis, running-scene evidence, measured outcomes and limitations](Documentation/ForagingDecisions/REPORT.md).
 

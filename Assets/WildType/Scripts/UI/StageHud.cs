@@ -9,7 +9,7 @@ namespace WildType
 {
     public sealed partial class StageHud : MonoBehaviour
     {
-        public enum JournalView { Living, Chronicle, Details, Guide, Events, Records, Menu, Profile }
+        public enum JournalView { Living, Chronicle, Details, Guide, Events, Records, Menu, Profile, Overview }
         public JournalView View { get; private set; }
         public bool TipsVisible { get; private set; } = true;
         StageSession session; PlayerInputBridge input;
@@ -66,11 +66,12 @@ namespace WildType
             var panel=Box(root,"Pause",0,0,1560,900,new Vector2(.5f,.5f),.94f);pausePanel=panel.gameObject;
             title=Text(panel,"FAMILY JOURNAL\nSimulation paused",28,-24,1460,90,28);title.name="Journal title";
             resume=ButtonAt(panel,"Resume",28,134,292,56,()=>session.SetPaused(false));
-            livingTab=ButtonAt(panel,"Chronicle",28,202,292,56,()=>Show(JournalView.Chronicle),24,"Family Tree");
-            ButtonAt(panel,"Details",28,270,292,56,()=>ShowDetails(session.Player.Life.Id));
-            ButtonAt(panel,"Getting started",28,338,292,56,()=>Show(JournalView.Guide));
-            ButtonAt(panel,"Run menu",28,406,292,56,()=>Show(JournalView.Menu),24,"Menu · Restart / Quit");
-            menuHelp=Text(panel,"Hover or focus a control for a short explanation.",28,-500,292,310,22);
+            ButtonAt(panel,"Overview",28,202,292,56,()=>Show(JournalView.Overview));
+            livingTab=ButtonAt(panel,"Chronicle",28,270,292,56,()=>Show(JournalView.Chronicle),24,"Family Tree");
+            ButtonAt(panel,"Details",28,338,292,56,()=>ShowDetails(session.Player.Life.Id),24,"My creature profile");
+            ButtonAt(panel,"Getting started",28,406,292,56,()=>Show(JournalView.Guide));
+            ButtonAt(panel,"Run menu",28,474,292,56,()=>Show(JournalView.Menu),24,"Menu · Restart / Quit");
+            menuHelp=Text(panel,"Hover or focus a control for a short explanation.",28,-558,292,252,22);
             Help(livingTab,"Find your family in one scrollable view. Living descendants are marked. Earlier branches and recorded deaths remain here.");
             var menuArea=Box(panel,"Run menu view",348,-130,1184,740,new Vector2(0,1),0);runMenu=menuArea.gameObject;
             Text(menuArea,"MENU · Simulation paused\n\nRestart repeats this seed. Reseed starts a different run.\nBoth clear this run's names and family history.",20,-8,1140,190,26);
@@ -90,7 +91,7 @@ namespace WildType
             previousPage=ButtonAt(cardArea,"Previous page",16,654,240,52,()=>{page=Mathf.Max(0,page-1);refresh=0;});
             nextPage=ButtonAt(cardArea,"Next page",270,654,240,52,()=>{page++;refresh=0;});
             Text(cardArea,"Highlight helps you find them.\nTake Control lets you live as them.",530,-646,630,86,23);
-            BuildFamilyTree(panel);BuildProfile(panel);
+            BuildOverview(panel);BuildFamilyTree(panel);BuildProfile(panel);
             var guideArea=Box(panel,"Getting started view",348,-130,1184,740,new Vector2(0,1),0);guidePanel=guideArea.gameObject;
             guide=Text(guideArea,"",20,-8,1144,606,25);
             tipsButton=ButtonAt(guideArea,"Hide tips",600,678,560,52,()=>{TipsVisible=!(TipsVisible&&!completed);completed=false;refresh=0;});
@@ -113,7 +114,7 @@ namespace WildType
         {
             View=view==JournalView.Living?JournalView.Chronicle:view==JournalView.Details?JournalView.Profile:view;page=0;refresh=0;ClearHelp();
             if(menuHelp)menuHelp.text="Hover or focus a control for a short explanation.";
-            if(treeHint)treeHint.text="Drag empty space or scroll; use bars sideways. Explore tree enables arrows / D-pad. Lines link recorded parents only; crossings are not junctions.";
+            if(treeHint)treeHint.text="Scroll or drag empty space. Arrows / D-pad move between cards; left at the edge returns to the menu. Lines link recorded parents only.";
             if(session.Ready&&!session.Paused)session.SetPaused(true);
         }
         public void ShowDetails(CreatureId id)=>ShowProfile(id);
@@ -121,6 +122,7 @@ namespace WildType
         {
             if(!session||!session.Ready||!session.Player)return;
             UpdateBiomeNotice();
+            UpdateJournalScroll();
             session.Names.ValidatePrompt();bool naming=session.Names.HasPrompt;namePanel.SetActive(naming);
             if(naming&&namingId!=session.Names.Pending){namingId=session.Names.Pending;nameInput.text="";RefreshNaming();nameInput.Select();nameInput.ActivateInputField();}
             if(!naming)namingId=default;
@@ -129,8 +131,8 @@ namespace WildType
             if(opening){refresh=0;if(born)completed=true;}
             refresh-=Time.unscaledDeltaTime;if(refresh>0)return;refresh=.1f;
             var a=session.Player;var v=a.Vitals;var loop=session.Generations;
-            if(archive!=loop.Archive){archive=loop.Archive;View=JournalView.Chronicle;page=0;profileId=default;treeId=default;ate=born=completed=false;TipsVisible=true;startingPoint=a.transform.position;records.Clear();ClearHelp();}
-            if(focusId!=a.Life.Id){focusId=a.Life.Id;page=0;View=JournalView.Chronicle;profileId=treeId=focusId;}
+            if(archive!=loop.Archive){archive=loop.Archive;View=JournalView.Overview;page=0;profileId=default;treeId=default;ate=born=completed=false;TipsVisible=true;startingPoint=a.transform.position;records.Clear();ClearHelp();}
+            if(focusId!=a.Life.Id){focusId=a.Life.Id;page=0;View=JournalView.Overview;profileId=treeId=focusId;}
             var record=archive.Get(focusId);ate|=a.Interaction.MealsEaten>0;born|=record.OffspringCount>0;
             float[] values={v.Energy,v.Health,v.Stamina},maximum={a.Stats.MaxEnergy,100,a.Stats.MaxStamina};string[] names={"Energy","Health","Stamina"};
             for(int i=0;i<3;i++){resources[i].text=$"{names[i]}  {JournalReadout.Whole(values[i])}/{JournalReadout.Whole(maximum[i])}";bars[i].rectTransform.localScale=new Vector3(Mathf.Clamp01(values[i]/maximum[i]),1,1);}
@@ -159,8 +161,9 @@ namespace WildType
             cardsPanel.SetActive(cards);guidePanel.SetActive(View==JournalView.Guide);eventsPanel.SetActive(View==JournalView.Events);
             treePanel.SetActive(View==JournalView.Chronicle);
             profilePanel.SetActive(View==JournalView.Profile);
+            overviewPanel.SetActive(View==JournalView.Overview);
             guide.text=GameplayText.Guide(input.UsingGamepad);
-            if(View==JournalView.Profile){RefreshProfile();return;}if(View==JournalView.Chronicle){RefreshFamilyTree();return;}if(!cards)return;
+            if(View==JournalView.Overview){RefreshOverview();return;}if(View==JournalView.Profile){RefreshProfile();return;}if(View==JournalView.Chronicle){RefreshFamilyTree();return;}if(!cards)return;
             records.Clear();if(View==JournalView.Records)session.CollectFamilyHistory(records);else foreach(var actor in living)records.Add(archive.Get(actor.Life.Id));
             int pages=Mathf.Max(1,Mathf.CeilToInt(records.Count/3f));page=Mathf.Clamp(page,0,pages-1);
             scope.text=View==JournalView.Records?$"All Family Records · {records.Count} relatives · Page {page+1}/{pages}\nEarlier branches stay here. Select Details for the full record.":$"{session.Names.PersonalName(a.Life.Id)}'s Descendants · {living.Count} living · Page {page+1}/{pages}\nYour children and their children. Earlier branches stay in Family Tree.";
@@ -190,6 +193,7 @@ namespace WildType
             // A bounded ordered ring works with arrows/D-pad even after paging or hiding a button.
             var active=new List<Button>();foreach(var b in navigation)if(b&&b.gameObject.activeInHierarchy&&b.interactable)active.Add(b);
             for(int i=0;i<active.Count;i++){var n=new Navigation{mode=Navigation.Mode.Explicit};n.selectOnUp=n.selectOnLeft=active[(i+active.Count-1)%active.Count];n.selectOnDown=n.selectOnRight=active[(i+1)%active.Count];active[i].navigation=n;}
+            if(View==JournalView.Chronicle){Button entry=null;foreach(var node in treePool)if(node.gameObject.activeInHierarchy){if(!entry||node.Id==treeId)entry=node.GetComponent<Button>();if(node.Id==treeId)break;}if(entry){var nav=livingTab.navigation;nav.selectOnRight=entry;livingTab.navigation=nav;}}
             if(EventSystem.current){var selected=EventSystem.current.currentSelectedGameObject;var s=selected?selected.GetComponent<Selectable>():null;if(!s||!s.IsActive()||!s.IsInteractable())if(active.Count>0)Select(active[0]);}
         }
         static void Select(Button button){if(EventSystem.current&&button&&button.interactable)EventSystem.current.SetSelectedGameObject(button.gameObject);}

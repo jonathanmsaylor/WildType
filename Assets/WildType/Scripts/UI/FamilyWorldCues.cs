@@ -14,9 +14,14 @@ namespace WildType
         readonly CourtshipHeart[] hearts = new CourtshipHeart[GenerationLoop.PopulationCap / 2];
         TMP_Text foodPrompt, matePrompt, locatePrompt;
         CreatureAgent lastLocated;
+        FoodPlant promptFood;
+        CreatureId promptController;
+        bool foodOffered;
+        float foodAlpha;
         public bool LocateCueVisible => locatePrompt && locatePrompt.gameObject.activeSelf;
         public bool DirectionCueVisible { get; private set; }
-        public bool FoodPromptVisible => foodPrompt && foodPrompt.gameObject.activeSelf;
+        public bool FoodPromptVisible => foodPrompt && foodPrompt.gameObject.activeSelf && foodOffered && foodAlpha > .01f;
+        public float FoodPromptAlpha => foodAlpha;
         public bool MatePromptVisible => matePrompt && matePrompt.gameObject.activeSelf;
         float refresh;
         public int VisibleChildren { get; private set; }
@@ -135,14 +140,24 @@ namespace WildType
                 hearts[i].gameObject.SetActive(shown);
             }
             var food = active ? session.Player.Interaction.Nearest() : null;
-            bool canEat = food && session.Player.Vitals.Energy < session.Player.Stats.MaxEnergy - .5f;
+            bool canEat = food && session.Player.Interaction.EatReason(food).Length == 0;
             Vector3 foodPoint = food ? food.transform.position + Vector3.up * (food.Region == Habitat.Dry ? 2.8f : 1.8f) : Vector3.zero;
-            foodPrompt.gameObject.SetActive(canEat && PointVisible(foodPoint));
-            if (foodPrompt.gameObject.activeSelf)
+            // Enter slightly inside real reach; retain only while genuinely actionable.
+            // On exit, remove the key immediately and fade a non-action plant name instead.
+            var controller=session.Player && session.Player.Life ? session.Player.Life.Id : default;
+            if(!active || promptController!=controller){foodAlpha=0;foodOffered=false;promptFood=null;}
+            promptController=controller;
+            bool retain=foodOffered && promptFood==food;
+            foodOffered=canEat && PointVisible(foodPoint) && (retain || Vector3.Distance(session.Player.transform.position,food.transform.position)<=session.Player.Interaction.Reach*.9f);
+            if(foodOffered){promptFood=food;Place(foodPrompt.rectTransform,foodPoint,false);}
+            foodAlpha=Mathf.MoveTowards(foodAlpha,foodOffered?1:0,Time.unscaledDeltaTime*5);
+            foodPrompt.gameObject.SetActive(active && promptFood && foodAlpha>.001f);
+            foodPrompt.alpha=foodAlpha;
+            if (foodOffered)
             {
-                Place(foodPrompt.rectTransform, foodPoint, false);
-                if (updateText) foodPrompt.text = session.GetComponent<PlayerInputBridge>().EatKey + " Eat " + food.DisplayName + $"\nGain {JournalReadout.Approx(Mathf.Min(session.Player.Stats.MaxEnergy-session.Player.Vitals.Energy,food.nutrition*session.Player.Stats.NutritionFactor))} energy";
+                foodPrompt.text = session.GetComponent<PlayerInputBridge>().EatKey + " Eat " + food.DisplayName + $"\nGain {JournalReadout.Approx(Mathf.Min(session.Player.Stats.MaxEnergy-session.Player.Vitals.Energy,food.nutrition*session.Player.Stats.NutritionFactor))} energy";
             }
+            else foodPrompt.text=promptFood?promptFood.DisplayName:"";
             var partner = active ? session.Generations.ReadyPlayerPartner() : null;
             Vector3 matePoint = partner ? partner.transform.position + Vector3.up * (partner.CurrentHeight + .7f) : Vector3.zero;
             matePrompt.gameObject.SetActive(partner && PointVisible(matePoint));
@@ -151,6 +166,21 @@ namespace WildType
                 Place(matePrompt.rectTransform, matePoint, false);
                 if (updateText) matePrompt.text = session.GetComponent<PlayerInputBridge>().MateKey + " Mate · " + session.Names.NearbyName(partner.Life.Id) + $"\nYou spend {JournalReadout.Approx(session.Player.Stats.MaxEnergy*GenerationLoop.ParentEnergyCost)} energy at birth";
             }
+            // Small, bounded displacement only for overlapping immediate-action labels.
+            if(foodPrompt.gameObject.activeSelf){
+                if(matePrompt.gameObject.activeSelf)Separate(matePrompt,foodPrompt);
+            }
+            for(int i=0;i<labels.Length;i++)if(labels[i].gameObject.activeSelf)
+                for(int pass=0;pass<i+3;pass++){
+                    if(foodPrompt.gameObject.activeSelf)Separate(labels[i],foodPrompt,true);
+                    if(matePrompt.gameObject.activeSelf)Separate(labels[i],matePrompt,true);
+                    for(int j=0;j<i;j++)if(labels[j].gameObject.activeSelf)Separate(labels[i],labels[j],true);
+                }
+        }
+        static void Separate(TMP_Text movable,TMP_Text fixedLabel,bool below=false)
+        {
+            var delta=movable.rectTransform.anchoredPosition-fixedLabel.rectTransform.anchoredPosition;
+            if(Mathf.Abs(delta.x)<480&&Mathf.Abs(delta.y)<84)movable.rectTransform.anchoredPosition+=Vector2.up*((below?-90:90)-delta.y);
         }
         public static string ChildLabel(StageSession s, CreatureAgent child, float distance) => s.Names.NearbyName(child.Life.Id) + "\n" +
             s.World.Zone(child.transform.position) + " · " + JournalReadout.Distance(distance) + " · Gen " + s.Generations.Archive.Get(child.Life.Id).Generation;

@@ -32,8 +32,6 @@ namespace WildType
             ButtonAt(area,"Back to Family Tree",12,0,250,48,BackToTree,23,"Back to tree");
             profileLocate=ButtonAt(area,"Profile Highlight",274,0,280,48,()=>session.Locator.Select(ProfileActor()),23,"Highlight in world");
             profileControl=ButtonAt(area,"Profile Take Control",566,0,280,48,()=>session.TakeControl(ProfileActor()),23,"Take Control");
-            ButtonAt(area,"Scroll profile up",858,0,140,48,()=>ScrollProfile(-280),22,"Scroll up");
-            ButtonAt(area,"Scroll profile down",1010,0,136,48,()=>ScrollProfile(280),22,"Scroll down");
             profileIdentity=Text(area,"",12,-60,1134,94,24);profileIdentity.name="Profile identity";
             profileViewport=Box(area,"Creature page viewport",12,-160,1134,450,new Vector2(0,1),.05f);
             profileViewport.gameObject.AddComponent<RectMask2D>();
@@ -41,6 +39,7 @@ namespace WildType
             profileScroll.movementType=ScrollRect.MovementType.Clamped;profileScroll.inertia=false;profileScroll.scrollSensitivity=32;
             profileContent=Box(profileViewport,"Creature page content",0,0,1134,600,new Vector2(0,1),0);profileScroll.content=profileContent;
             profileScroll.verticalScrollbar=TreeBar(area,"Creature page scrollbar",1154,160,16,450,true);
+            profileScroll.verticalScrollbar.gameObject.AddComponent<JournalFocusMarker>();
             for(int i=0;i<4;i++){
                 var b=ButtonAt(profileContent,"Profile card "+i,12+(i%2)*564,(i/2)*206,550,196,()=>{},23);profileCards[i]=b;
                 b.GetComponent<Image>().color=CardColors[i];var t=b.GetComponentInChildren<TMP_Text>();t.alignment=TextAlignmentOptions.TopLeft;
@@ -50,6 +49,7 @@ namespace WildType
                 motif.rectTransform.anchorMin=motif.rectTransform.anchorMax=new Vector2(1,1);motif.rectTransform.anchoredPosition=new Vector2(-24,-22);motif.rectTransform.sizeDelta=new Vector2(26,26);
             }
             BuildSections();
+            Text(area,"Scroll: wheel / drag\nRight stick / Page Up, Down",860,-2,278,52,20);
             profileExplanation=Text(Box(area,"Profile explanation",12,-624,1134,112,new Vector2(0,1),.96f),"",14,-6,1106,100,21);
             profileExplanation.name="Profile explanation text";
             Help(profileLocate,"Briefly highlight this relative, keeping control of your own creature.");
@@ -88,6 +88,16 @@ namespace WildType
             var at=profileContent.anchoredPosition;at.y=Mathf.Clamp(at.y+dy,0,Mathf.Max(0,profileContent.rect.height-profileViewport.rect.height));profileContent.anchoredPosition=at;
         }
         void ScrollProfile(float distance){var at=profileContent.anchoredPosition;at.y=Mathf.Clamp(at.y+distance,0,Mathf.Max(0,profileContent.rect.height-profileViewport.rect.height));profileContent.anchoredPosition=at;}
+        void UpdateJournalScroll()
+        {
+            if(!session.Paused||session.Names.HasPrompt||View!=JournalView.Profile)return;
+            var keyboard=UnityEngine.InputSystem.Keyboard.current;
+            float direction=0;
+            if(keyboard!=null){if(keyboard.pageDownKey.isPressed)direction+=1;if(keyboard.pageUpKey.isPressed)direction-=1;}
+            var pad=UnityEngine.InputSystem.Gamepad.current;
+            if(pad!=null){float y=pad.rightStick.ReadValue().y;if(Mathf.Abs(y)>.2f)direction-=y;}
+            if(direction!=0)ScrollProfile(direction*500*Time.unscaledDeltaTime);
+        }
         void BuildBiomeNotice(Transform parent)
         {
             var panel=Box(parent,"Biome entry",-24,-110,490,152,new Vector2(1,1),.9f);

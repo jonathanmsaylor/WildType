@@ -6,7 +6,7 @@ namespace WildType
     // Coordinates never depend on names or an inferred death. All work is bounded by the archive.
     public sealed class FamilyTreeLayout
     {
-        public const float CardWidth=326, CardHeight=148, Column=374, Row=236, Margin=24;
+        public const float CardWidth=326, CardHeight=248, Column=374, Row=336, Margin=24;
         public readonly List<CreatureLineageRecord> Records=new List<CreatureLineageRecord>();
         public readonly Dictionary<CreatureId,Vector2> Positions=new Dictionary<CreatureId,Vector2>();
         public readonly List<(CreatureId parent,CreatureId child)> Links=new List<(CreatureId,CreatureId)>();

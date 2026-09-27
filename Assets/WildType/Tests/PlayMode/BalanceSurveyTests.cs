@@ -88,6 +88,13 @@ namespace WildType.Tests
                 Assert.AreEqual(72,session.World.Foods.Count); Assert.LessOrEqual(session.Generations.Archive.Count,512); Assert.LessOrEqual(session.Fx.ParticleCount,512);
                 if (tick > 0 && tick % 100 == 0)
                 {
+                    int adults=0,kinshipPairs=0,localReady=0;
+                    for(int ai=0;ai<session.Creatures.Count;ai++) {
+                        var a=session.Creatures[ai];if(!a||a.Vitals.Dead||!a.Life.Adult)continue;adults++;
+                        if(session.Generations.FindPartner(a,a.Stats.Vision,true))localReady++;
+                        for(int bi=ai+1;bi<session.Creatures.Count;bi++){var b=session.Creatures[bi];if(b&&!b.Vitals.Dead&&b.Life.Adult&&!session.Generations.CloseRelatives(a,b))kinshipPairs++;}
+                    }
+                    Debug.Log($"KINSHIP_WINDOW seed={seed} t={tick} adults={adults} adultPairsAllowedByKinship={kinshipPairs} actorsWithEligibleMateInVision={localReady} pending={session.Generations.PendingBirths}");
                     Debug.Log($"BALANCE_WINDOW seed={seed} t={tick} pop={pop} births={session.Generations.Births} starved={starved} aged={aged} ripeMean(M,D,W)={windowFood[0]/windowSamples:F2},{windowFood[1]/windowSamples:F2},{windowFood[2]/windowSamples:F2}");
                     Array.Clear(windowFood,0,3); windowSamples=0;
                 }

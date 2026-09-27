@@ -12,6 +12,25 @@ namespace WildType
         readonly List<CreatureLineageRecord> birthOrder = new List<CreatureLineageRecord>(Capacity);
         public int Revision { get; private set; }
         public int Count => records.Count;
+        // Biological eligibility is independent of the displayed family, names and founder label.
+        // Immutable parent links and the hard archive cap bound both ancestor walks.
+        public bool TooCloselyRelated(CreatureId first, CreatureId second)
+        {
+            var a = Get(first); var b = Get(second);
+            if (a == null || b == null) return false; // Missing evidence is not invented kinship.
+            if (first == second || IsDescendant(first, second) || IsDescendant(second, first)) return true;
+            if (Siblings(a, b)) return true;
+            var a1 = Get(a.FirstParentId); var a2 = Get(a.SecondParentId);
+            var b1 = Get(b.FirstParentId); var b2 = Get(b.SecondParentId);
+            return Siblings(a, b1) || Siblings(a, b2) || Siblings(b, a1) || Siblings(b, a2) ||
+                Siblings(a1, b1) || Siblings(a1, b2) || Siblings(a2, b1) || Siblings(a2, b2);
+        }
+        static bool Siblings(CreatureLineageRecord a, CreatureLineageRecord b)
+        {
+            if (a == null || b == null || a.CreatureId == b.CreatureId) return false;
+            return a.FirstParentId.IsValid && (a.FirstParentId == b.FirstParentId || a.FirstParentId == b.SecondParentId) ||
+                a.SecondParentId.IsValid && (a.SecondParentId == b.FirstParentId || a.SecondParentId == b.SecondParentId);
+        }
         public CreatureLineageRecord Get(CreatureId id) => records.TryGetValue(id, out var value) ? value : null;
         public string Changes(CreatureId id) => changes.TryGetValue(id, out var value) ? value : "Founder traits";
         public bool Add(CreatureLineageRecord record, string summary = "Founder traits")

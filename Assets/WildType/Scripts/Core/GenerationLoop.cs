@@ -69,6 +69,7 @@ namespace WildType
         string PairReason(CreatureAgent first, CreatureAgent second, bool checkReserved, bool checkRange)
         {
             if (!Owns(first) || !Owns(second) || first.Vitals.Dead || second.Vitals.Dead) return "Partner unavailable";
+            if (CloseRelatives(first, second)) return "Too closely related — find another partner";
             if (first.Life.Age >= first.Stats.LifespanSeconds || second.Life.Age >= second.Stats.LifespanSeconds) return "Partner at end of lifespan";
             var result = ReproductionEligibility.Evaluate(first.Life.Candidate(checkReserved && Reserved(first)),
                 second.Life.Candidate(checkReserved && Reserved(second)), GeneticDistance.Between(first.Genome, second.Genome),
@@ -97,6 +98,8 @@ namespace WildType
             }
             return best;
         }
+        public bool CloseRelatives(CreatureAgent first, CreatureAgent second) =>
+            Owns(first) && Owns(second) && Archive.TooCloselyRelated(first.Life.Id, second.Life.Id);
         public string PlayerHint()
         {
             if (!enabled) return "Generations disabled";
@@ -154,7 +157,9 @@ namespace WildType
         }
         bool Birth(Pair pair, out string reason)
         {
-            reason = CapacityReason(false); if (reason.Length > 0) return false;
+            reason = PairReason(pair.first, pair.second, false, true);
+            if (reason.Length == 0) reason = CapacityReason(false);
+            if (reason.Length > 0) return false;
             var first = pair.first; var second = pair.second;
             // Reserve a collision-free site before sampling inheritance or spending resources.
             if (!BirthSite(first.transform.position, out var point)) { reason = "No safe nearby birth site"; return false; }

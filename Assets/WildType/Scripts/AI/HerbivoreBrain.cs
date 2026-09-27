@@ -42,7 +42,7 @@ namespace WildType
             var generations = actor.Session.Generations;
             if (generations.enabled && generations.Reserved(actor))
             { actor.DesiredDirection = Vector3.zero; actor.WantsSprint = false; actor.Intent = "Courting"; return; }
-            if (mate && (mate.Vitals.Dead || generations.IndividualReason(mate).Length > 0 ||
+            if (mate && (mate.Vitals.Dead || generations.CloseRelatives(actor, mate) || generations.IndividualReason(mate).Length > 0 ||
                 actor.Session.Population + generations.PendingBirths >= GenerationLoop.PopulationCap)) mate = null;
             decision -= Time.deltaTime;
             memoryAge += Time.deltaTime; rejectedTime -= Time.deltaTime;

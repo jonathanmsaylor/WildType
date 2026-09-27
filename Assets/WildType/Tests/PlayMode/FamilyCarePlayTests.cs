@@ -201,7 +201,7 @@ namespace WildType.Tests
             {
                 if (!label.text.Contains("Dave")) continue;
                 found = true; Assert.GreaterOrEqual(label.fontSize, 18); label.ForceMeshUpdate(); Assert.False(label.isTextOverflowing);
-                Assert.AreEqual(148, selection.GetComponent<RectTransform>().sizeDelta.y);
+                Assert.AreEqual(FamilyTreeLayout.CardHeight, selection.GetComponent<RectTransform>().sizeDelta.y);
             }
             Assert.True(found); Assert.True(session.TakeControl(child)); Assert.AreEqual("Dave", session.Names.PersonalName(id));
             session.SetPaused(true); session.Restart(false); yield return null; yield return new WaitForSecondsRealtime(.3f); Freeze();

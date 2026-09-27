@@ -64,7 +64,7 @@ namespace WildType
         {
             if (!session || !session.Ready || pauseFrame == Time.frameCount) return;
             pauseFrame = Time.frameCount;
-            if(session.Paused)session.SetPaused(false);else GetComponent<StageHud>().Show(journal?StageHud.JournalView.Chronicle:StageHud.JournalView.Menu);
+            if(session.Paused)session.SetPaused(false);else GetComponent<StageHud>().Show(journal?StageHud.JournalView.Overview:StageHud.JournalView.Menu);
             pointerWasLocked = false;
         }
         void OnGUI()
